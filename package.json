@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check engine.js && node --check script.js && node --check presentation.js && node --check storage.js && node --check server.js",
+    "check": "node --check engine.js && node --check script.js && node --check presentation.js && node --check storage.js && node --check field-guide.js && node --check audio.js && node --check server.js",
     "test": "node --test tests/*.test.js",
     "test:browser": "node tools/adventure-check.mjs && node tools/lifecycle-check.mjs",
+    "test:expansion": "node tools/expansion-check.mjs",
+    "test:audio": "node tools/audio-check.mjs",
     "test:balance": "node tools/simulate.mjs"
   },
   "devDependencies": {

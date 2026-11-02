@@ -1,8 +1,11 @@
 import * as E from "./engine.js";
 import { readState, writeState } from "./storage.js";
 import { BattleEffects } from "./presentation.js";
+import { discoveryRecords } from "./field-guide.js";
+import { GameAudio } from "./audio.js";
 const app = document.getElementById("app");
 const effects = new BattleEffects();
+const audio = new GameAudio();
 let saveStorage;
 try {
   saveStorage = window.localStorage;
@@ -22,6 +25,7 @@ let catalogue,
   run = null,
   titleMode = true,
   modal = null,
+  menuReturnFocus = null,
   paused = false,
   running = false,
   epoch = 0,
@@ -34,24 +38,24 @@ const AUTO = new Set(["travel", "arrival", "battle", "victoryBeat"]);
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
 const STARTERS = [1, 4, 7, 25, 133, 152];
 const NAME_TYPES = {
-  grass: "Plante",
+  grass: "Grass",
   poison: "Poison",
-  fire: "Feu",
-  flying: "Vol",
-  water: "Eau",
+  fire: "Fire",
+  flying: "Flying",
+  water: "Water",
   normal: "Normal",
-  electric: "Électrik",
-  bug: "Insecte",
-  ground: "Sol",
-  rock: "Roche",
-  psychic: "Psy",
-  ghost: "Spectre",
-  ice: "Glace",
-  fighting: "Combat",
+  electric: "Electric",
+  bug: "Bug",
+  ground: "Ground",
+  rock: "Rock",
+  psychic: "Psychic",
+  ghost: "Ghost",
+  ice: "Ice",
+  fighting: "Fighting",
   dragon: "Dragon",
-  steel: "Acier",
-  dark: "Ténèbres",
-  fairy: "Fée",
+  steel: "Steel",
+  dark: "Dark",
+  fairy: "Fairy",
 };
 const q = (s) => document.querySelector(s);
 const esc = (s) =>
@@ -66,21 +70,22 @@ const art = (asset, cls = "", alt = "") =>
   `<img class="item-art ${cls}" src="assets/generated/${asset}.webp" alt="${esc(alt)}" draggable="false">`;
 const mon = (id, cls = "") =>
   `<img class="pokemon-art ${cls}" src="${catalogue.pokemon[id].artwork}" alt="${esc(catalogue.pokemon[id].name)}" draggable="false">`;
+const visualHeroId = () => run.pendingGrowth?.fromId || run.hero.id;
 const button = (label, action, value = "", cls = "", disabled = false) =>
   `<button class="${cls}" data-action="${action}" data-value="${value}" ${disabled ? "disabled" : ""}>${label}</button>`;
 function persist() {
   if (!writeState(saveStorage, meta, run))
-    warning = "Sauvegarde indisponible : gardez cette fenêtre ouverte.";
+    warning = "Saving is unavailable. Keep this window open to retain your expedition.";
 }
 function health(m) {
   return `<div class="health-frame"><div class="health-fill ${m.hp / m.maxHp < 0.25 ? "danger" : m.hp / m.maxHp < 0.5 ? "low" : ""}" style="width:${(m.hp / m.maxHp) * 100}%"></div></div>`;
 }
 function hud() {
   const stage = E.stage(run);
-  return `<header class="game-hud"><div class="hud-left paper-panel">${art("gold-coins")}<strong id="hud-coins">${run.coins}</strong><span class="hud-score">${run.wins} victoire${run.wins > 1 ? "s" : ""}</span></div><div class="stage-heading"><small>LE SENTIER DES GARDIENS · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}</small><strong>${stage.name}</strong></div><div class="hud-controls"><div class="speed-select paper-panel">${[
-    ["Lent", 2000],
+  return `<header class="game-hud"><div class="hud-left paper-panel">${art("gold-coins")}<strong id="hud-coins">${run.coins}</strong><span class="hud-score">${run.wins} ${run.wins === 1 ? "victory" : "victories"}</span></div><div class="stage-heading"><small>THE GUARDIAN TRAIL · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}</small><strong>${stage.name}</strong></div><div class="hud-controls"><div class="speed-select paper-panel">${[
+    ["Slow", 2000],
     ["Normal", 1500],
-    ["Rapide", 750],
+    ["Fast", 750],
   ]
     .map(([label, v]) =>
       button(label, "speed", v, speed === v ? "selected" : ""),
@@ -99,20 +104,20 @@ function buffRail() {
     .join("")}</div>`;
 }
 function heroCard() {
-  const h = run.hero;
-  return `<div class="map-hero-card paper-panel">${mon(h.id)}<div><strong>${catalogue.pokemon[h.id].name}</strong><small>Niveau ${h.level} · ${h.hp} / ${h.maxHp} PV</small>${health(h)}</div></div>`;
+  const h = { ...run.hero, id: visualHeroId() };
+  return `<div class="map-hero-card paper-panel">${mon(h.id)}<div><strong>${catalogue.pokemon[h.id].name}</strong><small>Level ${h.level} · ${h.hp} / ${h.maxHp} HP</small>${health(h)}</div></div>`;
 }
 function titleView() {
   const saved = run && !TERMINAL.has(run.phase);
-  return `<div class="title-scene"><div class="title-shade"></div><div class="title-brand"><small>ROGUELIKE · COMBATS AUTOMATIQUES</small><h1>POKÉ<span>ROGUE</span></h1><p>LE SENTIER DES GARDIENS</p></div><div class="title-stats"><span>Record <b>${meta.bestScore}</b></span><span>Victoires <b>${meta.totalVictories}</b></span><span class="title-gold">${art("gold-coins")}<b>${meta.gold}</b></span></div>
- ${saved ? `<div class="resume-adventure">${button(`Reprendre l'expédition · étape ${run.stageIndex + 1}`, "resume", "", "paper-panel main-button")}</div>` : ""}
- <h2 class="starter-heading">${saved ? "Ou choisir un nouveau partenaire" : "Choisissez votre partenaire"}</h2><div class="starter-line">${STARTERS.map(
+  return `<div class="title-scene"><div class="title-shade"></div><div class="title-brand"><small>ROGUELIKE · AUTOMATIC BATTLES</small><h1>POKÉ<span>ROGUE</span></h1><p>THE GUARDIAN TRAIL</p></div><div class="title-stats"><span>Record <b>${meta.bestScore}</b></span><span>Victories <b>${meta.totalVictories}</b></span><span class="title-gold">${art("gold-coins")}<b>${meta.gold}</b></span></div>
+ ${saved ? `<div class="resume-adventure">${button(`Resume expedition · stage ${run.stageIndex + 1}`, "resume", "", "paper-panel main-button")}</div>` : ""}
+ <h2 class="starter-heading">${saved ? "Or choose a new partner" : "Choose your partner"}</h2><div class="starter-line">${STARTERS.map(
    (id) => {
      const s = catalogue.pokemon[id],
        locked = !meta.unlockedStarters[id],
        threshold = { 25: 10, 133: 25, 152: 50 }[id];
      return button(
-       `${mon(id)}<strong>${s.name}</strong><small>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small>${locked ? `<span class="starter-lock">${art("brass-lock")}<span>${threshold} victoires</span></span>` : ""}`,
+       `${mon(id)}<strong>${s.name}</strong><small>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small>${locked ? `<span class="starter-lock">${art("brass-lock")}<span>${threshold} victories</span></span>` : ""}`,
        "starter",
        id,
        `starter-pokemon ${locked ? "locked" : ""}`,
@@ -120,16 +125,16 @@ function titleView() {
      );
    },
  ).join("")}</div>
- <div class="title-actions">${button(`${art("affinity-crystal")}Améliorations permanentes`, "upgrades", "", "paper-panel")}${button("Comment jouer", "help", "", "paper-panel")}</div></div>`;
+ <div class="title-actions">${button(`${art("affinity-crystal")}Permanent upgrades`, "upgrades", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}</div></div>`;
 }
 function battleCard(m, side) {
   const s = catalogue.pokemon[m.id];
-  return `<section class="battle-card ${side}-card paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Nv. ${m.level}</span></div><small>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div></section>`;
+  return `<section class="battle-card ${side}-card paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><small>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div></section>`;
 }
 function battleView() {
-  const h = run.hero,
+  const h = { ...run.hero, id: visualHeroId() },
     e = run.enemy;
-  return `<div id="battle-scene"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div><div class="battle-kind">${E.stage(run).kind === "boss" ? "GARDIEN" : E.stage(run).kind === "elite" ? "RENCONTRE ÉLITE" : "COMBAT AUTOMATIQUE"}<small id="turn-label">Action ${run.battleActions + 1}</small></div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${esc(narration || run.log.at(-1))}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTOIRE</div>' : ""}</div>`;
+  return `<div id="battle-scene" style="--battle-arena:url(assets/generated/${E.region(run).arena}.webp)"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div><div class="battle-kind">${E.stage(run).kind === "boss" ? "GUARDIAN" : E.stage(run).kind === "elite" ? "ELITE ENCOUNTER" : "AUTOMATIC BATTLE"}<small id="turn-label">Action ${run.battleActions + 1}</small></div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${esc(narration || run.log.at(-1))}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTORY</div>' : ""}</div>`;
 }
 function worldProp(p) {
   return `<img class="map-prop" src="assets/generated/${p.asset}.webp" alt="" style="left:${p.x * 100}%;top:${p.y * 100}%;width:${p.w * 100}%;height:${p.h * 100}%;z-index:${Math.round(p.y * 1000)}" draggable="false">`;
@@ -140,7 +145,8 @@ function destinationProp() {
 }
 function mapView() {
   const [x, y] = E.travelPosition(run, world.route);
-  return `<div id="map-scene"><div class="map-canvas"><img class="map-foundation" src="${world.base}" alt="Sentier de forêt peint à la main">${world.props.map(worldProp).join("")}${destinationProp()}<div id="map-actor" class="map-actor ${run.phase === "travel" ? "walking" : ""}" style="left:${x * 100}%;top:${y * 100}%;z-index:${Math.round(y * 1000)}" data-x="${x}" data-y="${y}">${mon(run.hero.id, "body-art")}</div></div>${heroCard()}${run.phase === "travel" ? `<div class="travel-caption"><strong>${catalogue.pokemon[run.hero.id].name} rejoint la prochaine étape</strong><span>En route vers ${esc(E.stage(run).name)}</span></div>` : ""}${encounterDock()}</div>`;
+  const biome = world.regions?.[E.region(run).id] || world;
+  return `<div id="map-scene"><div class="map-canvas"><img class="map-foundation" src="${biome.base}" alt="${esc(E.region(run).name)}">${biome.props.map(worldProp).join("")}${destinationProp()}<div id="map-actor" class="map-actor ${run.phase === "travel" && !run.pendingGrowth ? "walking" : ""}" style="left:${x * 100}%;top:${y * 100}%;z-index:${Math.round(y * 1000)}" data-x="${x}" data-y="${y}">${mon(visualHeroId(), "body-art")}</div></div>${heroCard()}${run.phase === "travel" && !run.pendingGrowth ? `<div class="travel-caption"><strong>${catalogue.pokemon[run.hero.id].name} travels to the next destination</strong><span>On the way to ${esc(E.stage(run).name)}</span></div>` : ""}${encounterDock()}</div>`;
 }
 function choice(asset, title, text, action, value, disabled = false) {
   return button(
@@ -160,14 +166,15 @@ function bonusChoices(action = "bonus") {
     .join("");
 }
 function encounterDock() {
+  if (run.pendingGrowth) return "";
   let title = "",
     content = "";
   if (run.phase === "evolution") {
-    title = "Votre Évoli est prêt à évoluer";
+    title = "Your Eevee is ready to evolve";
     content = [134, 135, 136]
       .map((id) =>
         button(
-          `${mon(id, "evolution-art")}<span><strong>${catalogue.pokemon[id].name}</strong><small>${catalogue.pokemon[id].types.map((t) => NAME_TYPES[t] || t).join(" / ")} · Votre choix est définitif pour cette expédition.</small></span>`,
+          `${mon(id, "evolution-art")}<span><strong>${catalogue.pokemon[id].name}</strong><small>${catalogue.pokemon[id].types.map((t) => NAME_TYPES[t] || t).join(" / ")} · Your choice lasts for this expedition.</small></span>`,
           "evolve",
           id,
           "dock-choice",
@@ -176,65 +183,72 @@ function encounterDock() {
       .join("");
   }
   if (run.phase === "reward") {
-    title = "Une victoire, un nouvel atout";
+    title = "Another victory, a new boon";
     content = bonusChoices();
   }
   if (run.phase === "camp") {
-    title = "Le murmure de la source";
+    title = "A moment at the spring";
     content =
       choice(
         "rest-spring",
-        "Se reposer",
-        "Restaure tous les PV et PP.",
+        "Rest",
+        "Restore all HP and PP.",
         "encounter",
         "rest",
       ) +
       choice(
         "attack-fang",
-        "S’entraîner",
-        "Gagne un niveau et 5 PV maximum.",
+        "Train",
+        "Gain a level and 5 maximum HP.",
         "encounter",
         "train",
+      ) +
+      choice(
+        "critical-lens",
+        "Scout ahead",
+        "Reveal the next opponent. Your opening strike deals 25% more damage. Forgo healing and training.",
+        "encounter",
+        "scout",
       );
   }
   if (run.phase === "cache") {
-    title = "Une découverte sur le chemin";
+    title = "A discovery along the trail";
     content =
       choice(
         "gold-coins",
-        "Prendre les pièces",
-        "Trouve 50 à 80 pièces.",
+        "Take the gold",
+        "Find 50 to 80 gold.",
         "encounter",
         "gold",
       ) +
       choice(
         "healing-potion",
-        "Garder les provisions",
-        "Rend 50 % des PV maximum.",
+        "Take the supplies",
+        "Restore 50% maximum HP.",
         "encounter",
         "heal",
       );
   }
   if (run.phase === "shrine") {
-    title = "Un don des anciens";
+    title = "A gift from the ancients";
     content =
       bonusChoices() +
       choice(
         "trail-sign",
-        "Poursuivre",
-        "Laisse le sanctuaire intact.",
+        "Continue",
+        "Leave the shrine undisturbed.",
         "encounter",
         "leave",
       );
   }
   if (run.phase === "shop") {
-    title = "L’échoppe des voyageurs";
+    title = "The wayfarer trading post";
     content =
       Object.entries(E.SHOP_ITEMS)
         .map(([key, s]) =>
           choice(
             s.asset,
-            s.name + " · " + s.cost + " pièces",
+            s.name + " · " + s.cost + " gold",
             s.text,
             "buy",
             key,
@@ -242,21 +256,22 @@ function encounterDock() {
               (s.bonus &&
                 E.count(run, s.bonus) >=
                   E.BONUSES.find((b) => b.id === s.bonus).max) ||
-              (key === "potion" && run.hero.hp === run.hero.maxHp),
+              (key === "potion" && run.hero.hp === run.hero.maxHp) ||
+              (key === "full_heal" && !E.needsRecovery(run)),
           ),
         )
-        .join("") + button("Reprendre le chemin", "leave", "", "dock-leave");
+        .join("") + button("Continue the journey", "leave", "", "dock-leave");
   }
   return title
     ? `<section class="encounter-dock paper-panel"><h2>${title}</h2><div class="dock-choices">${content}</div><p class="dock-note">${esc(run.log.at(-1))}</p></section>`
     : "";
 }
 function starterBonusView() {
-  return `<div class="starter-bonus-scene">${mon(run.hero.id, "bonus-partner")}<section class="initial-bonus-dock paper-panel"><small>PRÉPARER L’EXPÉDITION</small><h2>Choisissez votre premier atout</h2><div class="dock-choices">${bonusChoices()}</div><p>Votre Pokémon combattra automatiquement. Vos choix feront la différence.</p></section></div>`;
+  return `<div class="starter-bonus-scene">${mon(run.hero.id, "bonus-partner")}<section class="initial-bonus-dock paper-panel"><small>PREPARE YOUR EXPEDITION</small><h2>Choose your first boon</h2><div class="dock-choices">${bonusChoices()}</div><p>Your partner fights automatically. Your choices shape the journey.</p></section></div>`;
 }
 function endingView() {
   const won = run.phase === "complete";
-  return `<div class="ending-scene"><div class="ending-shade"></div>${mon(run.hero.id, "ending-partner")}<section class="ending-content"><small>${won ? "LES GARDIENS S’INCLINENT" : "CHAQUE VOYAGE LAISSE UNE TRACE"}</small><h1>${won ? "Expédition accomplie" : "Le voyage s’achève"}</h1><p>${won ? "Votre Pokémon a traversé le sentier et vaincu le dernier gardien." : run.phase === "retired" ? "Votre Pokémon rentre au camp avec ses découvertes." : "Votre Pokémon a tout donné. De nouveaux chemins vous attendent."}</p><div class="ending-stats"><span><b>${run.wins}</b>victoires</span><span><b>${run.stageIndex + 1} / ${E.STAGES.length}</b>étapes</span><span><b>${run.coins}</b>pièces conservées</span></div><div class="ending-actions">${button("Retour au camp", "finish", "", "paper-panel main-button")}${button("Nouvelle expédition", "retry", "", "paper-panel")}</div></section></div>`;
+  return `<div class="ending-scene"><div class="ending-shade"></div>${mon(run.hero.id, "ending-partner")}<section class="ending-content"><small>${won ? "THE GUARDIANS YIELD" : "EVERY JOURNEY LEAVES A MARK"}</small><h1>${won ? "Expedition complete" : "The journey ends"}</h1><p>${won ? "Your partner crossed the trail and defeated its final guardian." : run.phase === "retired" ? "Your partner returns to camp with everything discovered along the way." : "Your partner gave everything. A new journey awaits."}</p><div class="ending-stats"><span><b>${run.wins}</b>victories</span><span><b>${run.stageIndex + 1} / ${E.STAGES.length}</b>stages</span><span><b>${run.coins}</b>gold retained</span></div><div class="ending-actions">${button("Return to camp", "finish", "", "paper-panel main-button")}${button("New expedition", "retry", "", "paper-panel")}</div></section></div>`;
 }
 function render() {
   effects.clear();
@@ -269,19 +284,32 @@ function render() {
         : run.enemy && ["battle", "victoryBeat"].includes(run.phase)
           ? "battle"
           : "map";
-  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${warning ? `<div class="save-warning">${esc(warning)}</div>` : ""}${fatal ? `<div class="fatal-panel paper-panel"><h2>Le voyage est interrompu</h2><p>${esc(fatal)}</p>${button("Reprendre depuis la sauvegarde", "reload", "", "main-button")}</div>` : ""}<div id="menu-host"></div></div>`;
+  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${warning ? `<div class="save-warning">${esc(warning)}</div>` : ""}${fatal ? `<div class="fatal-panel paper-panel"><h2>The journey was interrupted</h2><p>${esc(fatal)}</p>${button("Resume from the last save", "reload", "", "main-button")}</div>` : ""}<div id="menu-host"></div></div>`;
+  if (!titleMode && run) {
+    const heading = q(".stage-heading small");
+    if (heading) heading.textContent = `${E.region(run).name.toUpperCase()} · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}`;
+    if (run.scouting) {
+      const caption = q(".travel-caption");
+      if (caption) {
+        const report = document.createElement("span");
+        report.className = "scouting-report";
+        report.textContent = `Scouted: ${catalogue.pokemon[run.scouting.speciesId].name} · Opening strike +25%`;
+        caption.append(report);
+      }
+    }
+  }
   if (modal) renderMenu();
 }
 function updateBattle() {
   for (const [side, m] of [
-    ["ally", run.hero],
+    ["ally", { ...run.hero, id: visualHeroId() }],
     ["enemy", run.enemy],
   ]) {
     const card = q("." + side + "-card");
     if (card) {
       card.querySelector(".fighter-name>strong").textContent =
         catalogue.pokemon[m.id].name;
-      card.querySelector(".fighter-name>span").textContent = "Nv. " + m.level;
+      card.querySelector(".fighter-name>span").textContent = "Lv. " + m.level;
       card.querySelector(":scope>small").textContent = catalogue.pokemon[
         m.id
       ].types
@@ -305,7 +333,7 @@ function updateBattle() {
   const coins = q("#hud-coins");
   if (coins) coins.textContent = run.coins;
   for (const [side, m] of [
-    ["ally", run.hero],
+    ["ally", { ...run.hero, id: visualHeroId() }],
     ["enemy", run.enemy],
   ]) {
     const actor = q(".actor-" + side);
@@ -329,13 +357,36 @@ function updateTravel() {
   actor.dataset.x = x;
   actor.dataset.y = y;
 }
+function fieldGuideView() {
+  const records = discoveryRecords(meta, run);
+  const known = Object.values(catalogue.pokemon).filter((p) => records[p.id]);
+  return `<h2>Field guide</h2><p class="guide-intro">${known.length} / ${Object.keys(catalogue.pokemon).length} species discovered. Meet wild Pokémon and explore each partner's evolution line.</p><div class="guide-species">${known.map((p) =>
+    `<section class="guide-entry">${mon(p.id)}<div><strong>${esc(p.name)}</strong><small>${p.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small><small>Seen ${records[p.id].seen} · Defeated ${records[p.id].defeated}</small></div></section>`
+  ).join("") || '<p>No discoveries yet. Choose a partner to begin your journey.</p>'}</div><h3>Recent expeditions</h3><div class="expedition-history">${meta.expeditionHistory.map((r) =>
+    `<section>${catalogue.pokemon[r.partnerId] ? mon(r.partnerId) : ""}<div><strong>${r.outcome === "complete" ? "Guardian defeated" : r.outcome === "defeat" ? "Partner exhausted" : "Returned to camp"}</strong><small>Stage ${r.stage} / ${E.STAGES.length} · ${r.wins} victories · ${r.actions} actions</small></div></section>`
+  ).join("") || '<p>Your completed expeditions will appear here.</p>'}</div>`;
+}
+function partnerView() {
+  const h = run.hero, p = catalogue.pokemon[h.id];
+  const next = run.enemy && run.phase === "battle" ? E.bestMove(run, catalogue, "ally").id : null;
+  return `<h2>${esc(p.name)}</h2><div class="partner-profile">${mon(h.id)}<div><strong>Level ${h.level}</strong><p>${h.hp} / ${h.maxHp} HP · ${h.xp} / 2 experience</p>${health(h)}<p>${p.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</p></div></div><h3>Automatic moves</h3><p>Your partner chooses the strongest available move against the current opponent. PP recover after victories and at springs.</p><div class="partner-moves">${h.moves.map((slot) => {
+    const move = catalogue.moves[slot.id] || E.STRUGGLE;
+    return `<section class="partner-move ${slot.id === next ? "next-move" : ""}"><div><strong>${esc(move.name)}</strong><small>${NAME_TYPES[move.type] || move.type} · ${move.damageClass} · Power ${move.power}</small></div><span>${slot.pp} / ${slot.maxPp} PP${slot.id === next ? '<small>Next automatic choice</small>' : ""}</span></section>`;
+  }).join("")}</div><p>Expedition: ${run.stats.damage} damage dealt · ${run.stats.criticals} critical hits.</p>`;
+}
+function audioControl() {
+  const supported = !!(globalThis.AudioContext || globalThis.webkitAudioContext);
+  return `<button class="paper-panel sound-control" data-action="sound" aria-pressed="${meta.sound}" ${supported ? "" : "disabled"}>${supported ? `Sound: ${meta.sound ? "On" : "Off"}` : "Sound unavailable"}</button>`;
+}
 function menuContent() {
+  if (modal === "guide") return fieldGuideView();
+  if (modal === "partner" && run) return partnerView();
   if (modal === "pause")
-    return `<h2>Pause</h2><p>Le combat et le déplacement sont suspendus.</p><div class="pause-actions">${button("Reprendre", "close", "", "paper-panel main-button")}${button("Les atouts du voyage", "journal", "", "paper-panel")}${button("Comment jouer", "help", "", "paper-panel")}${button("Rentrer au camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
+    return `<h2>Pause</h2><p>Battle and travel are paused.</p>${audioControl()}<div class="pause-actions">${button("Resume", "close", "", "paper-panel main-button")}${button("Partner & moves", "partner", "", "paper-panel")}${button("Expedition boons", "journal", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}${button("Return to camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
   if (modal === "retire" || modal === "replace")
-    return `<h2>Rentrer au camp ?</h2><p>Cette expédition prendra fin. Votre or et vos victoires seront conservés.</p><div class="pause-actions">${button("Continuer le voyage", "close", "", "paper-panel main-button")}${button("Terminer l’expédition", "confirm-retire", pendingStarter || "", "", "")}</div>`;
+    return `<h2>Return to camp?</h2><p>This expedition will end. Your gold and victories will be retained.</p><div class="pause-actions">${button("Continue the journey", "close", "", "paper-panel main-button")}${button("End expedition", "confirm-retire", pendingStarter || "", "", "")}</div>`;
   if (modal === "upgrades")
-    return `<h2>Améliorations permanentes</h2><p class="menu-money">${art("gold-coins")}${meta.gold} pièces</p><div class="upgrade-list">${Object.entries(
+    return `<h2>Permanent upgrades</h2><p class="menu-money">${art("gold-coins")}${meta.gold} gold</p><div class="upgrade-list">${Object.entries(
       E.UPGRADE_DEFS,
     )
       .map(([key, d]) => {
@@ -343,8 +394,8 @@ function menuContent() {
           cost = Math.round(d.cost * (1 + n * 0.5));
         return choice(
           d.asset,
-          d.name + " · niveau " + n + "/10",
-          d.text + (n < 10 ? " · " + cost + " pièces" : ""),
+          d.name + " · rank " + n + "/10",
+          d.text + (n < 10 ? " · " + cost + " gold" : ""),
           "upgrade",
           key,
           n >= 10 || meta.gold < cost || (!!run && !TERMINAL.has(run.phase)),
@@ -352,26 +403,27 @@ function menuContent() {
       })
       .join(
         "",
-      )}</div>${run && !TERMINAL.has(run.phase) ? '<p class="muted">Terminez votre expédition pour acheter des améliorations.</p>' : ""}`;
+      )}</div>${run && !TERMINAL.has(run.phase) ? '<p class="muted">Finish your expedition before purchasing permanent upgrades.</p>' : ""}`;
   if (modal === "journal")
-    return `<h2>Les atouts du voyage</h2><div class="journal-bonuses">${
+    return `<h2>Expedition boons</h2><div class="journal-bonuses">${
       [...new Set(run.bonuses)]
         .map((id) => {
           const b = E.BONUSES.find((b) => b.id === id);
           return `<div>${art(b.asset)}<span><strong>${b.name}${E.count(run, id) > 1 ? " ×" + E.count(run, id) : ""}</strong><small>${b.text}</small></span></div>`;
         })
-        .join("") || "<p>Aucun atout pour le moment.</p>"
-    }</div><h3>Journal de combat</h3><div class="log-list">${run.log.map((s) => `<p>${esc(s)}</p>`).join("")}</div>`;
-  return `<h2>Le carnet du voyageur</h2><div class="help-copy"><h3>Un autobattler roguelike</h3><p>Votre Pokémon choisit automatiquement sa meilleure attaque en fonction des types, de sa puissance et des PP restants. Il n’y a pas de commande d’attaque manuelle.</p><h3>Un chemin de quinze étapes</h3><p>Après chaque victoire, votre Pokémon rejoint automatiquement la prochaine étape sur la carte. Choisissez alors un nouvel atout. Des coffres, des sources, un marchand, un sanctuaire, des élites et deux gardiens jalonnent le trajet.</p><h3>Construire votre stratégie</h3><p>Les atouts se combinent : dégâts, résistance, critiques, régénération et vol de vie. Les PP sont limités. Une attaque de dernier recours empêche les blocages. Un combat ne peut pas dépasser 80 actions.</p><h3>Grandir et recommencer</h3><p>Votre partenaire gagne des niveaux, apprend des capacités et les trois starters évoluent aux niveaux 8 et 11. Pikachu et Germignon évoluent également. Évoli choisit sa forme au niveau 7. L’or conservé permet d’acheter des améliorations permanentes. Pikachu, Évoli et Germignon se débloquent à 10, 25 et 50 victoires.</p><p class="muted">Échap : pause. Le jeu sauvegarde votre progression sur cet appareil. Vous pouvez reprendre un combat ou un trajet après rechargement.</p></div>`;
+        .join("") || "<p>No boons acquired yet.</p>"
+    }</div><h3>Battle journal</h3><div class="log-list">${run.log.map((s) => `<p>${esc(s)}</p>`).join("")}</div>`;
+  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
 }
 function renderMenu() {
   const host = q("#menu-host");
   if (!host) return;
   host.innerHTML = modal
-    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top">${button("Fermer", "close", "", "menu-close")}</div><div id="menu-heading">${menuContent()}</div></dialog>`
+    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top">${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}</div></dialog>`
     : "";
   if (modal) {
     const d = host.querySelector("dialog");
+    d.querySelector("h2").id = "menu-heading";
     d.showModal();
     d.addEventListener("cancel", (e) => {
       e.preventDefault();
@@ -380,25 +432,33 @@ function renderMenu() {
   }
 }
 function openMenu(name) {
+  if (!modal) menuReturnFocus = document.activeElement;
   modal = name;
   paused = true;
   if (meta) persist();
   effects.setPaused(true);
+  audio.setPaused(true);
   q(".game-screen")?.classList.add("paused");
   renderMenu();
 }
 function closeMenu() {
   modal = null;
   paused = false;
-  effects.setPaused(false);
+  effects.setPaused(document.hidden);
+  audio.setPaused(document.hidden);
+  audio.play("select");
   q(".game-screen")?.classList.remove("paused");
   renderMenu();
+  if (menuReturnFocus?.isConnected) menuReturnFocus.focus({ preventScroll: true });
+  menuReturnFocus = null;
   pump();
 }
 let pendingStarter = null;
 function begin(id) {
   epoch++;
   effects.clear();
+  audio.stop();
+  audio.setPaused(false);
   run = E.createRun(id, meta, catalogue, Date.now());
   run.starterId = id;
   titleMode = false;
@@ -454,12 +514,36 @@ async function travel(token) {
         zone.radius
     )
       throw new Error(
-        "La destination du trajet ne correspond pas à sa rencontre.",
+        "The route destination does not match its encounter.",
       );
     E.arrive(run, catalogue);
     persist();
     render();
   }
+}
+async function playGrowth(token) {
+  const growth = run.pendingGrowth;
+  if (!growth) return true;
+  const node = q(".actor-ally .body-art") || q("#map-actor .body-art");
+  if (node) {
+    audio.play("evolve");
+    const name = catalogue.pokemon[growth.toId].name;
+    const label = document.createElement("span");
+    label.className = "vfx evolution-caption";
+    label.textContent = `${catalogue.pokemon[growth.fromId].name} is evolving…`;
+    node.closest("#battle-scene,#map-scene").append(label);
+    q(".victory-banner")?.remove();
+    const completed = await effects.evolve(node, catalogue.pokemon[growth.toId].artwork,
+      name, (ms) => wait(ms, token));
+    if (!completed || !live(token)) return false;
+    label.textContent = `${name} joins your journey!`;
+    if (!await wait(650, token)) return false;
+    label.remove();
+  }
+  if (!live(token)) return false;
+  run.pendingGrowth = null;
+  persist();
+  return true;
 }
 async function pump() {
   if (running || titleMode || !run || fatal) return;
@@ -467,13 +551,18 @@ async function pump() {
   const token = epoch;
   let transitions = 0;
   try {
-    while (live(token) && AUTO.has(run.phase)) {
+    while (live(token) && (AUTO.has(run.phase) || run.pendingGrowth)) {
       if (++transitions > 500)
         throw new Error(
-          "La séquence automatique a été arrêtée pour éviter une répétition inattendue.",
+          "The automatic sequence was stopped to prevent an unexpected loop.",
         );
       if (paused || document.hidden) {
         await wait(30, token);
+        continue;
+      }
+      if (run.pendingGrowth && !["battle", "victoryBeat"].includes(run.phase)) {
+        if (!await playGrowth(token)) break;
+        render();
         continue;
       }
       if (run.phase === "travel") {
@@ -493,7 +582,8 @@ async function pump() {
           move = E.bestMove(run, catalogue),
           actor = side === "ally" ? run.hero : run.enemy;
         narration =
-          catalogue.pokemon[actor.id].name + " utilise " + move.name + " !";
+          catalogue.pokemon[actor.id].name + " uses " + move.name + "!";
+        audio.play("windup", move.type);
         updateBattle();
         const duration = Math.max(450, speed * 0.65);
         await effects.windup(side, move, (ms) => wait(ms, token), duration);
@@ -502,10 +592,16 @@ async function pump() {
         narration = run.log.at(-1);
         persist();
         updateBattle();
-        if (result) effects.impact(result);
+        if (result) {
+          effects.impact(result);
+          if (result.kind === "hit") audio.play("hit", result.move.type, result.crit);
+          if (["victoryBeat", "complete"].includes(run.phase)) audio.play("victory");
+          if (run.phase === "defeat") audio.play("defeat");
+        }
         await wait(Math.max(430, speed - duration * 0.7), token);
         if (!live(token)) break;
         if (TERMINAL.has(run.phase)) {
+          if (run.pendingGrowth && !await playGrowth(token)) break;
           E.settle(run, meta);
           persist();
           render();
@@ -517,6 +613,7 @@ async function pump() {
         render();
         await wait(1200, token);
         if (!live(token)) break;
+        if (run.pendingGrowth && !await playGrowth(token)) break;
         E.depart(run);
         persist();
         render();
@@ -524,7 +621,7 @@ async function pump() {
     }
   } catch (error) {
     if (token === epoch) {
-      fatal = error.message || "Une erreur a interrompu le voyage.";
+      fatal = error.message || "An unexpected error interrupted the journey.";
       paused = true;
       effects.clear();
       persist();
@@ -536,7 +633,7 @@ async function pump() {
       run &&
       !titleMode &&
       !fatal &&
-      AUTO.has(run.phase) &&
+      (AUTO.has(run.phase) || run.pendingGrowth) &&
       !paused &&
       !document.hidden
     )
@@ -544,6 +641,18 @@ async function pump() {
   }
 }
 async function dispatch(action, value) {
+  if (action === "sound") {
+    meta.sound = !meta.sound;
+    persist();
+    const enabled = meta.sound;
+    await audio.unlock(enabled);
+    for (const control of app.querySelectorAll('[data-action="sound"]')) {
+      control.textContent = `Sound: ${meta.sound ? "On" : "Off"}`;
+      control.setAttribute("aria-pressed", String(meta.sound));
+    }
+    return;
+  }
+  if (meta?.sound) void audio.unlock(true);
   if (action === "close") {
     closeMenu();
     return;
@@ -556,7 +665,7 @@ async function dispatch(action, value) {
     openMenu("pause");
     return;
   }
-  if (["help", "upgrades", "journal", "retire"].includes(action)) {
+  if (["help", "upgrades", "journal", "retire", "guide", "partner"].includes(action)) {
     openMenu(action);
     return;
   }
@@ -606,6 +715,7 @@ async function dispatch(action, value) {
       return;
     }
     epoch++;
+    audio.stop();
     run.phase = "retired";
     E.settle(run, meta);
     persist();
@@ -621,6 +731,7 @@ async function dispatch(action, value) {
   }
   if (action === "finish") {
     epoch++;
+    audio.stop();
     run = null;
     titleMode = true;
     modal = null;
@@ -648,6 +759,7 @@ async function dispatch(action, value) {
   }
   if (action === "bonus") {
     if (E.selectBonus(run, value)) {
+      audio.play("reward");
       persist();
       render();
       pump();
@@ -655,7 +767,8 @@ async function dispatch(action, value) {
     return;
   }
   if (action === "encounter") {
-    if (E.resolveEncounter(run, value)) {
+    if (E.resolveEncounter(run, value, catalogue)) {
+      audio.play("reward");
       persist();
       render();
       pump();
@@ -664,6 +777,7 @@ async function dispatch(action, value) {
   }
   if (action === "buy") {
     if (E.buy(run, value)) {
+      audio.play("reward");
       persist();
       render();
     }
@@ -695,6 +809,8 @@ document.addEventListener("keydown", (e) => {
   }
 });
 document.addEventListener("visibilitychange", () => {
+  effects.setPaused(paused || document.hidden);
+  audio.setPaused(paused || document.hidden);
   if (!document.hidden) pump();
 });
 window.addEventListener("pagehide", () => {
@@ -706,7 +822,7 @@ async function boot() {
       ["data/pokemon.json", "data/moves.json", "data/world-map.json"].map(
         async (path) => {
           const r = await fetch(path, { signal: AbortSignal.timeout(8000) });
-          if (!r.ok) throw new Error("Ressource manquante : " + path);
+          if (!r.ok) throw new Error("Missing resource: " + path);
           return r.json();
         },
       ),
@@ -724,7 +840,15 @@ async function boot() {
     }
     const required = [
       "forest-arena",
+      "mist-lake-arena",
+      "ancient-shrine-arena",
       "woodland-trail-base",
+      "lake-trail-base",
+      "silver-willow",
+      "lakeside-reeds",
+      "sanctuary-trail-base",
+      "sanctuary-arch",
+      "broken-sanctuary-column",
       "parchment-panel",
       "gold-coins",
       "healing-berry",
@@ -747,6 +871,8 @@ async function boot() {
     ];
     const sources = [
       ...required.map((name) => "assets/generated/" + name + ".webp"),
+      ...["electric-burst", "spectral-pulse", "stone-impact", "evolution-aura"].map((name) =>
+        "assets/effects/" + name + "-sheet.webp"),
       ...Object.values(catalogue.pokemon).map((p) => p.artwork),
     ];
     await Promise.all(
@@ -758,7 +884,7 @@ async function boot() {
           i.decode(),
           new Promise((_, reject) => {
             timer = setTimeout(
-              () => reject(new Error("Illustration indisponible : " + src)),
+              () => reject(new Error("Artwork unavailable: " + src)),
               8000,
             );
           }),
@@ -768,7 +894,7 @@ async function boot() {
     persist();
     render();
   } catch (error) {
-    app.innerHTML = `<div class="loading-screen"><h1>POKÉROGUE</h1><p>Le jeu n’a pas pu charger ses ressources.</p><p>${esc(error.message)}</p><button data-action="reload">Réessayer</button></div>`;
+    app.innerHTML = `<div class="loading-screen"><h1>POKÉROGUE</h1><p>The game could not load its resources.</p><p>${esc(error.message)}</p><button data-action="reload">Retry</button></div>`;
   }
 }
 boot();

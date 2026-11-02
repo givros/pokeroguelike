@@ -10,6 +10,8 @@ import {
   SAVE_KEY,
 } from "../storage.js";
 import { simulate } from "../tools/simulate.mjs";
+import { discoveryRecords } from "../field-guide.js";
+import { impactSequence } from "../presentation.js";
 const catalogue = {
   pokemon: JSON.parse(readFileSync("data/pokemon.json")),
   moves: JSON.parse(readFileSync("data/moves.json")),
@@ -220,6 +222,128 @@ test("shop healing and PP restoration are bounded by the actual maximum", () => 
   assert.equal(r.coins, 15);
   assert.ok(r.hero.moves.every((m) => m.pp === m.maxPp));
 });
+
+test("a full recovery cannot consume coins when both HP and PP are full", () => {
+  const r = initial();
+  r.phase = "shop";
+  r.coins = 200;
+  const before = structuredClone(r);
+  assert.equal(E.needsRecovery(r), false);
+  assert.equal(E.buy(r, "full_heal"), false);
+  assert.deepEqual(r, before);
+  r.hero.moves[0].pp--;
+  assert.equal(E.needsRecovery(r), true);
+  assert.equal(E.buy(r, "full_heal"), true);
+  assert.equal(r.coins, 115);
+  assert.equal(E.buy(r, "full_heal"), false);
+});
+
+test("camp training resolves evolution and move learning before the next fight", () => {
+  const r = initial(4);
+  r.phase = "camp";
+  r.stageIndex = 4;
+  r.hero.level = 7;
+  assert.equal(E.resolveEncounter(r, "train", catalogue), true);
+  assert.equal(r.hero.level, 8);
+  assert.equal(r.hero.id, 5);
+  assert.deepEqual(r.pendingGrowth, { fromId: 4, toId: 5 });
+  assert.equal(r.phase, "travel");
+  assert.equal(r.stageIndex, 5);
+  assert.ok(r.hero.moves.every((m) => catalogue.pokemon[5].learnset.includes(m.id)));
+  const hp = r.hero.maxHp;
+  const logCount = r.log.length;
+  E.refreshGrowth(r, catalogue);
+  assert.equal(r.hero.maxHp, hp);
+  assert.equal(r.log.length, logCount);
+  assert.equal(E.resolveEncounter(r, "train", catalogue), false);
+  assert.ok(validRun(r, catalogue));
+});
+
+test("training Eevee preserves its evolution choice for the next map arrival", () => {
+  const r = initial(133);
+  r.hero.level = 6;
+  r.phase = "camp";
+  r.stageIndex = 4;
+  E.resolveEncounter(r, "train", catalogue);
+  assert.equal(r.pendingEvolution, true);
+  r.travelProgress = 1;
+  E.arrive(r, catalogue);
+  assert.equal(r.phase, "evolution");
+  assert.ok(E.chooseEvolution(r, 135, catalogue));
+  assert.equal(r.hero.id, 135);
+  assert.equal(r.phase, "arrival");
+});
+
+test("scouting reveals and persists the actual next opponent without healing", () => {
+  const r = initial();
+  r.phase = "camp";
+  r.stageIndex = 13;
+  r.hero.hp = 10;
+  assert.ok(E.resolveEncounter(r, "scout", catalogue));
+  assert.equal(r.hero.hp, 10);
+  assert.equal(r.hero.level, 5);
+  assert.equal(r.scouting.stageIndex, 14);
+  assert.ok(E.STAGES[14].pool.includes(r.scouting.speciesId));
+  const copy = JSON.parse(JSON.stringify(r));
+  assert.ok(validRun(copy, catalogue));
+  const speciesId = copy.scouting.speciesId;
+  copy.travelProgress = 1;
+  E.arrive(copy, catalogue);
+  E.activateStage(copy, catalogue);
+  assert.equal(copy.enemy.id, speciesId);
+  assert.equal(copy.preparedStrike, true);
+  copy.hero.hp = copy.hero.maxHp;
+  const without = structuredClone(copy);
+  without.preparedStrike = false;
+  const hit = E.battleStep(copy, catalogue);
+  const normal = E.battleStep(without, catalogue);
+  assert.ok(hit.damage >= normal.damage);
+  assert.equal(hit.prepared, true);
+  assert.equal(copy.preparedStrike, false);
+  E.battleStep(copy, catalogue);
+  assert.equal(E.battleStep(copy, catalogue)?.prepared, false);
+});
+
+test("invalid reconnaissance cannot inject a species outside the encounter pool", () => {
+  const r = initial();
+  r.scouting = { stageIndex: 14, speciesId: 4 };
+  assert.equal(validRun(r, catalogue), false);
+  r.scouting = { stageIndex: -1, speciesId: 150 };
+  assert.equal(validRun(r, catalogue), false);
+});
+
+test("field guide records partners and encounters without double settlement", () => {
+  const r = simulate(2026, 4).run;
+  const meta = E.baseMeta();
+  const provisional = discoveryRecords(meta, r);
+  assert.equal(provisional[4].seen, 1);
+  assert.equal(provisional[5].seen, 1);
+  assert.equal(provisional[6].seen, 1);
+  assert.equal(Object.values(provisional).reduce((n, p) => n + p.defeated, 0), 9);
+  assert.deepEqual(meta.discoveries, {});
+  assert.ok(E.settle(r, meta));
+  assert.deepEqual(meta.discoveries, provisional);
+  assert.deepEqual(discoveryRecords(meta, r), provisional);
+  assert.equal(meta.expeditionHistory.length, 1);
+  assert.equal(meta.expeditionHistory[0].seed, 2026);
+  assert.equal(meta.expeditionHistory[0].partnerId, 6);
+  assert.equal(E.settle(r, meta), false);
+  assert.equal(meta.expeditionHistory.length, 1);
+  assert.deepEqual(normalizeMeta(meta), meta);
+});
+
+test("expedition records stay bounded and corrupt collection counts are normalized", () => {
+  const meta = E.baseMeta();
+  for (let i = 1; i <= 18; i++) {
+    const r = initial(7, i);
+    r.phase = "retired";
+    E.settle(r, meta);
+  }
+  assert.equal(meta.expeditionHistory.length, 12);
+  assert.equal(meta.discoveries[7].seen, 18);
+  const fixed = normalizeMeta({ discoveries: { 1: { seen: 3, defeated: 99 }, 4: null, invalid: {} } });
+  assert.deepEqual(fixed.discoveries, { 1: { seen: 3, defeated: 3 } });
+});
 test("camps restore an injured Pokemon and continue to the next stage once", () => {
   const r = initial();
   r.phase = "camp";
@@ -356,6 +480,38 @@ test("corrupt saves and unavailable storage fail safely", () => {
   assert.equal(loaded.meta.gold, 35);
   assert.ok(loaded.warning);
 });
+
+test("malformed expedition fields never discard intact permanent progress", () => {
+  const mutations = [
+    (r) => { r.hero.moves = [null]; },
+    (r) => { r.hero.moves[0].maxPp = 0; },
+    (r) => { r.hero.moves[0].pp = 1000; },
+    (r) => { r.hero.id = "__proto__"; },
+    (r) => { r.hero.moves[0].id = "__proto__"; },
+    (r) => { r.hero.xp = 12; },
+    (r) => { r.settled = "false"; },
+    (r) => { r.pendingReward = []; },
+    (r) => { r.pendingEvolution = {}; },
+    (r) => { r.actions = 0.5; },
+    (r) => { r.enemy.hp = 0; },
+    (r) => { r.phase = "shop"; },
+    (r) => { r.upgrades.attackBonus = 0.5; },
+    (r) => { r.pendingGrowth = { fromId: 1, toId: 150 }; },
+  ];
+  for (const mutate of mutations) {
+    const run = battle();
+    mutate(run);
+    assert.doesNotThrow(() => validRun(run, catalogue));
+    assert.equal(validRun(run, catalogue), false);
+    const store = memory();
+    store.setItem(SAVE_KEY, JSON.stringify({ meta: { gold: 321, totalVictories: 25 }, run }));
+    const restored = readState(store, catalogue);
+    assert.equal(restored.run, null);
+    assert.equal(restored.meta.gold, 321);
+    assert.equal(restored.meta.unlockedStarters[133], true);
+    assert.ok(restored.warning.includes("permanent progress"));
+  }
+});
 test("normalization rejects nonfinite values, negative balances and excess upgrade levels", () => {
   const m = normalizeMeta({
     gold: -10,
@@ -385,6 +541,7 @@ test("the complete route avoids every authored prop collider", () => {
     assert.ok(x >= 0 && x <= 1 && y >= 0 && y <= 1);
     for (const prop of [
       ...world.props,
+      ...Object.values(world.regions || {}).flatMap((r) => r.props),
       ...world.encounters.map((z) => z.prop).filter(Boolean),
     ]) {
       const [cx, cy, w, h] = prop.collider;
@@ -394,6 +551,44 @@ test("the complete route avoids every authored prop collider", () => {
       );
     }
   }
+});
+
+test("every stage has a regional arena and a layered map with real assets", () => {
+  for (let i = 0; i < E.STAGES.length; i++) {
+    const region = E.region({ stageIndex: i });
+    assert.equal(E.REGIONS.filter((r) => i >= r.from && i <= r.to).length, 1);
+    assert.ok(existsSync(`assets/generated/${region.arena}.webp`));
+    const map = world.regions[region.id];
+    assert.ok(map.base.endsWith("-base.webp"));
+    assert.ok(existsSync(map.base));
+    for (const prop of map.props)
+      assert.ok(existsSync(`assets/generated/${prop.asset}.webp`));
+  }
+});
+
+test("elemental animation sheets retain all four equal frames and their prompts", () => {
+  for (const [type, id] of [["electric", "electric-burst"], ["psychic", "spectral-pulse"],
+    ["ghost", "spectral-pulse"], ["dark", "spectral-pulse"],
+    ["ground", "stone-impact"], ["rock", "stone-impact"], ["steel", "stone-impact"]]) {
+    assert.equal(impactSequence(type), id);
+    const png = readFileSync(`assets/effects/${id}-sheet.png`);
+    assert.equal(png.readUInt32BE(16), 1024);
+    assert.equal(png.readUInt32BE(20), 1024);
+    assert.ok(existsSync(`assets/effects/${id}-sheet.webp`));
+    assert.ok(readFileSync(`assets/effects/${id}.prompt.txt`, "utf8").includes("2 by 2"));
+  }
+  assert.equal(impactSequence("fire"), null);
+});
+
+test("camp strategies remain finite and preserve valid saves across seeded runs", () => {
+  for (const camp of ["rest", "train", "scout"])
+    for (const id of [1, 4, 7, 25, 133, 152])
+      for (let seed = 1; seed <= 40; seed++) {
+        const result = simulate(seed * 9001 + 2026, id, { camp });
+        assert.ok(["complete", "defeat"].includes(result.phase), `${camp}/${id}/${seed}`);
+        assert.ok(result.actions <= 9 * 81);
+        assert.ok(validRun(result.run, catalogue), `${camp}/${id}/${seed}`);
+      }
 });
 test("all final art and prompt files exist and runtime map uses separate props", () => {
   const manifest = JSON.parse(readFileSync("data/asset-manifest.json"));

@@ -131,7 +131,7 @@ try {
   await p.waitForTimeout(1200);
   assert.equal(attempts, 1);
   assert.ok(
-    (await p.locator(".loading-screen").textContent()).includes("ressources"),
+    (await p.locator(".loading-screen").textContent()).includes("resources"),
   );
   checks.push(
     "A missing art asset produces one recoverable error and no infinite retry loop",

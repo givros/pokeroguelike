@@ -12,6 +12,18 @@
     "transparent": true
   },
   {
+    "id": "ancient-shrine-arena",
+    "image": "assets/generated/ancient-shrine-arena.webp",
+    "source": "assets/generated/ancient-shrine-arena.png",
+    "prompt": "assets/generated/ancient-shrine-arena.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
+  },
+  {
     "id": "attack-fang",
     "image": "assets/generated/attack-fang.webp",
     "source": "assets/generated/attack-fang.png",
@@ -32,6 +44,18 @@
     "size": [
       512,
       492
+    ],
+    "transparent": true
+  },
+  {
+    "id": "broken-sanctuary-column",
+    "image": "assets/generated/broken-sanctuary-column.webp",
+    "source": "assets/generated/broken-sanctuary-column.png",
+    "prompt": "assets/generated/broken-sanctuary-column.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      510
     ],
     "transparent": true
   },
@@ -132,6 +156,42 @@
     "transparent": true
   },
   {
+    "id": "lake-dressed-reference",
+    "image": "assets/generated/lake-dressed-reference.webp",
+    "source": "assets/generated/lake-dressed-reference.png",
+    "prompt": "assets/generated/lake-dressed-reference.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
+  },
+  {
+    "id": "lake-trail-base",
+    "image": "assets/generated/lake-trail-base.webp",
+    "source": "assets/generated/lake-trail-base.png",
+    "prompt": "assets/generated/lake-trail-base.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
+  },
+  {
+    "id": "lakeside-reeds",
+    "image": "assets/generated/lakeside-reeds.webp",
+    "source": "assets/generated/lakeside-reeds.png",
+    "prompt": "assets/generated/lakeside-reeds.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      485
+    ],
+    "transparent": true
+  },
+  {
     "id": "leaf-wisp",
     "image": "assets/generated/leaf-wisp.webp",
     "source": "assets/generated/leaf-wisp.png",
@@ -154,6 +214,18 @@
       463
     ],
     "transparent": true
+  },
+  {
+    "id": "mist-lake-arena",
+    "image": "assets/generated/mist-lake-arena.webp",
+    "source": "assets/generated/mist-lake-arena.png",
+    "prompt": "assets/generated/mist-lake-arena.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
   },
   {
     "id": "mossy-rocks",
@@ -188,6 +260,54 @@
     "size": [
       512,
       465
+    ],
+    "transparent": true
+  },
+  {
+    "id": "sanctuary-arch",
+    "image": "assets/generated/sanctuary-arch.webp",
+    "source": "assets/generated/sanctuary-arch.png",
+    "prompt": "assets/generated/sanctuary-arch.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      429
+    ],
+    "transparent": true
+  },
+  {
+    "id": "sanctuary-dressed-reference",
+    "image": "assets/generated/sanctuary-dressed-reference.webp",
+    "source": "assets/generated/sanctuary-dressed-reference.png",
+    "prompt": "assets/generated/sanctuary-dressed-reference.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
+  },
+  {
+    "id": "sanctuary-trail-base",
+    "image": "assets/generated/sanctuary-trail-base.webp",
+    "source": "assets/generated/sanctuary-trail-base.png",
+    "prompt": "assets/generated/sanctuary-trail-base.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
+  },
+  {
+    "id": "silver-willow",
+    "image": "assets/generated/silver-willow.webp",
+    "source": "assets/generated/silver-willow.png",
+    "prompt": "assets/generated/silver-willow.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      768,
+      700
     ],
     "transparent": true
   },
@@ -262,5 +382,69 @@
       597
     ],
     "transparent": true
+  },
+  {
+    "id": "electric-burst",
+    "image": "assets/effects/electric-burst-sheet.webp",
+    "source": "assets/effects/electric-burst-sheet.png",
+    "rawSource": "assets/effects/electric-burst-raw.png",
+    "prompt": "assets/effects/electric-burst.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4
+  },
+  {
+    "id": "evolution-aura",
+    "image": "assets/effects/evolution-aura-sheet.webp",
+    "source": "assets/effects/evolution-aura-sheet.png",
+    "rawSource": "assets/effects/evolution-aura-raw.png",
+    "prompt": "assets/effects/evolution-aura.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4
+  },
+  {
+    "id": "spectral-pulse",
+    "image": "assets/effects/spectral-pulse-sheet.webp",
+    "source": "assets/effects/spectral-pulse-sheet.png",
+    "rawSource": "assets/effects/spectral-pulse-raw.png",
+    "prompt": "assets/effects/spectral-pulse.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4
+  },
+  {
+    "id": "stone-impact",
+    "image": "assets/effects/stone-impact-sheet.webp",
+    "source": "assets/effects/stone-impact-sheet.png",
+    "rawSource": "assets/effects/stone-impact-raw.png",
+    "prompt": "assets/effects/stone-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4
   }
 ]

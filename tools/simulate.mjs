@@ -4,14 +4,17 @@ const catalogue = {
   pokemon: JSON.parse(readFileSync("data/pokemon.json")),
   moves: JSON.parse(readFileSync("data/moves.json")),
 };
-export function simulate(seed, starter = 7) {
+export function simulate(seed, starter = 7, options = {}) {
   const r = E.createRun(starter, E.baseMeta(), catalogue, seed);
   let transitions = 0;
   const visited = [];
   while (
     !["complete", "defeat", "retired"].includes(r.phase) &&
+    !options.stopAt?.(r) &&
     transitions++ < 3000
   ) {
+    // Acknowledge the cosmetic scene beat; it never grants gameplay rewards.
+    if (r.pendingGrowth) r.pendingGrowth = null;
     visited.push(r.phase);
     switch (r.phase) {
       case "evolution":
@@ -53,7 +56,7 @@ export function simulate(seed, starter = 7) {
         E.depart(r);
         break;
       case "camp":
-        E.resolveEncounter(r, "rest");
+        E.resolveEncounter(r, options.camp || "rest", catalogue);
         break;
       case "cache":
         E.resolveEncounter(r, r.hero.hp < r.hero.maxHp * 0.7 ? "heal" : "gold");

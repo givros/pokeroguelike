@@ -1,135 +1,142 @@
 export const STAGES = [
-  { kind: "wild", name: "Lisière de la forêt", pool: [10, 16, 19] },
-  { kind: "wild", name: "Prairie fleurie", pool: [23, 25, 43, 152] },
-  { kind: "cache", name: "Sacoche oubliée" },
-  { kind: "elite", name: "Le bosquet farouche", pool: [12, 58, 66] },
-  { kind: "camp", name: "Source des voyageurs" },
-  { kind: "boss", name: "Gardien du bosquet", pool: [123] },
-  { kind: "wild", name: "Sentier rocailleux", pool: [27, 37, 74, 95] },
-  { kind: "shop", name: "Échoppe du sentier" },
-  { kind: "elite", name: "Le passage des brumes", pool: [81, 92, 104, 111] },
-  { kind: "shrine", name: "Clairière des anciens" },
-  { kind: "wild", name: "Rives paisibles", pool: [39, 41, 52, 54, 63, 129] },
-  { kind: "cache", name: "Trésor sous les feuilles" },
-  { kind: "elite", name: "Le dernier défilé", pool: [130, 131, 143, 149] },
-  { kind: "camp", name: "Au seuil de la légende" },
-  { kind: "boss", name: "Le gardien légendaire", pool: [150, 149, 131] },
+  { kind: "wild", name: "Woodland Edge", pool: [10, 16, 19] },
+  { kind: "wild", name: "Wildflower Meadow", pool: [23, 25, 43, 152] },
+  { kind: "cache", name: "Forgotten Satchel" },
+  { kind: "elite", name: "Untamed Grove", pool: [12, 58, 66] },
+  { kind: "camp", name: "Wayfarer Spring" },
+  { kind: "boss", name: "Grove Guardian", pool: [123] },
+  { kind: "wild", name: "Rocky Shore Trail", pool: [27, 37, 50, 74, 95] },
+  { kind: "shop", name: "Trailside Trading Post" },
+  { kind: "elite", name: "Mistbound Passage", pool: [81, 92, 104, 111] },
+  { kind: "shrine", name: "Clearing of the Ancients" },
+  { kind: "wild", name: "Quiet Waters", pool: [39, 41, 52, 54, 63, 129, 147] },
+  { kind: "cache", name: "Treasure Beneath the Leaves" },
+  { kind: "elite", name: "The Last Mountain Pass", pool: [130, 131, 143, 149] },
+  { kind: "camp", name: "The Threshold of Legend" },
+  { kind: "boss", name: "The Legendary Guardian", pool: [150, 149, 131] },
 ];
+export const REGIONS = [
+  { id: "woodland", name: "Verdant Woodland", from: 0, to: 5, arena: "forest-arena" },
+  { id: "lake", name: "Silvermist Lake", from: 6, to: 10, arena: "mist-lake-arena" },
+  { id: "sanctuary", name: "Ancient Sanctuary", from: 11, to: 14, arena: "ancient-shrine-arena" },
+];
+export const region = (run) => REGIONS.find((r) =>
+  run.stageIndex >= r.from && run.stageIndex <= r.to) || REGIONS[0];
 export const BONUSES = [
   {
     id: "hp_boost",
     name: "Endurance",
     asset: "healing-berry",
-    text: "PV maximum +20 %.",
+    text: "Maximum HP +20%.",
     max: 3,
   },
   {
     id: "attack_boost",
-    name: "Force",
+    name: "Strength",
     asset: "attack-fang",
-    text: "Attaque et attaque spéciale +15 %.",
+    text: "Attack and Special Attack +15%.",
     max: 3,
   },
   {
     id: "defense_boost",
-    name: "Robustesse",
+    name: "Resilience",
     asset: "defense-shell",
-    text: "Défense et défense spéciale +15 %.",
+    text: "Defense and Special Defense +15%.",
     max: 3,
   },
   {
     id: "crit_chance",
-    name: "Précision",
+    name: "Precision",
     asset: "critical-lens",
-    text: "Chance de critique +10 points.",
+    text: "Critical chance +10 percentage points.",
     max: 3,
   },
   {
     id: "type_boost",
-    name: "Affinité élémentaire",
+    name: "Elemental Affinity",
     asset: "affinity-crystal",
-    text: "Bonus de même type renforcé de 20 %.",
+    text: "Same-type attack bonus +20 percentage points.",
     max: 2,
   },
   {
     id: "regeneration",
-    name: "Racines vivantes",
+    name: "Living Roots",
     asset: "healing-berry",
-    text: "Récupère 10 % des PV après chaque victoire.",
+    text: "Recover 10% maximum HP after every victory.",
     max: 2,
   },
   {
     id: "lifesteal",
-    name: "Croc vorace",
+    name: "Ravenous Fang",
     asset: "attack-fang",
-    text: "Soigne 15 % des dégâts infligés.",
+    text: "Heal for 15% of damage dealt.",
     max: 2,
   },
   {
     id: "first_guard",
-    name: "Carapace protectrice",
+    name: "Opening Guard",
     asset: "defense-shell",
-    text: "Le premier coup reçu est réduit de 50 %.",
+    text: "Take 50% less damage from the first hit.",
     max: 1,
   },
   {
     id: "gold_boost",
-    name: "Porte-bonheur",
+    name: "Lucky Charm",
     asset: "gold-coins",
-    text: "Or des combats +30 %.",
+    text: "Battle gold +30%.",
     max: 2,
   },
   {
     id: "momentum",
-    name: "Élan du voyageur",
+    name: "Wayfarer Momentum",
     asset: "affinity-crystal",
-    text: "Dégâts +3 % par action de combat, maximum +30 %.",
+    text: "Damage +3% per battle action, up to +30%.",
     max: 1,
   },
   {
     id: "pp_boost",
-    name: "Second souffle",
+    name: "Second Wind",
     asset: "healing-potion",
-    text: "Restaure tous les PP et rend 20 % des PV.",
+    text: "Restore all PP and recover 20% maximum HP.",
     max: 5,
   },
   {
     id: "focus_crit",
-    name: "Œil du gardien",
+    name: "Guardian Eye",
     asset: "critical-lens",
-    text: "Les coups critiques infligent 25 % de dégâts supplémentaires.",
+    text: "Critical hits deal 25% additional damage.",
     max: 1,
   },
 ];
 export const UPGRADE_DEFS = {
   maxHpBonus: {
-    name: "Vitalité",
+    name: "Vitality",
     asset: "healing-berry",
-    text: "+5 PV de départ par niveau",
+    text: "+5 starting HP per rank",
     cost: 100,
   },
   attackBonus: {
-    name: "Puissance",
+    name: "Power",
     asset: "attack-fang",
-    text: "+3 aux deux attaques par niveau",
+    text: "+3 Attack and Special Attack per rank",
     cost: 150,
   },
   defenseBonus: {
     name: "Protection",
     asset: "defense-shell",
-    text: "+3 aux deux défenses par niveau",
+    text: "+3 Defense and Special Defense per rank",
     cost: 150,
   },
   criticalChance: {
     name: "Instinct",
     asset: "critical-lens",
-    text: "+5 points de critique par niveau",
+    text: "+5 percentage points of critical chance per rank",
     cost: 200,
   },
 };
 export const STRUGGLE = {
   id: 0,
-  name: "Lutte",
+  name: "Struggle",
   type: "neutral",
   power: 45,
   damageClass: "physical",
@@ -287,6 +294,8 @@ export function baseMeta() {
       criticalChance: 0,
     },
     sound: false,
+    discoveries: {},
+    expeditionHistory: [],
     battleSpeed: 1500,
     unlockedStarters: {
       1: true,
@@ -365,6 +374,9 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
     version: 3,
     id: String(seed) + "-" + id,
     seed: seed >>> 0 || 1,
+    initialSeed: seed >>> 0 || 1,
+    starterId: id,
+    partnerForms: [id],
     phase: "starter",
     stageIndex: 0,
     travelProgress: 0,
@@ -379,8 +391,9 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
     battleActions: 0,
     nextSide: "ally",
     settled: false,
-    log: ["Une nouvelle expédition commence."],
+    log: ["A new expedition begins."],
     stats: { damage: 0, healing: 0, criticals: 0, encounters: 0 },
+    encounters: [],
     upgrades: { ...meta.permanentUpgrades },
   };
   run.hero.maxHp += 25;
@@ -397,7 +410,7 @@ export function selectBonus(run, id) {
   const b = BONUSES.find((b) => b.id === id);
   if (!b || count(run, id) >= b.max) return false;
   run.bonuses.push(id);
-  addLog(run, b.name + " obtenu.");
+  addLog(run, b.name + " acquired.");
   if (id === "hp_boost") {
     const amount = Math.ceil(run.hero.maxHp * 0.2);
     run.hero.maxHp += amount;
@@ -445,10 +458,12 @@ export function chooseEvolution(run, id, catalogue) {
   )
     return false;
   run.hero.id = id;
+  run.pendingGrowth = { fromId: 133, toId: id };
+  if (run.partnerForms && !run.partnerForms.includes(id)) run.partnerForms.push(id);
   run.hero.maxHp += 18;
   run.hero.hp += 18;
   run.pendingEvolution = false;
-  addLog(run, `${catalogue.pokemon[id].name} : évolution accomplie !`);
+  addLog(run, `${catalogue.pokemon[id].name} evolved!`);
   refreshMoves(run, catalogue);
   if (run.pendingReward) {
     run.offers = offerBonuses(run);
@@ -467,8 +482,31 @@ function refreshMoves(run, catalogue) {
     if (!previousMoves.some((s) => s.id === move.id))
       addLog(
         run,
-        `${catalogue.moves[move.id]?.name || STRUGGLE.name} apprise !`,
+        `${catalogue.moves[move.id]?.name || STRUGGLE.name} learned!`,
       );
+}
+export function refreshGrowth(run, catalogue) {
+  const previousId = run.hero.id;
+  const evolutions = {
+    1: [2, 8], 2: [3, 11], 4: [5, 8], 5: [6, 11],
+    7: [8, 8], 8: [9, 11], 25: [26, 7],
+    152: [153, 7], 153: [154, 10],
+  };
+  // Resolve each earned threshold once, including levels earned outside battle.
+  let evolution = evolutions[run.hero.id];
+  while (evolution && run.hero.level >= evolution[1]) {
+    run.hero.id = evolution[0];
+    if (run.partnerForms && !run.partnerForms.includes(run.hero.id))
+      run.partnerForms.push(run.hero.id);
+    run.hero.maxHp += 12;
+    run.hero.hp += 12;
+    addLog(run, `${catalogue.pokemon[run.hero.id].name} evolved!`);
+    evolution = evolutions[run.hero.id];
+  }
+  if (run.hero.id === 133 && run.hero.level >= 7) run.pendingEvolution = true;
+  if (run.hero.id !== previousId)
+    run.pendingGrowth = { fromId: run.pendingGrowth?.fromId || previousId, toId: run.hero.id };
+  refreshMoves(run, catalogue);
 }
 export function activateStage(run, catalogue) {
   if (run.phase !== "arrival") return false;
@@ -476,12 +514,16 @@ export function activateStage(run, catalogue) {
   run.stats.encounters++;
   addLog(run, node.name + ".");
   if (["wild", "elite", "boss"].includes(node.kind)) {
-    const id = node.pool[Math.floor(random(run) * node.pool.length)],
+    const prepared = run.scouting?.stageIndex === run.stageIndex &&
+      node.pool.includes(run.scouting.speciesId);
+    const id = prepared ? run.scouting.speciesId :
+      node.pool[Math.floor(random(run) * node.pool.length)],
       level =
         4 +
         Math.floor(run.stageIndex * 0.65) +
         (node.kind === "elite" ? 1 : node.kind === "boss" ? 2 : 0);
     run.enemy = fighter(id, level, catalogue);
+    (run.encounters ||= []).push({ id, stage: run.stageIndex, level, won: false });
     run.enemy.maxHp -= 20;
     run.enemy.hp = run.enemy.maxHp;
     if (node.kind === "boss") {
@@ -489,10 +531,12 @@ export function activateStage(run, catalogue) {
       run.enemy.hp = run.enemy.maxHp;
     }
     run.hero.guardUsed = false;
+    run.preparedStrike = !!prepared;
+    run.scouting = null;
     run.battleActions = 0;
     run.nextSide = "ally";
     run.phase = "battle";
-    addLog(run, `${catalogue.pokemon[id].name} vous défie !`);
+    addLog(run, `${catalogue.pokemon[id].name} challenges you!`);
   } else {
     run.phase = node.kind;
     if (node.kind === "shrine") run.offers = offerBonuses(run);
@@ -568,7 +612,7 @@ export function battleStep(run, catalogue) {
     run.phase = "defeat";
     addLog(
       run,
-      "Le combat est interrompu après 80 actions. Votre Pokémon est épuisé.",
+      "After 80 actions, your partner is exhausted. The battle ends.",
     );
     return { kind: "exhausted" };
   }
@@ -595,6 +639,11 @@ export function battleStep(run, catalogue) {
     (0.85 + random(run) * 0.3);
   if (player && count(run, "momentum"))
     damage *= 1 + Math.min(0.3, run.battleActions * 0.03);
+  const prepared = player && run.preparedStrike;
+  if (prepared) {
+    damage *= 1.25;
+    run.preparedStrike = false;
+  }
   if (!player && count(run, "first_guard") && !d.guardUsed) {
     damage *= 0.5;
     d.guardUsed = true;
@@ -622,7 +671,7 @@ export function battleStep(run, catalogue) {
   const eff = effectiveness(move.type, catalogue.pokemon[d.id].types);
   addLog(
     run,
-    `${catalogue.pokemon[a.id].name} : ${move.name}, ${actual} dégâts${crit ? " — critique !" : eff > 1 ? " — super efficace !" : eff < 1 ? " — résisté." : "."}`,
+    `${catalogue.pokemon[a.id].name}: ${move.name}, ${actual} damage${crit ? " — critical hit!" : eff > 1 ? " — super effective!" : eff < 1 ? " — resisted." : "."}${prepared ? " Prepared strike!" : ""}`,
   );
   const result = {
     kind: "hit",
@@ -632,16 +681,19 @@ export function battleStep(run, catalogue) {
     healing,
     crit,
     effectiveness: eff,
+    prepared: !!prepared,
   };
   if (run.hero.hp <= 0) {
     run.phase = "defeat";
-    addLog(run, "Votre Pokémon est K.O.");
+    addLog(run, "Your partner has fainted.");
   } else if (run.enemy.hp <= 0) winBattle(run, catalogue);
   return result;
 }
 function winBattle(run, catalogue) {
   if (run.phase !== "battle") return;
   run.wins++;
+  const encounter = run.encounters?.at(-1);
+  if (encounter?.stage === run.stageIndex) encounter.won = true;
   const node = stage(run),
     gold = Math.floor(
       (node.kind === "boss" ? 80 : node.kind === "elite" ? 45 : 25) *
@@ -656,31 +708,9 @@ function winBattle(run, catalogue) {
     run.hero.level++;
     run.hero.maxHp += 5;
     run.hero.hp += 5;
-    addLog(run, `Niveau ${run.hero.level} atteint !`);
+    addLog(run, `Reached level ${run.hero.level}!`);
   }
-  const evolutions = {
-    1: [2, 8],
-    2: [3, 11],
-    4: [5, 8],
-    5: [6, 11],
-    7: [8, 8],
-    8: [9, 11],
-    25: [26, 7],
-    152: [153, 7],
-    153: [154, 10],
-  };
-  const evolution = evolutions[run.hero.id];
-  if (evolution && run.hero.level >= evolution[1]) {
-    run.hero.id = evolution[0];
-    run.hero.maxHp += 12;
-    run.hero.hp += 12;
-    addLog(
-      run,
-      `${catalogue.pokemon[run.hero.id].name} : évolution accomplie !`,
-    );
-  }
-  if (run.hero.id === 133 && run.hero.level >= 7) run.pendingEvolution = true;
-  refreshMoves(run, catalogue);
+  refreshGrowth(run, catalogue);
   const healing = Math.ceil(
     run.hero.maxHp * (0.12 + 0.1 * count(run, "regeneration")),
   );
@@ -689,12 +719,12 @@ function winBattle(run, catalogue) {
     const base = catalogue.moves[slot.id];
     if (base) slot.pp = Math.min(base.pp, slot.pp + 2);
   });
-  addLog(run, `Victoire ! +${gold} pièces, +${xp} expérience.`);
+  addLog(run, `Victory! +${gold} gold, +${xp} experience.`);
   run.pendingReward = true;
   if (run.stageIndex === STAGES.length - 1) {
     run.phase = "complete";
     run.pendingReward = false;
-    addLog(run, "Le gardien légendaire est vaincu. Expédition accomplie !");
+    addLog(run, "The legendary guardian falls. Expedition complete!");
   } else run.phase = "victoryBeat";
 }
 export function depart(run) {
@@ -710,32 +740,43 @@ export function depart(run) {
   run.enemy = null;
   return true;
 }
-export function resolveEncounter(run, choice) {
+export function resolveEncounter(run, choice, catalogue) {
   if (run.phase === "camp") {
     if (choice === "rest") {
       run.hero.hp = run.hero.maxHp;
       run.hero.moves.forEach((s) => (s.pp = s.maxPp || 35));
-      addLog(run, "La source restaure tous les PV et PP.");
+      addLog(run, "The spring restores all HP and PP.");
     } else if (choice === "train") {
+      if (!catalogue) return false;
       run.hero.level++;
       run.hero.maxHp += 5;
       run.hero.hp = Math.min(run.hero.maxHp, run.hero.hp + 5);
-      addLog(run, "Entraînement terminé : niveau +1.");
+      addLog(run, "Training complete: level +1.");
+      refreshGrowth(run, catalogue);
+    } else if (choice === "scout") {
+      if (!catalogue) return false;
+      const index = STAGES.findIndex((node, i) => i > run.stageIndex &&
+        ["wild", "elite", "boss"].includes(node.kind));
+      if (index < 0) return false;
+      const pool = STAGES[index].pool;
+      const speciesId = pool[Math.floor(random(run) * pool.length)];
+      run.scouting = { stageIndex: index, speciesId };
+      addLog(run, `${catalogue.pokemon[speciesId].name} scouted: your opening strike deals 25% more damage.`);
     } else return false;
   } else if (run.phase === "cache") {
     if (choice === "gold") {
       const amount = 50 + Math.floor(random(run) * 31);
       run.coins += amount;
-      addLog(run, `La sacoche contenait ${amount} pièces.`);
+      addLog(run, `The satchel held ${amount} gold.`);
     } else if (choice === "heal") {
       run.hero.hp = Math.min(
         run.hero.maxHp,
         run.hero.hp + Math.ceil(run.hero.maxHp * 0.5),
       );
-      addLog(run, "Les provisions rendent 50 % des PV.");
+      addLog(run, "The supplies restore 50% maximum HP.");
     } else return false;
   } else if (run.phase === "shrine" && choice === "leave") {
-    addLog(run, "Vous laissez le sanctuaire en paix.");
+    addLog(run, "You leave the shrine undisturbed.");
   } else return false;
   depart(run);
   return true;
@@ -745,28 +786,28 @@ export const SHOP_ITEMS = {
     name: "Potion",
     asset: "healing-potion",
     cost: 30,
-    text: "Rend 35 % des PV.",
+    text: "Restore 35% maximum HP.",
     heal: 0.35,
   },
   full_heal: {
-    name: "Soin complet",
+    name: "Full Recovery",
     asset: "healing-berry",
     cost: 85,
-    text: "Restaure tous les PV et PP.",
+    text: "Restore all HP and PP.",
     heal: 1,
   },
   force: {
-    name: "Croc de force",
+    name: "Strength Fang",
     asset: "attack-fang",
     cost: 70,
-    text: "Ajoute un bonus Force à cette expédition.",
+    text: "Gain a Strength boon for this expedition.",
     bonus: "attack_boost",
   },
   guard: {
-    name: "Coquille solide",
+    name: "Sturdy Shell",
     asset: "defense-shell",
     cost: 70,
-    text: "Ajoute un bonus Robustesse à cette expédition.",
+    text: "Gain a Resilience boon for this expedition.",
     bonus: "defense_boost",
   },
 };
@@ -775,6 +816,7 @@ export function buy(run, key) {
   if (run.phase !== "shop" || !item || run.coins < item.cost) return false;
   if (item.heal && run.hero.hp === run.hero.maxHp && key !== "full_heal")
     return false;
+  if (key === "full_heal" && !needsRecovery(run)) return false;
   if (
     item.bonus &&
     count(run, item.bonus) >= BONUSES.find((b) => b.id === item.bonus).max
@@ -789,8 +831,12 @@ export function buy(run, key) {
   if (key === "full_heal")
     run.hero.moves.forEach((s) => (s.pp = s.maxPp || 35));
   if (item.bonus) run.bonuses.push(item.bonus);
-  addLog(run, item.name + " acheté.");
+  addLog(run, item.name + " purchased.");
   return true;
+}
+export function needsRecovery(run) {
+  return run.hero.hp < run.hero.maxHp ||
+    run.hero.moves.some((slot) => slot.pp < slot.maxPp);
 }
 export function settle(run, meta) {
   if (!["defeat", "complete", "retired"].includes(run.phase) || run.settled)
@@ -805,6 +851,27 @@ export function settle(run, meta) {
   meta.totalRuns++;
   meta.totalVictories += run.wins;
   meta.bestScore = Math.max(meta.bestScore, run.wins);
+  meta.discoveries ||= {};
+  for (const encounter of run.encounters || []) {
+    const record = meta.discoveries[encounter.id] ||= { seen: 0, defeated: 0 };
+    record.seen++;
+    if (encounter.won) record.defeated++;
+  }
+  for (const id of new Set(run.partnerForms || [run.hero.id])) {
+    const record = meta.discoveries[id] ||= { seen: 0, defeated: 0 };
+    record.seen++;
+  }
+  meta.expeditionHistory = [{
+    id: run.id,
+    starterId: run.starterId || run.hero.id,
+    partnerId: run.hero.id,
+    outcome: run.phase,
+    stage: run.stageIndex + 1,
+    wins: run.wins,
+    actions: run.actions,
+    damage: run.stats.damage,
+    seed: run.initialSeed || null,
+  }, ...(meta.expeditionHistory || [])].slice(0, 12);
   for (const [id, threshold] of [
     [25, 10],
     [133, 25],

@@ -1,3 +1,9 @@
+export function impactSequence(type) {
+  if (type === "electric") return "electric-burst";
+  if (["psychic", "ghost", "dark"].includes(type)) return "spectral-pulse";
+  if (["ground", "rock", "steel"].includes(type)) return "stone-impact";
+  return null;
+}
 export class BattleEffects {
   constructor() {
     this.animations = new Set();
@@ -46,6 +52,49 @@ export class BattleEffects {
     n.style.cssText = `left:${point.x}px;top:${point.y}px;width:${width}px`;
     scene.append(n);
     return n;
+  }
+  sprite(asset, point, width, options = {}) {
+    const scene = options.scene || document.querySelector("#battle-scene");
+    if (!scene) return null;
+    const node = document.createElement("span");
+    node.className = "vfx impact effect-sprite";
+    node.dataset.effect = asset;
+    node.style.cssText = `left:${point.x}px;top:${point.y}px;width:${width}px;height:${width}px;background-image:url(assets/effects/${asset}-sheet.webp)`;
+    scene.append(node);
+    const animation = this.animate(node, [
+      { backgroundPosition: "0% 0%", offset: 0, easing: "steps(1, end)" },
+      { backgroundPosition: "100% 0%", offset: 0.25, easing: "steps(1, end)" },
+      { backgroundPosition: "0% 100%", offset: 0.5, easing: "steps(1, end)" },
+      { backgroundPosition: "100% 100%", offset: 0.75, easing: "steps(1, end)" },
+      { backgroundPosition: "100% 100%", offset: 1 },
+    ], { duration: options.duration || 640, iterations: options.iterations || 1, easing: "linear" });
+    animation?.finished.catch(() => {}).finally(() => node.remove());
+    return node;
+  }
+  async evolve(node, artwork, name, wait) {
+    const scene = node.closest("#battle-scene,#map-scene");
+    if (!scene) return true;
+    const body = node.getBoundingClientRect(), bounds = scene.getBoundingClientRect();
+    const point = { x: body.left + body.width / 2 - bounds.left,
+      y: body.top + body.height / 2 - bounds.top };
+    const aura = this.sprite("evolution-aura", point, Math.max(240, body.height * 1.4),
+      { scene, duration: 800, iterations: 2 });
+    if (aura) aura.style.zIndex = "1800";
+    node.classList.add("evolving");
+    this.animate(node, [
+      { filter: "brightness(1)", scale: 1 },
+      { filter: "brightness(8)", scale: 1.2 },
+    ], { duration: 650, fill: "forwards", easing: "ease-in" });
+    if (!await wait(650)) return false;
+    node.src = artwork;
+    node.alt = name;
+    this.animate(node, [
+      { filter: "brightness(8)", scale: 1.2 },
+      { filter: "brightness(1)", scale: 1 },
+    ], { duration: 900, fill: "forwards", easing: "ease-out" });
+    if (!await wait(900)) return false;
+    node.classList.remove("evolving");
+    return true;
   }
   async windup(side, move, wait, duration) {
     const actor = document.querySelector(".actor-" + side + " .body-art");
@@ -119,16 +168,23 @@ export class BattleEffects {
       point = this.point(target);
     if (!point) return;
     const width = Math.min(250, innerWidth * 0.18) * (result.crit ? 1.25 : 1),
-      burst = this.image("impact-burst", point, width, "impact");
+      sequence = impactSequence(result.move.type),
+      burst = sequence ? this.sprite(sequence, point, width * 1.5) :
+        this.image("impact-burst", point, width, "impact");
     if (burst) {
       const a = this.animate(
         burst,
-        [
+        sequence ? [
+          { opacity: 0, transform: "translate(-50%,-50%) scale(.7)", offset: 0 },
+          { opacity: 1, transform: "translate(-50%,-50%) scale(1)", offset: 0.12 },
+          { opacity: 1, transform: "translate(-50%,-50%) scale(1.05)", offset: 0.65 },
+          { opacity: 0, transform: "translate(-50%,-50%) scale(1.15)", offset: 1 },
+        ] : [
           { opacity: 0, transform: "translate(-50%,-50%) scale(.25)" },
           { opacity: 1, offset: 0.15 },
           { opacity: 0, transform: "translate(-50%,-50%) scale(1.25)" },
         ],
-        { duration: 470, easing: "ease-out" },
+        { duration: sequence ? 640 : 470, easing: sequence ? "linear" : "ease-out" },
       );
       a?.finished.catch(() => {}).finally(() => burst.remove());
     }
@@ -172,7 +228,7 @@ export class BattleEffects {
     const scene = document.querySelector("#battle-scene"),
       number = document.createElement("span");
     number.className = "damage-number" + (result.crit ? " critical" : "");
-    number.textContent = (result.crit ? "CRITIQUE " : "") + "-" + result.damage;
+    number.textContent = (result.crit ? "CRITICAL " : "") + "-" + result.damage;
     number.style.left = point.x + "px";
     number.style.top = point.y - 35 + "px";
     scene?.append(number);

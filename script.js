@@ -1,4 +1,6 @@
 import * as E from "./engine.js";
+import { advanceIdle } from "./idle.js";
+import { PLANS, planDecision, applyPlanDecision } from "./plans.js";
 import { readState, writeState } from "./storage.js";
 import { BattleEffects } from "./presentation.js";
 import { discoveryRecords } from "./field-guide.js";
@@ -36,7 +38,7 @@ let catalogue,
   narration = "",
   saveAt = 0;
 const AUTO = new Set(["travel", "arrival", "battle", "victoryBeat"]);
-const hasAutomaticWork = () => run && (AUTO.has(run.phase) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length);
+const hasAutomaticWork = () => run && (AUTO.has(run.phase) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || planDecision(run));
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
 const STARTERS = [1, 4, 7, 25, 133, 152];
 const NAME_TYPES = {
@@ -76,6 +78,7 @@ const visualHeroId = () => run.pendingGrowth?.fromId || run.hero.id;
 const button = (label, action, value = "", cls = "", disabled = false) =>
   `<button class="${cls}" data-action="${action}" data-value="${value}" ${disabled ? "disabled" : ""}>${label}</button>`;
 function persist() {
+  if (run?.idleEnabled) run.idleAt = !paused && !titleMode && !TERMINAL.has(run.phase) ? Date.now() : null;
   if (!writeState(saveStorage, meta, run))
     warning = "Saving is unavailable. Keep this window open to retain your expedition.";
 }
@@ -111,7 +114,7 @@ function buffRail() {
 }
 function heroCard() {
   const h = { ...run.hero, id: visualHeroId() };
-  return `<div class="map-hero-card paper-panel">${mon(h.id)}<div><strong>${catalogue.pokemon[h.id].name}</strong><small>Level ${h.level}</small><span class="map-hp-value">${h.hp} / ${h.maxHp} HP</span>${health(h)}</div></div>`;
+  return `<div class="map-hero-card paper-panel">${mon(h.id)}<div><strong>${catalogue.pokemon[h.id].name}</strong><small>Level ${h.level}${run.plan && run.plan !== "manual" ? ` · <button class="plan-link" data-action="plans">${PLANS.find(p=>p.id===run.plan).name}</button>` : ""}</small><span class="map-hp-value">${h.hp} / ${h.maxHp} HP</span>${health(h)}</div></div>`;
 }
 function titleView() {
   const saved = run && !TERMINAL.has(run.phase);
@@ -141,7 +144,7 @@ function battleCard(m, side) {
 function battleView() {
   const h = { ...run.hero, id: visualHeroId() },
     e = run.enemy;
-  return `<div id="battle-scene" style="--battle-arena:url(assets/generated/${E.region(run).arena}.webp)"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div><div class="battle-kind">${E.stage(run).kind === "boss" ? "GUARDIAN" : E.stage(run).kind === "elite" ? "ELITE ENCOUNTER" : "AUTOMATIC BATTLE"}<small id="turn-label">Action ${run.battleActions + 1}</small></div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${esc(narration || run.log.at(-1))}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTORY</div>' : ""}</div>`;
+  return `<div id="battle-scene" style="--battle-arena:url(assets/generated/${E.region(run).arena}.webp)"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div><div class="battle-kind">${E.stage(run).kind === "boss" ? "GUARDIAN" : E.stage(run).kind === "elite" ? "ELITE ENCOUNTER" : "AUTOMATIC BATTLE"}<small id="turn-label">Action ${run.battleActions + 1}${run.plan && run.plan !== "manual" ? ` · ${PLANS.find(p=>p.id===run.plan).name}` : ""}</small></div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${esc(narration || run.log.at(-1))}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTORY</div>' : ""}</div>`;
 }
 function worldProp(p) {
   return `<img class="map-prop" src="assets/generated/${p.asset}.webp" alt="" style="left:${p.x * 100}%;top:${p.y * 100}%;width:${p.w * 100}%;height:${p.h * 100}%;z-index:${p.layer === "ground" ? 30 : Math.round(p.y * 1000)}" draggable="false">`;
@@ -177,7 +180,7 @@ function bonusChoices(action = "bonus") {
 }
 function rerollControl() {
   const cost = E.rerollCost(run);
-  const label = cost === null ? "Reforges exhausted � 3/3" : `Reforge boons � ${cost} gold � ${3 - (run.rerolls || 0)} left`;
+  const label = cost === null ? "Reforges exhausted · 3/3" : `Reforge boons · ${cost} gold · ${3 - (run.rerolls || 0)} left`;
   return `<button class="dock-builds reforge-control" data-action="reroll" ${E.canReroll(run) ? "" : "disabled"}>${label}</button>`;
 }
 function encounterDock() {
@@ -283,7 +286,7 @@ function encounterDock() {
     : "";
 }
 function starterBonusView() {
-  return `<div class="starter-bonus-scene">${mon(run.hero.id, "bonus-partner")}<section class="initial-bonus-dock paper-panel"><small>PREPARE YOUR EXPEDITION</small><h2>Choose your first boon</h2><div class="dock-choices">${bonusChoices()}</div>${button("View build combinations", "builds", "", "dock-builds")}<p>Your partner fights automatically. Your choices shape the journey.</p></section></div>`;
+  return `<div class="starter-bonus-scene">${mon(run.hero.id, "bonus-partner")}<section class="initial-bonus-dock paper-panel"><small>PREPARE YOUR EXPEDITION</small><h2>Choose your first boon</h2><div class="dock-choices">${bonusChoices()}</div><div class="reward-tools">${button("View build combinations", "builds", "", "dock-builds")}${button("Expedition plan", "plans", "", "dock-builds")}</div><p>Your partner fights automatically. Your choices shape the journey.</p></section></div>`;
 }
 function endingView() {
   const won = run.phase === "complete";
@@ -409,12 +412,21 @@ function audioControl() {
   const supported = !!(globalThis.AudioContext || globalThis.webkitAudioContext);
   return `<button class="paper-panel sound-control" data-action="sound" aria-pressed="${meta.sound}" ${supported ? "" : "disabled"}>${supported ? `Sound: ${meta.sound ? "On" : "Off"}` : "Sound unavailable"}</button>`;
 }
+function plansView() {
+  return `<h2>Expedition plan</h2><p>Choose a strategy for this expedition. An active plan selects boons, supplies and spring actions, and may spend expedition gold at the merchant. Reforges and Eevee’s evolution remain your decisions.</p><div class="plan-options">${PLANS.map(plan=>choice(plan.asset, plan.name + ((run.plan || "manual") === plan.id ? " · Selected" : ""), plan.text, "set-plan", plan.id)).join("")}</div><p>Plans run while this game is visible. Pause or switch to Manual at any time.</p>${button(`Away progression: ${run.idleEnabled ? "On" : "Off"}`, "idle-toggle", "", "paper-panel", !run.plan || run.plan === "manual")}<p>When enabled, your plan can progress after this window is hidden or closed, for up to eight hours. Pause stops away progression. Eevee waits for your evolution choice. Each expedition ends at victory or defeat; another expedition requires your choice.</p>`;
+}
+function idleSummaryView() {
+  const report = idleReport;
+  return `<h2>While you were away</h2><p>Your ${PLANS.find(p=>p.id===run.plan).name} plan guided this expedition.</p><div class="idle-results"><p><strong>Stages</strong> ${report.fromStage} to ${report.toStage}</p><p><strong>Victories</strong> ${report.wins}</p><p><strong>Gold change</strong> ${report.goldChange >= 0 ? "+" : ""}${report.goldChange}</p><p><strong>Levels gained</strong> ${report.levels}</p><p><strong>Battle actions</strong> ${report.actions}</p></div><p>${report.waitingForEvolution ? "Eevee is waiting for your evolution choice." : TERMINAL.has(run.phase) ? "This expedition has ended. Its rewards have been retained once." : "Your partner is ready to continue."}</p><p>Gold change includes merchant purchases and any ending reward.</p>${button("Continue", "close", "", "paper-panel main-button")}`;
+}
 function menuContent() {
+  if (modal === "idle-summary" && idleReport) return idleSummaryView();
+  if (modal === "plans" && run) return plansView();
   if (modal === "builds") return buildCombinationsView();
   if (modal === "guide") return fieldGuideView();
   if (modal === "partner" && run) return partnerView();
   if (modal === "pause")
-    return `<h2>Pause</h2><p>Battle and travel are paused.</p>${audioControl()}<div class="pause-actions">${button("Resume", "close", "", "paper-panel main-button")}${button("Partner & moves", "partner", "", "paper-panel")}${button("Expedition boons", "journal", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}${button("Return to camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
+    return `<h2>Pause</h2><p>Battle and travel are paused.</p>${audioControl()}<div class="pause-actions">${button("Resume", "close", "", "paper-panel main-button")}${button("Expedition plan", "plans", "", "paper-panel")}${button("Partner & moves", "partner", "", "paper-panel")}${button("Expedition boons", "journal", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}${button("Return to camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
   if (modal === "retire" || modal === "replace")
     return `<h2>Return to camp?</h2><p>This expedition will end. Your gold and victories will be retained.</p><div class="pause-actions">${button("Continue the journey", "close", "", "paper-panel main-button")}${button("End expedition", "confirm-retire", pendingStarter || "", "", "")}</div>`;
   if (modal === "upgrades")
@@ -475,7 +487,9 @@ function openMenu(name) {
 }
 function closeMenu() {
   modal = null;
+  idleReport = null;
   paused = false;
+  if (run?.idleEnabled) { run.idleCredit = 0; persist(); }
   effects.setPaused(document.hidden);
   audio.setPaused(document.hidden);
   audio.play("select");
@@ -486,6 +500,7 @@ function closeMenu() {
   pump();
 }
 let pendingStarter = null;
+let idleReport = null;
 function begin(id) {
   epoch++;
   effects.clear();
@@ -654,6 +669,16 @@ async function pump() {
         render();
         continue;
       }
+      const decision = planDecision(run);
+      if (decision) {
+        narration = `${PLANS.find(p=>p.id===run.plan).name} plan is choosing the next step…`;
+        if (!await wait(1100, token)) break;
+        if (planDecision(run)?.action !== decision.action || planDecision(run)?.value !== decision.value) continue;
+        if (!applyPlanDecision(run, decision, catalogue)) throw new Error("The expedition plan could not apply its choice.");
+        persist();
+        render();
+        continue;
+      }
       if (run.phase === "travel") {
         await travel(token);
         continue;
@@ -730,6 +755,24 @@ async function pump() {
   }
 }
 async function dispatch(action, value) {
+  if (action === "idle-toggle" && run && modal === "plans" && run.plan !== "manual") {
+    run.idleEnabled = !run.idleEnabled;
+    run.idleCredit = 0;
+    persist();
+    renderMenu();
+    return;
+  }
+  if (action === "plans" && run && !TERMINAL.has(run.phase)) { openMenu("plans"); return; }
+  if (action === "set-plan" && run && modal === "plans" && PLANS.some(p=>p.id===value)) {
+    run.plan = value;
+    if (value === "manual") { run.idleEnabled = false; run.idleAt = null; run.idleCredit = 0; }
+    E.addLog(run, `${PLANS.find(p=>p.id===value).name} expedition plan selected.`);
+    persist();
+    closeMenu();
+    render();
+    pump();
+    return;
+  }
   if (action === "sound") {
     meta.sound = !meta.sound;
     persist();
@@ -792,6 +835,7 @@ async function dispatch(action, value) {
     return;
   }
   if (action === "resume") {
+    if (run?.idleEnabled) run.idleCredit = 0;
     titleMode = false;
     paused = false;
     render();
@@ -906,7 +950,29 @@ document.addEventListener("keydown", (e) => {
         : openMenu("help");
   }
 });
+function catchUpAbsence() {
+  if (!run?.idleEnabled || !Number.isFinite(run.idleAt)) return;
+  const elapsed = Date.now() - run.idleAt;
+  run.idleAt = null;
+  const report = advanceIdle(run, meta, catalogue, elapsed);
+  if (report) {
+    idleReport = report;
+    titleMode = false;
+    paused = true;
+    modal = "idle-summary";
+  }
+}
 document.addEventListener("visibilitychange", () => {
+  if (document.hidden && run?.idleEnabled && !paused && !titleMode) {
+    epoch++;
+    effects.clear();
+    persist();
+  } else if (!document.hidden && run?.idleEnabled) {
+    catchUpAbsence();
+    if (!idleReport) run.idleCredit = 0;
+    persist();
+    render();
+  }
   effects.setPaused(paused || document.hidden);
   audio.setPaused(paused || document.hidden);
   if (!document.hidden) pump();
@@ -950,6 +1016,7 @@ async function boot() {
       "flurry-talons",
       "briar-bulwark",
       "lifebloom-vessel",
+      "living-roots",
       "parchment-panel",
       "gold-coins",
       "healing-berry",
@@ -992,6 +1059,7 @@ async function boot() {
         ]).finally(() => clearTimeout(timer));
       }),
     );
+    catchUpAbsence();
     persist();
     render();
   } catch (error) {

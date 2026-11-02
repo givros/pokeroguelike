@@ -240,6 +240,18 @@
     "transparent": true
   },
   {
+    "id": "living-roots",
+    "image": "assets/generated/living-roots.webp",
+    "source": "assets/generated/living-roots.png",
+    "prompt": "assets/generated/living-roots.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      509,
+      512
+    ],
+    "transparent": true
+  },
+  {
     "id": "merchant-cart",
     "image": "assets/generated/merchant-cart.webp",
     "source": "assets/generated/merchant-cart.png",

@@ -1,11 +1,13 @@
 import { readFileSync } from "node:fs";
 import * as E from "../engine.js";
+import { planDecision, applyPlanDecision } from "../plans.js";
 const catalogue = {
   pokemon: JSON.parse(readFileSync("data/pokemon.json")),
   moves: JSON.parse(readFileSync("data/moves.json")),
 };
 export function simulate(seed, starter = 7, options = {}) {
   const r = E.createRun(starter, E.baseMeta(), catalogue, seed);
+  if (options.plan) r.plan = options.plan;
   let transitions = 0;
   const visited = [];
   while (
@@ -18,6 +20,11 @@ export function simulate(seed, starter = 7, options = {}) {
     if (r.regionEntry) r.regionEntry = null;
     if (r.pendingAwakenings?.length) r.pendingAwakenings = [];
     visited.push(r.phase);
+    const decision = planDecision(r);
+    if (decision) {
+      if (!applyPlanDecision(r, decision, catalogue)) throw new Error("Invalid plan decision");
+      continue;
+    }
     switch (r.phase) {
       case "evolution":
         E.chooseEvolution(r,134,catalogue);

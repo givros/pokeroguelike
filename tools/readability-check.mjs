@@ -20,9 +20,13 @@ battle.bonuses = E.BONUSES.flatMap((b) => Array(b.max).fill(b.id));
 battle.hero.maxHp = 999999;
 battle.hero.hp = 888888;
 battle.coins = 100000000;
+const idleRun = E.createRun(4, E.baseMeta(), catalogue, 2026);
+Object.assign(idleRun, { plan:"predator", idleEnabled:true, idleAt:Date.now()-3600000 });
 const scenarios = [
+  { name: "idle-summary", run: idleRun },
   { name: "title", run: null },
   { name: "preparation", run: E.createRun(4, E.baseMeta(), catalogue, 2026) },
+  { name: "plans", run: E.createRun(4, E.baseMeta(), catalogue, 2026), menu: "plans" },
   { name: "builds", run: E.createRun(4, E.baseMeta(), catalogue, 2026), menu: "builds" },
   { name: "reward", run: checkpoint(1, "reward") },
   { name: "camp", run: checkpoint(4, "camp") },
@@ -55,7 +59,7 @@ try {
       const resume = page.locator('[data-action="resume"]');
       if (await resume.count()) await resume.click();
       if (scenario.menu) {
-        if (scenario.run && scenario.menu !== "builds") await page.locator('[data-action="finish"]').click();
+        if (scenario.run && !["builds", "plans"].includes(scenario.menu)) await page.locator('[data-action="finish"]').click();
         await page.locator(`[data-action="${scenario.menu}"]`).first().click();
       }
       await page.locator("img").evaluateAll((images) => Promise.all(images.map((image) => image.decode())));
@@ -65,13 +69,14 @@ try {
         const dialog = document.querySelector("dialog");
         const root = dialog || document.querySelector(".game-screen");
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-        const small = [], overflow = [], text = [];
+        const small = [], overflow = [], text = [], brokenText = [];
         let node;
         while ((node = walker.nextNode())) {
           if (!node.textContent.trim()) continue;
           const parent = node.parentElement, style = getComputedStyle(parent);
           if (!parent.getClientRects().length || style.visibility === "hidden") continue;
           const label = node.textContent.trim();
+          if (label.includes("\uFFFD")) brokenText.push(label);
           const size = Number.parseFloat(style.fontSize);
           if (size < 14) small.push({ label, size });
           const range = document.createRange();
@@ -93,7 +98,7 @@ try {
         for (const [a, b] of [[".hud-left", ".stage-heading"], [".stage-heading", ".hud-controls"],
           [".encounter-dock", "#map-actor .body-art"], [".relic-rail", ".battle-narration"], [".initial-bonus-dock", ".bonus-partner"]])
           if (!dialog && intersect(rect(a), rect(b))) collisions.push([a, b]);
-        return { small, overflow, collisions, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
+        return { small, overflow, collisions, brokenText, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
       });
       await page.screenshot({ path: `${out}/${width}-${scenario.name}.png` });
       results.push({ width, height, scenario: scenario.name, ...measured });
@@ -101,7 +106,7 @@ try {
     }
   }
   await writeFile(`${out}/results.json`, JSON.stringify({ results, errors }, null, 2));
-  const failures = results.filter((r) => r.small.length || r.overflow.length || r.collisions.length);
+  const failures = results.filter((r) => r.small.length || r.overflow.length || r.collisions.length || r.brokenText.length);
   console.log(JSON.stringify({ scenes: results.length, failures, errors }, null, 2));
   assert.deepEqual(errors, []);
   assert.equal(failures.length, 0);

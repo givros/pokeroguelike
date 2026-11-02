@@ -63,7 +63,7 @@ export const BONUSES = [
   {
     id: "regeneration",
     name: "Living Roots",
-    asset: "healing-berry",
+    asset: "living-roots",
     text: "Recover 10% maximum HP after every victory.",
     max: 2,
   },
@@ -412,6 +412,7 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
     bonuses: [],
     offers: [],
     rerolls: 0,
+    plan: "manual",
     pendingReward: false,
     coins: meta.gold,
     wins: 0,

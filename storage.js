@@ -154,6 +154,10 @@ export function validRun(r, c) {
     !r.offers.every((id) => BONUSES.some((b) => b.id === id))
   )
     return false;
+  if (r.idleEnabled !== undefined && typeof r.idleEnabled !== "boolean") return false;
+  if (r.idleAt != null && (!Number.isSafeInteger(r.idleAt) || r.idleAt < 0)) return false;
+  if (r.idleCredit != null && (!Number.isInteger(r.idleCredit) || r.idleCredit < 0 || r.idleCredit > 28800000)) return false;
+  if (r.plan !== undefined && !["manual", "predator", "warden", "siphon"].includes(r.plan)) return false;
   if (r.rerolls !== undefined && (!Number.isInteger(r.rerolls) || r.rerolls < 0 || r.rerolls > 3)) return false;
   if (["starter", "reward"].includes(r.phase) && r.offers.length === 0)
     return false;

@@ -1736,7 +1736,7 @@ summary {
 }
 @media (max-height: 780px) {
   .bonus-partner {
-    bottom: 57%;
+    bottom: 59%;
   }
   .initial-bonus-dock > .dock-choices {
     gap: 12px;
@@ -1760,3 +1760,16 @@ summary {
 .reward-tools { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
 .reward-tools .dock-builds { margin:8px 0 0; }
 .reforge-control:disabled { cursor:default; text-decoration:none; color:#52604b; }
+
+.plan-options { display:grid; gap:8px; }
+.plan-options .dock-choice { text-align:left; display:flex; align-items:center; gap:16px; padding:12px; }
+.plan-options .item-art { width:78px; height:78px; flex:0 0 78px; }
+.plan-options strong { font-size:18px; }
+.plan-options small { display:block; font-size:14px; line-height:1.55; margin-top:6px; }
+
+.plan-link { padding:0; border:0; background:none; color:inherit; font:inherit; text-decoration:underline; }
+.initial-bonus-dock > .dock-builds + .dock-builds { margin-left:24px; }
+
+.idle-results { display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; margin:24px 0; }
+.idle-results p { margin:0; font-size:18px; }
+.idle-results strong { display:block; font-size:14px; margin-bottom:5px; }

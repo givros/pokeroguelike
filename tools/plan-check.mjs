@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import { chromium } from "playwright";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import * as E from "../engine.js";
+const catalogue={pokemon:JSON.parse(await readFile("data/pokemon.json")),moves:JSON.parse(await readFile("data/moves.json"))};
+const run=E.createRun(4,E.baseMeta(),catalogue,2026), meta=E.baseMeta(); meta.battleSpeed=750;
+const browser=await chromium.launch({headless:true}), errors=[], checks=[];
+const context=await browser.newContext({viewport:{width:1280,height:720}});
+await context.addInitScript(data=>{if(!localStorage.getItem("pokeRogueAdventureV3"))localStorage.setItem("pokeRogueAdventureV3",JSON.stringify(data));},{version:3,meta,run});
+const page=await context.newPage();page.on("pageerror",e=>errors.push(e.message));
+const saved=()=>page.evaluate(()=>JSON.parse(localStorage.getItem("pokeRogueAdventureV3")));
+try {
+  await page.goto("http://127.0.0.1:5173"); await page.locator('[data-action="resume"]').click();
+  await page.locator('[data-action="plans"]').last().click();
+  await page.locator('[data-action="set-plan"][data-value="predator"]').click();
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run.phase==="travel");
+  await page.locator('[data-action="pause"]').click();
+  await page.locator('[data-action="plans"]').last().click();
+  await page.locator('[data-action="set-plan"][data-value="manual"]').click();
+  assert.equal((await saved()).run.plan,"manual");
+  await page.locator('[data-action="pause"]').click();
+  const frozen=await saved(); await page.waitForTimeout(500); assert.deepEqual(await saved(),frozen);
+  await page.locator('[data-action="plans"]').last().click();
+  await page.locator('[data-action="set-plan"][data-value="predator"]').click();
+  await page.waitForFunction(()=>["complete","defeat"].includes(JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run.phase),{},{timeout:300000});
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run.settled);
+  const final=await saved(); await page.waitForTimeout(1200); assert.deepEqual(await saved(),final);
+  assert.equal(final.run.plan,"predator"); assert.ok(final.run.wins>0); assert.ok(final.run.settled);
+  checks.push("Plan is opt-in, can return to Manual during travel, and pauses without save changes");
+  checks.push("A real expedition progresses through every decision automatically and stops at a settled terminal state");
+  await mkdir("output/playwright",{recursive:true});
+  await page.screenshot({path:"output/playwright/plan-ending.png"});
+  assert.deepEqual(errors,[]);
+  const report={checks,phase:final.run.phase,stage:final.run.stageIndex+1,actions:final.run.actions,errors};
+  await writeFile("output/playwright/plan-results.json",JSON.stringify(report,null,2)); console.log(JSON.stringify(report,null,2));
+} finally {await browser.close();}

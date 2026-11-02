@@ -15,6 +15,8 @@ export function simulate(seed, starter = 7, options = {}) {
   ) {
     // Acknowledge the cosmetic scene beat; it never grants gameplay rewards.
     if (r.pendingGrowth) r.pendingGrowth = null;
+    if (r.regionEntry) r.regionEntry = null;
+    if (r.pendingAwakenings?.length) r.pendingAwakenings = [];
     visited.push(r.phase);
     switch (r.phase) {
       case "evolution":

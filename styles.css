@@ -4,7 +4,7 @@
   background: #10252b;
   font-size: 16px;
   --ink: #28413f;
-  --muted: #758569;
+  --muted: #44563f;
   --gold: #e7cb85;
 }
 * {
@@ -30,7 +30,12 @@ button {
 }
 button:disabled {
   cursor: default;
-  opacity: 0.45;
+  opacity: 1;
+  color: #52614b;
+}
+button:disabled > .item-art {
+  opacity: 0.6;
+  filter: saturate(0.5);
 }
 button:focus-visible,
 summary:focus-visible {
@@ -124,7 +129,7 @@ button:not(:disabled):hover {
 }
 .title-brand > small {
   letter-spacing: 5px;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 700;
   color: #e8dfbb;
 }
@@ -140,7 +145,7 @@ button:not(:disabled):hover {
   color: #ecca7c;
 }
 .title-brand > p {
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 5px;
   font-weight: 700;
   color: #e7e2bd;
@@ -155,7 +160,7 @@ button:not(:disabled):hover {
   align-items: center;
   gap: 38px;
   text-shadow: 0 2px 4px #1d3c36;
-  font-size: 12px;
+  font-size: 14px;
 }
 .title-stats > span {
   display: flex;
@@ -218,13 +223,14 @@ button:not(:disabled):hover {
   white-space: nowrap;
 }
 .starter-pokemon > small {
-  font-size: 10px;
+  font-size: 14px;
   color: #f4eccd;
   text-shadow: 0 2px 4px #173b30;
   letter-spacing: 0.6px;
 }
 .starter-pokemon.locked {
-  opacity: 0.72;
+  opacity: 1;
+  color: #fff6d6;
 }
 .starter-pokemon.locked > .pokemon-art {
   filter: grayscale(0.6) brightness(0.8);
@@ -236,7 +242,7 @@ button:not(:disabled):hover {
   gap: 6px;
   color: #eee9ce;
   margin-top: 10px;
-  font-size: 10px;
+  font-size: 14px;
   text-shadow: 0 2px 4px #173b30;
   white-space: nowrap;
 }
@@ -257,7 +263,7 @@ button:not(:disabled):hover {
 .title-actions > button {
   border-width: 18px;
   border-image-width: 18px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -329,10 +335,126 @@ button:not(:disabled):hover {
   min-width: 32px;
   font-variant-numeric: tabular-nums;
 }
+.ally-card.has-barrier {
+  top: 12.5%;
+}
+.barrier-line {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 5px;
+  min-height: 20px;
+  font-size: 14px;
+}
+.barrier-line > span {
+  flex: 0 0 16ch;
+  font-variant-numeric: tabular-nums;
+}
+.barrier-track {
+  height: 8px;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid #66898a;
+  border-radius: 4px;
+  background: #bfd3cb;
+}
+.barrier-fill {
+  height: 100%;
+  background: linear-gradient(#9ee4dd, #4c9ca4);
+  transition: width 0.25s;
+}
+.dock-builds {
+  display: block;
+  margin: 10px auto 0;
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.build-recipe {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 22px 0;
+  border-bottom: 1px solid #9fac8255;
+}
+.build-recipe > .item-art {
+  width: 100px;
+  height: 110px;
+  flex-shrink: 0;
+}
+.build-recipe > div {
+  min-width: 0;
+}
+.build-recipe small {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.build-recipe h3 {
+  font-size: 21px;
+  margin: 8px 0;
+}
+.build-recipe p {
+  line-height: 1.5;
+}
+.build-requirements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+}
+.build-requirements > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.build-requirements .item-art {
+  width: 30px;
+  height: 30px;
+}
+.build-requirements .fulfilled {
+  font-weight: 700;
+  color: #246249;
+}
+.awakening-toast {
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #fff1b9;
+  text-shadow: 0 2px 4px #153c31, 0 0 12px #153c31;
+  z-index: 1850;
+}
+.awakening-toast .item-art {
+  width: 110px;
+  height: 110px;
+  filter: drop-shadow(0 0 12px #fff0a6);
+}
+.awakening-toast small {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.awakening-toast strong {
+  font-size: 25px;
+}
+.awakened-relic {
+  filter: drop-shadow(0 0 5px #ffe5a0);
+}
 .hud-score {
-  font-size: 10px;
+  font-size: 14px;
   margin-left: 12px;
-  color: #7a856b;
+  color: var(--muted);
   white-space: nowrap;
 }
 .stage-heading {
@@ -348,7 +470,7 @@ button:not(:disabled):hover {
   pointer-events: none;
 }
 .stage-heading > small {
-  font-size: 8px;
+  font-size: 14px;
   letter-spacing: 1.4px;
   color: #f4e7bb;
   white-space: nowrap;
@@ -376,8 +498,8 @@ button:not(:disabled):hover {
 .speed-select > button {
   border: 0;
   background: none;
-  color: #758267;
-  font-size: 10px;
+  color: var(--muted);
+  font-size: 14px;
   padding: 4px 9px;
   border-radius: 3px;
 }
@@ -387,7 +509,7 @@ button:not(:disabled):hover {
   font-weight: 800;
 }
 .pause-button {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   border-width: 14px;
   border-image-width: 14px;
@@ -464,17 +586,17 @@ button:not(:disabled):hover {
   font-weight: 800;
 }
 .fighter-name > span {
-  font-size: 12px;
-  color: #7a886f;
+  font-size: 14px;
+  color: var(--muted);
   white-space: nowrap;
 }
 .battle-card > small {
   display: block;
-  font-size: 9px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-top: 5px;
-  color: #869174;
+  color: var(--muted);
 }
 .fighter-hp {
   display: flex;
@@ -486,16 +608,16 @@ button:not(:disabled):hover {
   flex: 1;
 }
 .fighter-hp > span {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 700;
-  color: #6e8268;
+  color: var(--muted);
   min-width: 62px;
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 .health-frame {
-  height: 9px;
+  height: 12px;
   border: 1px solid #788c69;
   border-radius: 6px;
   background: #c0cba7;
@@ -517,7 +639,7 @@ button:not(:disabled):hover {
   position: absolute;
   top: 33%;
   left: 5.8%;
-  font-size: 9px;
+  font-size: 14px;
   letter-spacing: 1.6px;
   color: #f5eac6;
   font-weight: 700;
@@ -525,7 +647,7 @@ button:not(:disabled):hover {
 }
 .battle-kind small {
   display: block;
-  font-size: 9px;
+  font-size: 14px;
   margin-top: 6px;
   letter-spacing: 0.3px;
   color: #e7e9cc;
@@ -561,8 +683,11 @@ button:not(:disabled):hover {
 }
 .relic {
   position: relative;
-  width: 30px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: none;
+  padding: 0;
   display: block;
   cursor: help;
 }
@@ -575,7 +700,7 @@ button:not(:disabled):hover {
   position: absolute;
   right: -2px;
   bottom: -1px;
-  font-size: 9px;
+  font-size: 14px;
   color: #fff8ce;
   text-shadow: 1px 1px #1a3d31;
 }
@@ -632,7 +757,7 @@ button:not(:disabled):hover {
   right: 25%;
   bottom: 1px;
   text-align: center;
-  font-size: 9px;
+  font-size: 14px;
   background: #8d554b;
   color: #fff0d0;
   z-index: 4000;
@@ -705,31 +830,41 @@ button:not(:disabled):hover {
   display: flex;
   gap: 10px;
   align-items: center;
-  width: 217px;
+  width: 270px;
   z-index: 1500;
   border-width: 16px;
   border-image-width: 16px;
   padding: 0 3px 0 0;
 }
 .map-hero-card > .pokemon-art {
-  height: 45px;
-  width: 46px;
+  height: 60px;
+  width: 60px;
 }
 .map-hero-card > div {
   flex: 1;
 }
 .map-hero-card strong {
-  font-size: 12px;
+  font-size: 16px;
   display: block;
 }
 .map-hero-card small {
-  font-size: 8px;
+  font-size: 14px;
   display: block;
-  color: #7f8a6f;
+  color: var(--muted);
   margin: 5px 0;
 }
+.map-hp-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  min-height: 20px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 .map-hero-card .health-frame {
-  height: 5px;
+  height: 9px;
 }
 .travel-caption {
   position: absolute;
@@ -749,7 +884,7 @@ button:not(:disabled):hover {
   display: block;
 }
 .travel-caption span {
-  font-size: 11px;
+  font-size: 14px;
   display: block;
   margin-top: 9px;
   color: #fff3c7;
@@ -805,32 +940,32 @@ button:not(:disabled):hover {
   min-width: 0;
 }
 .dock-choice strong {
-  font-size: 14px;
+  font-size: 17px;
   display: block;
   color: #3a5442;
   line-height: 1.25;
 }
 .dock-choice small {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.5;
-  color: #7c896d;
+  color: var(--muted);
   display: block;
   margin-top: 7px;
 }
 .dock-note {
-  font-size: 10px;
+  font-size: 14px;
   text-align: center;
   margin-top: 12px;
-  color: #8a9479;
+  color: var(--muted);
   line-height: 1.5;
 }
 .dock-leave {
   border: 0;
   background: none;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
-  color: #71835f;
+  color: var(--muted);
   padding: 8px;
   white-space: nowrap;
 }
@@ -844,14 +979,14 @@ button:not(:disabled):hover {
   gap: 7px;
 }
 .game-screen[data-phase="shop"] .dock-choice > .item-art {
-  width: 43px;
-  height: 43px;
+  width: 56px;
+  height: 56px;
 }
 .game-screen[data-phase="shop"] .dock-choice strong {
-  font-size: 12px;
+  font-size: 16px;
 }
 .game-screen[data-phase="shop"] .dock-choice small {
-  font-size: 9px;
+  font-size: 14px;
 }
 .game-screen[data-phase="shop"] .dock-leave {
   grid-column: 1/-1;
@@ -862,10 +997,10 @@ button:not(:disabled):hover {
   height: 44px;
 }
 .game-screen[data-phase="shrine"] .dock-choice strong {
-  font-size: 12px;
+  font-size: 16px;
 }
 .game-screen[data-phase="shrine"] .dock-choice small {
-  font-size: 9px;
+  font-size: 14px;
 }
 .game-screen[data-phase="shrine"] .dock-choices {
   gap: 7px;
@@ -881,9 +1016,9 @@ button:not(:disabled):hover {
   border-image-width: 28px;
 }
 .initial-bonus-dock > small {
-  font-size: 9px;
+  font-size: 14px;
   letter-spacing: 2px;
-  color: #899271;
+  color: var(--muted);
   font-weight: 700;
 }
 .initial-bonus-dock > h2 {
@@ -908,12 +1043,12 @@ button:not(:disabled):hover {
   font-size: 18px;
 }
 .initial-bonus-dock .dock-choice small {
-  font-size: 12px;
+  font-size: 14px;
   max-width: 220px;
 }
 .initial-bonus-dock > p {
-  font-size: 11px;
-  color: #8a9378;
+  font-size: 14px;
+  color: var(--muted);
   margin-top: 20px;
   line-height: 1.5;
 }
@@ -941,7 +1076,7 @@ button:not(:disabled):hover {
   text-shadow: 0 2px 5px #193d30;
 }
 .ending-content > small {
-  font-size: 9px;
+  font-size: 14px;
   letter-spacing: 2px;
   color: #f1e9ba;
   font-weight: 700;
@@ -963,7 +1098,7 @@ button:not(:disabled):hover {
   display: flex;
   gap: 35px;
   margin: 27px 0;
-  font-size: 10px;
+  font-size: 14px;
   color: #eee7bf;
 }
 .ending-stats b {
@@ -979,7 +1114,7 @@ button:not(:disabled):hover {
   margin-top: 10px;
 }
 .ending-actions > button {
-  font-size: 12px;
+  font-size: 14px;
   text-shadow: none;
   border-width: 20px;
   border-image-width: 20px;
@@ -1000,7 +1135,7 @@ button:not(:disabled):hover {
   border-width: 12px;
   border-image-width: 12px;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 14px;
   padding: 0 8px;
   min-height: 38px;
   pointer-events: auto;
@@ -1031,9 +1166,9 @@ dialog h3 {
   margin: 18px 0 8px;
 }
 dialog p {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.8;
-  color: #7b886d;
+  color: var(--muted);
 }
 .pause-actions {
   display: flex;
@@ -1051,7 +1186,7 @@ dialog p {
 .pause-actions > button:not(.paper-panel) {
   background: none;
   border: 0;
-  color: #7c8b6b;
+  color: var(--muted);
   padding: 12px 20px;
 }
 .menu-money {
@@ -1080,15 +1215,15 @@ dialog p {
   font-size: 17px;
 }
 .upgrade-list .dock-choice small {
-  font-size: 12px;
+  font-size: 14px;
 }
 .upgrade-list .item-art {
   width: 65px;
   height: 65px;
 }
 .muted {
-  color: #9aa284 !important;
-  font-size: 11px !important;
+  color: var(--muted) !important;
+  font-size: 14px !important;
   margin-top: 16px;
 }
 .journal-bonuses {
@@ -1110,12 +1245,12 @@ dialog p {
 }
 .journal-bonuses strong {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
 }
 .journal-bonuses small {
   display: block;
-  font-size: 10px;
-  color: #899576;
+  font-size: 14px;
+  color: var(--muted);
   line-height: 1.5;
   margin-top: 5px;
 }
@@ -1125,17 +1260,17 @@ dialog p {
   margin-top: 13px;
 }
 .log-list > p {
-  font-size: 11px;
+  font-size: 14px;
   padding: 8px 0;
   border-bottom: 1px solid #d4d6b2;
 }
 summary {
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
-  color: #69825b;
+  color: var(--muted);
 }
 .help-copy > p {
-  font-size: 12px;
+  font-size: 14px;
 }
 .paused * {
   animation-play-state: paused !important;
@@ -1163,7 +1298,7 @@ summary {
     font-size: 61px;
   }
   .title-brand > small {
-    font-size: 8px;
+    font-size: 14px;
   }
   .title-stats {
     top: 28%;
@@ -1181,10 +1316,10 @@ summary {
     margin-top: 7px;
   }
   .starter-pokemon > small {
-    font-size: 9px;
+    font-size: 14px;
   }
   .starter-lock {
-    font-size: 9px;
+    font-size: 14px;
     margin-top: 7px;
   }
   .title-actions {
@@ -1192,7 +1327,7 @@ summary {
   }
   .title-actions > button {
     min-height: 45px;
-    font-size: 11px;
+    font-size: 14px;
     border-width: 15px;
     border-image-width: 15px;
   }
@@ -1211,7 +1346,7 @@ summary {
     top: 33%;
   }
   .resume-adventure .main-button {
-    font-size: 12px;
+    font-size: 14px;
     border-width: 17px;
     border-image-width: 17px;
   }
@@ -1232,7 +1367,7 @@ summary {
     font-size: 16px;
   }
   .hud-score {
-    font-size: 9px;
+    font-size: 14px;
     margin-left: 5px;
   }
   .speed-select {
@@ -1241,14 +1376,14 @@ summary {
     border-image-width: 11px;
   }
   .speed-select > button {
-    font-size: 9px;
+    font-size: 14px;
     padding: 3px 8px;
   }
   .pause-button {
     min-height: 43px;
     border-width: 12px;
     border-image-width: 12px;
-    font-size: 10px;
+    font-size: 14px;
   }
   .stage-heading {
     top: 6px;
@@ -1258,13 +1393,13 @@ summary {
     margin-top: 5px;
   }
   .stage-heading > small {
-    font-size: 7px;
+    font-size: 14px;
   }
   .fighter-name > strong {
     font-size: 18px;
   }
   .fighter-name > span {
-    font-size: 11px;
+    font-size: 14px;
   }
   .battle-card {
     border-width: 17px;
@@ -1276,11 +1411,11 @@ summary {
     gap: 8px;
   }
   .fighter-hp > span {
-    font-size: 9px;
+    font-size: 14px;
     min-width: 55px;
   }
   .battle-card > small {
-    font-size: 8px;
+    font-size: 14px;
   }
   .battle-narration {
     font-size: 14px;
@@ -1293,29 +1428,29 @@ summary {
     gap: 5px;
   }
   .relic {
-    width: 25px;
-    height: 29px;
+    width: 36px;
+    height: 36px;
   }
   .map-hero-card {
-    width: 190px;
+    width: 270px;
     border-width: 13px;
     border-image-width: 13px;
   }
   .map-hero-card .pokemon-art {
-    height: 37px;
-    width: 38px;
+    height: 60px;
+    width: 60px;
   }
   .map-hero-card strong {
-    font-size: 11px;
+    font-size: 16px;
   }
   .map-hero-card small {
-    font-size: 7px;
+    font-size: 14px;
   }
   .travel-caption strong {
     font-size: 14px;
   }
   .travel-caption span {
-    font-size: 10px;
+    font-size: 14px;
   }
   .encounter-dock {
     border-width: 20px;
@@ -1337,22 +1472,22 @@ summary {
     padding: 6px 8px;
   }
   .dock-choice strong {
-    font-size: 13px;
+    font-size: 17px;
   }
   .dock-choice small {
-    font-size: 9px;
+    font-size: 14px;
     margin-top: 5px;
   }
   .dock-note {
-    font-size: 8px;
+    font-size: 14px;
     margin-top: 8px;
   }
   .initial-bonus-dock {
     bottom: 5%;
     border-width: 24px;
     border-image-width: 24px;
-    left: 11%;
-    right: 11%;
+    left: 6%;
+    right: 6%;
     padding: 5px 12px;
   }
   .initial-bonus-dock > h2 {
@@ -1367,13 +1502,15 @@ summary {
     font-size: 16px;
   }
   .initial-bonus-dock .dock-choice small {
-    font-size: 11px;
+    font-size: 14px;
   }
   .initial-bonus-dock .dock-choice {
     padding: 6px 12px;
+    flex-direction: row;
+    text-align: left;
   }
   .initial-bonus-dock > p {
-    font-size: 10px;
+    font-size: 14px;
     margin-top: 14px;
   }
   .bonus-partner {
@@ -1386,7 +1523,7 @@ summary {
     font-size: 36px;
   }
   .ending-content > p {
-    font-size: 12px;
+    font-size: 14px;
   }
   .ending-stats {
     margin: 20px 0;
@@ -1396,13 +1533,13 @@ summary {
     font-size: 27px;
   }
   .ending-actions > button {
-    font-size: 11px;
+    font-size: 14px;
     min-height: 52px;
     border-width: 17px;
     border-image-width: 17px;
   }
   .ending-actions > .main-button {
-    font-size: 12px;
+    font-size: 14px;
   }
   .victory-banner {
     font-size: 52px;
@@ -1431,7 +1568,7 @@ summary {
   height: 24.5%;
 }
 .fighter-hp > span {
-  font-size: 12px;
+  font-size: 14px;
 }
 @media (max-height: 780px) {
   .bonus-partner {
@@ -1442,11 +1579,11 @@ summary {
     height: 24.5%;
   }
   .fighter-hp > span {
-    font-size: 11px;
+    font-size: 14px;
   }
   .battle-kind {
     top: 12%;
-    font-size: 8px;
+    font-size: 14px;
   }
 }
 .actor-ally {
@@ -1495,15 +1632,15 @@ summary {
 }
 .guide-entry strong,
 .expedition-history strong {
-  font-size: 13px;
+  font-size: 16px;
 }
 .guide-entry small,
 .expedition-history small,
 .partner-move small {
   display: block;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.6;
-  color: #6b795c;
+  color: var(--muted);
   margin-top: 4px;
 }
 .expedition-history > section > .pokemon-art {
@@ -1524,7 +1661,7 @@ summary {
 .partner-move > span {
   min-width: 145px;
   text-align: right;
-  font-size: 13px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
 .partner-move.next-move strong {
@@ -1555,5 +1692,71 @@ summary {
   border-image-width: 12px;
   min-height: 42px;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: 14px;
 }
+.region-entry {
+  position: absolute;
+  inset: 0;
+  z-index: 1900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: #102d3b80;
+  color: #fff7d3;
+  text-align: center;
+  text-shadow: 0 3px 12px #082521;
+}
+.region-entry small {
+  font-size: 14px;
+  letter-spacing: 4px;
+}
+.region-entry h2 {
+  font-size: clamp(32px, 4vw, 62px);
+  margin: 16px 0;
+  letter-spacing: 1px;
+}
+.region-entry p {
+  font-size: 16px;
+}
+.game-screen:has(.region-entry) .map-actor.walking .body-art {
+  animation-play-state: paused;
+}
+.fighter-hp > span {
+  flex: 0 0 15ch;
+  min-width: 15ch;
+}
+.hud-left > strong {
+  min-width: 9ch;
+  text-align: right;
+}
+.battle-narration {
+  font-size: 18px;
+}
+@media (max-height: 780px) {
+  .bonus-partner {
+    bottom: 57%;
+  }
+  .initial-bonus-dock > .dock-choices {
+    gap: 12px;
+  }
+}
+@media (max-width: 1100px) {
+  .relic-rail {
+    width: 26%;
+  }
+  .battle-narration {
+    left: 30%;
+    right: 18%;
+  }
+}
+
+.damage-number.secondary { font-size: 24px; -webkit-text-stroke-width: 1.5px; }
+.damage-number.barrier-number { color: #c4fff1; -webkit-text-stroke-color: #264e4d; }
+
+@media (min-height: 781px) { .bonus-partner { bottom: 60%; } }
+
+.reward-tools { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+.reward-tools .dock-builds { margin:8px 0 0; }
+.reforge-control:disabled { cursor:default; text-decoration:none; color:#52604b; }

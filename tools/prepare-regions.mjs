@@ -1,4 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { REGIONS } from "../engine.js";
+import { buildEncounters } from "./world-layout.mjs";
 const world = JSON.parse(await readFile("data/world-map.json", "utf8"));
 world.regions = {
   woodland: { base: world.base, props: world.props, preview: "assets/generated/woodland-layered-preview.webp" },
@@ -26,4 +28,9 @@ world.regions = {
     ],
   },
 };
+for (const region of REGIONS) {
+  const area = world.regions[region.id];
+  area.encounters = buildEncounters(world, area.props,
+    Array.from({ length: region.to - region.from + 1 }, (_, i) => region.from + i), "regional");
+}
 await writeFile("data/world-map.json", JSON.stringify(world, null, 2) + "\n");

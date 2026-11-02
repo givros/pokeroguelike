@@ -162,6 +162,23 @@ export class BattleEffects {
     }
     await wait(duration * 0.45);
   }
+  floatingText(label, point, cls = "", delay = 0) {
+    const scene = document.querySelector("#battle-scene");
+    if (!scene || !point) return;
+    const node = document.createElement("span");
+    node.className = "damage-number " + cls;
+    node.textContent = label;
+    scene.append(node);
+    const width = node.getBoundingClientRect().width;
+    node.style.left = Math.max(width / 2 + 12, Math.min(scene.clientWidth - width / 2 - 12, point.x)) + "px";
+    node.style.top = Math.max(100, Math.min(scene.clientHeight - 60, point.y)) + "px";
+    const animation = this.animate(node, [
+      { translate: "-50% 0", opacity: 1, scale: .9 },
+      { opacity: 1, scale: 1.08, offset: .25 },
+      { translate: "-50% -65px", opacity: 0, scale: 1 },
+    ], { duration: 1000, delay, fill: "backwards", easing: "ease-out" });
+    animation?.finished.catch(() => {}).finally(() => node.remove());
+  }
   impact(result) {
     if (result.kind !== "hit") return;
     const target = result.side === "ally" ? "enemy" : "ally",
@@ -225,41 +242,19 @@ export class BattleEffects {
       );
       a?.finished.catch(() => {}).finally(() => particle.remove());
     }
-    const scene = document.querySelector("#battle-scene"),
-      number = document.createElement("span");
-    number.className = "damage-number" + (result.crit ? " critical" : "");
-    number.textContent = (result.crit ? "CRITICAL " : "") + "-" + result.damage;
-    number.style.left = point.x + "px";
-    number.style.top = point.y - 35 + "px";
-    scene?.append(number);
-    const a = this.animate(
-      number,
-      [
-        { translate: "-50% 0", opacity: 1, scale: 0.8 },
-        { opacity: 1, scale: 1.15, offset: 0.25 },
-        { translate: "-50% -70px", opacity: 0, scale: 1 },
-      ],
-      { duration: 1000, easing: "ease-out" },
-    );
-    a?.finished.catch(() => {}).finally(() => number.remove());
-    if (result.healing) {
-      const h = document.createElement("span");
-      h.className = "damage-number healing";
-      h.textContent = "+" + result.healing;
-      const p = this.point(result.side);
-      h.style.left = p.x + "px";
-      h.style.top = p.y + "px";
-      scene?.append(h);
-      const a = this.animate(
-        h,
-        [
-          { translate: "-50% 0", opacity: 1 },
-          { translate: "-50% -65px", opacity: 0 },
-        ],
-        { duration: 1000 },
-      );
-      a?.finished.catch(() => {}).finally(() => h.remove());
-    }
+    const primary = result.damage - (result.echoDamage || 0);
+    this.floatingText(primary ? (result.crit ? "CRITICAL " : "") + "-" + primary : "BLOCKED",
+      { x: point.x, y: point.y - 35 }, result.crit ? "critical" : "");
+    if (result.echoDamage) this.floatingText("ECHO -" + result.echoDamage,
+      { x: point.x, y: point.y + 15 }, "secondary", 120);
+    const source = this.point(result.side);
+    if (result.reflectDamage) this.floatingText("RIPOSTE -" + result.reflectDamage,
+      { x: source.x, y: source.y - 35 }, "secondary", 120);
+    if (result.healing) this.floatingText("+" + result.healing + " HP", source, "healing secondary");
+    if (result.shielding) this.floatingText("+" + result.shielding + " BARRIER",
+      { x: source.x, y: source.y + 40 }, "barrier-number secondary", 120);
+    if (result.absorbed && primary) this.floatingText("BARRIER " + result.absorbed,
+      { x: point.x, y: point.y + 15 }, "barrier-number secondary", 120);
     if (result.crit && !this.reduced)
       this.animate(
         document.querySelector("#battle-camera"),

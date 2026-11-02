@@ -3,6 +3,7 @@ import { readState, writeState } from "./storage.js";
 import { BattleEffects } from "./presentation.js";
 import { discoveryRecords } from "./field-guide.js";
 import { GameAudio } from "./audio.js";
+import { SYNERGIES, activeSynergies, awakenedBy } from "./builds.js";
 const app = document.getElementById("app");
 const effects = new BattleEffects();
 const audio = new GameAudio();
@@ -35,6 +36,7 @@ let catalogue,
   narration = "",
   saveAt = 0;
 const AUTO = new Set(["travel", "arrival", "battle", "victoryBeat"]);
+const hasAutomaticWork = () => run && (AUTO.has(run.phase) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length);
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
 const STARTERS = [1, 4, 7, 25, 133, 152];
 const NAME_TYPES = {
@@ -95,17 +97,21 @@ function hud() {
     )}</div>${button("Pause", "pause", "", "paper-panel pause-button")}</div></header>`;
 }
 function buffRail() {
-  const ids = [...new Set(run.bonuses)];
-  return `<div class="relic-rail">${ids
+  const builds = activeSynergies(run);
+  const combined = new Set(builds.flatMap((recipe) => Object.keys(recipe.requires)));
+  const ids = [...new Set(run.bonuses)].filter((id) => !combined.has(id));
+  return `<div class="relic-rail">${builds.map((recipe) =>
+    button(art(recipe.asset), "builds", "", "relic awakened-relic").replace("<button ", `<button title="${esc(recipe.name + ": " + recipe.text)}" aria-label="${esc(recipe.name)}" `)
+  ).join("")}${ids
     .map((id) => {
       const b = E.BONUSES.find((b) => b.id === id);
-      return `<span class="relic" title="${b.name} : ${b.text}">${art(b.asset)}${E.count(run, id) > 1 ? `<b>${E.count(run, id)}</b>` : ""}</span>`;
+      return `<button class="relic" type="button" data-action="journal" aria-label="${esc(b.name + ": " + b.text)}" title="${esc(b.name + ": " + b.text)}">${art(b.asset)}${E.count(run, id) > 1 ? `<b>${E.count(run, id)}</b>` : ""}</button>`;
     })
     .join("")}</div>`;
 }
 function heroCard() {
   const h = { ...run.hero, id: visualHeroId() };
-  return `<div class="map-hero-card paper-panel">${mon(h.id)}<div><strong>${catalogue.pokemon[h.id].name}</strong><small>Level ${h.level} · ${h.hp} / ${h.maxHp} HP</small>${health(h)}</div></div>`;
+  return `<div class="map-hero-card paper-panel">${mon(h.id)}<div><strong>${catalogue.pokemon[h.id].name}</strong><small>Level ${h.level}</small><span class="map-hp-value">${h.hp} / ${h.maxHp} HP</span>${health(h)}</div></div>`;
 }
 function titleView() {
   const saved = run && !TERMINAL.has(run.phase);
@@ -129,7 +135,8 @@ function titleView() {
 }
 function battleCard(m, side) {
   const s = catalogue.pokemon[m.id];
-  return `<section class="battle-card ${side}-card paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><small>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div></section>`;
+  const barrier = side === "ally" && activeSynergies(run).some((recipe) => recipe.id === "lifebloom");
+  return `<section class="battle-card ${side}-card ${barrier ? "has-barrier" : ""} paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><small>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div>${barrier ? `<div class="barrier-line"><span>Barrier <b data-barrier-value>${m.shield || 0}</b></span><div class="barrier-track"><div class="barrier-fill" style="width:${((m.shield || 0) / Math.ceil(m.maxHp * 0.2)) * 100}%"></div></div></div>` : ""}</section>`;
 }
 function battleView() {
   const h = { ...run.hero, id: visualHeroId() },
@@ -137,10 +144,10 @@ function battleView() {
   return `<div id="battle-scene" style="--battle-arena:url(assets/generated/${E.region(run).arena}.webp)"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div><div class="battle-kind">${E.stage(run).kind === "boss" ? "GUARDIAN" : E.stage(run).kind === "elite" ? "ELITE ENCOUNTER" : "AUTOMATIC BATTLE"}<small id="turn-label">Action ${run.battleActions + 1}</small></div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${esc(narration || run.log.at(-1))}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTORY</div>' : ""}</div>`;
 }
 function worldProp(p) {
-  return `<img class="map-prop" src="assets/generated/${p.asset}.webp" alt="" style="left:${p.x * 100}%;top:${p.y * 100}%;width:${p.w * 100}%;height:${p.h * 100}%;z-index:${Math.round(p.y * 1000)}" draggable="false">`;
+  return `<img class="map-prop" src="assets/generated/${p.asset}.webp" alt="" style="left:${p.x * 100}%;top:${p.y * 100}%;width:${p.w * 100}%;height:${p.h * 100}%;z-index:${p.layer === "ground" ? 30 : Math.round(p.y * 1000)}" draggable="false">`;
 }
 function destinationProp() {
-  const prop = world.encounters[run.stageIndex]?.prop;
+  const prop = E.encounterZone(run, world)?.prop;
   return prop ? worldProp(prop) : "";
 }
 function mapView() {
@@ -161,12 +168,20 @@ function bonusChoices(action = "bonus") {
   return run.offers
     .map((id) => {
       const b = E.BONUSES.find((b) => b.id === id);
-      return choice(b.asset, b.name, b.text, action, id);
+      const rank = E.count(run, id) + 1;
+      const next = awakenedBy(run, id);
+      return choice(b.asset, b.name + (b.max > 1 ? ` · ${b.id === "pp_boost" ? "use " : ""}${rank}/${b.max}` : ""),
+        b.text + (next.length ? ` Awakens ${next.map((recipe) => recipe.name).join(", ")}!` : ""), action, id);
     })
     .join("");
 }
+function rerollControl() {
+  const cost = E.rerollCost(run);
+  const label = cost === null ? "Reforges exhausted � 3/3" : `Reforge boons � ${cost} gold � ${3 - (run.rerolls || 0)} left`;
+  return `<button class="dock-builds reforge-control" data-action="reroll" ${E.canReroll(run) ? "" : "disabled"}>${label}</button>`;
+}
 function encounterDock() {
-  if (run.pendingGrowth) return "";
+  if (run.pendingGrowth || run.pendingAwakenings?.length) return "";
   let title = "",
     content = "";
   if (run.phase === "evolution") {
@@ -206,7 +221,7 @@ function encounterDock() {
       choice(
         "critical-lens",
         "Scout ahead",
-        "Reveal the next opponent. Your opening strike deals 25% more damage. Forgo healing and training.",
+        "Reveal the next foe. Opening hit +25%. Skip rest and training.",
         "encounter",
         "scout",
       );
@@ -262,12 +277,13 @@ function encounterDock() {
         )
         .join("") + button("Continue the journey", "leave", "", "dock-leave");
   }
+  const note = run.log.at(-1) !== E.stage(run).name + "." ? run.log.at(-1) : "";
   return title
-    ? `<section class="encounter-dock paper-panel"><h2>${title}</h2><div class="dock-choices">${content}</div><p class="dock-note">${esc(run.log.at(-1))}</p></section>`
+    ? `<section class="encounter-dock paper-panel"><h2>${title}</h2><div class="dock-choices">${content}</div>${["reward", "shrine"].includes(run.phase) ? `<div class="reward-tools">${button("View build combinations", "builds", "", "dock-builds")}${rerollControl()}</div>` : ""}${note ? `<p class="dock-note">${esc(note)}</p>` : ""}</section>`
     : "";
 }
 function starterBonusView() {
-  return `<div class="starter-bonus-scene">${mon(run.hero.id, "bonus-partner")}<section class="initial-bonus-dock paper-panel"><small>PREPARE YOUR EXPEDITION</small><h2>Choose your first boon</h2><div class="dock-choices">${bonusChoices()}</div><p>Your partner fights automatically. Your choices shape the journey.</p></section></div>`;
+  return `<div class="starter-bonus-scene">${mon(run.hero.id, "bonus-partner")}<section class="initial-bonus-dock paper-panel"><small>PREPARE YOUR EXPEDITION</small><h2>Choose your first boon</h2><div class="dock-choices">${bonusChoices()}</div>${button("View build combinations", "builds", "", "dock-builds")}<p>Your partner fights automatically. Your choices shape the journey.</p></section></div>`;
 }
 function endingView() {
   const won = run.phase === "complete";
@@ -324,6 +340,12 @@ function updateBattle() {
       );
       card.querySelector(".fighter-hp>span").textContent =
         m.hp + " / " + m.maxHp;
+      const barrier = card.querySelector("[data-barrier-value]");
+      if (barrier) {
+        barrier.textContent = m.shield || 0;
+        card.querySelector(".barrier-fill").style.width =
+          ((m.shield || 0) / Math.ceil(m.maxHp * 0.2)) * 100 + "%";
+      }
     }
   }
   const turn = q("#turn-label");
@@ -374,11 +396,21 @@ function partnerView() {
     return `<section class="partner-move ${slot.id === next ? "next-move" : ""}"><div><strong>${esc(move.name)}</strong><small>${NAME_TYPES[move.type] || move.type} · ${move.damageClass} · Power ${move.power}</small></div><span>${slot.pp} / ${slot.maxPp} PP${slot.id === next ? '<small>Next automatic choice</small>' : ""}</span></section>`;
   }).join("")}</div><p>Expedition: ${run.stats.damage} damage dealt · ${run.stats.criticals} critical hits.</p>`;
 }
+function buildCombinationsView() {
+  const active = new Set(run ? activeSynergies(run).map((recipe) => recipe.id) : []);
+  return `<h2>Build combinations</h2><p>Collect the listed boon ranks to awaken a relic. Each relic changes how your partner fights for the rest of this expedition.</p><div class="build-recipes">${SYNERGIES.map((recipe) =>
+    `<section class="build-recipe ${active.has(recipe.id) ? "is-awakened" : ""}">${art(recipe.asset)}<div><small>${recipe.style.toUpperCase()}${active.has(recipe.id) ? " · AWAKENED" : ""}</small><h3>${recipe.name}</h3><p>${recipe.text}</p><div class="build-requirements">${Object.entries(recipe.requires).map(([id, rank]) => {
+      const boon = E.BONUSES.find((b) => b.id === id);
+      return `<span class="${run && E.count(run, id) >= rank ? "fulfilled" : ""}">${art(boon.asset)}${boon.name} ${run ? Math.min(rank, E.count(run, id)) + "/" : ""}${rank}</span>`;
+    }).join("")}</div></div></section>`
+  ).join("")}</div>`;
+}
 function audioControl() {
   const supported = !!(globalThis.AudioContext || globalThis.webkitAudioContext);
   return `<button class="paper-panel sound-control" data-action="sound" aria-pressed="${meta.sound}" ${supported ? "" : "disabled"}>${supported ? `Sound: ${meta.sound ? "On" : "Off"}` : "Sound unavailable"}</button>`;
 }
 function menuContent() {
+  if (modal === "builds") return buildCombinationsView();
   if (modal === "guide") return fieldGuideView();
   if (modal === "partner" && run) return partnerView();
   if (modal === "pause")
@@ -507,7 +539,7 @@ async function travel(token) {
   if (live(token) && run.phase === "travel") {
     run.travelProgress = 1;
     const position = E.travelPosition(run, world.route),
-      zone = world.encounters[run.stageIndex];
+      zone = E.encounterZone(run, world);
     if (
       !zone ||
       Math.hypot(position[0] - zone.center[0], position[1] - zone.center[1]) >
@@ -545,13 +577,60 @@ async function playGrowth(token) {
   persist();
   return true;
 }
+async function playRegionEntry(token) {
+  const scene = q("#map-scene");
+  if (scene) {
+    const area = E.region(run), entry = document.createElement("section");
+    const description = {
+      woodland: "Sunlit paths beneath the old canopy.",
+      lake: "Follow the silver shore into rising mist.",
+      sanctuary: "Ancient stone remembers every traveler.",
+    }[area.id];
+    entry.className = "region-entry";
+    entry.innerHTML = `<small>REGION ${E.REGIONS.indexOf(area) + 1} OF ${E.REGIONS.length}</small><h2>${area.name}</h2><p>${description}</p>`;
+    scene.append(entry);
+    const duration = effects.reduced ? 500 : 1800;
+    effects.animate(entry, [
+      { opacity: 0 }, { opacity: 1, offset: 0.15 },
+      { opacity: 1, offset: 0.75 }, { opacity: 0 },
+    ], { duration, easing: "linear" });
+    if (!await wait(duration, token)) return false;
+    entry.remove();
+  }
+  if (!live(token)) return false;
+  run.regionEntry = null;
+  persist();
+  return true;
+}
+async function playAwakening(token) {
+  const id = run.pendingAwakenings[0];
+  const recipe = SYNERGIES.find((candidate) => candidate.id === id);
+  const scene = q("#map-scene") || q("#battle-scene");
+  if (scene && recipe) {
+    const toast = document.createElement("section");
+    toast.className = "vfx awakening-toast";
+    toast.innerHTML = `${art(recipe.asset)}<small>BUILD AWAKENED</small><strong>${recipe.name}</strong>`;
+    scene.append(toast);
+    audio.play("evolve");
+    effects.animate(toast, [
+      { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, offset: 0.2 },
+      { opacity: 1, offset: 0.8 }, { opacity: 0, scale: 1.05 },
+    ], { duration: effects.reduced ? 1 : 1700, easing: "linear" });
+    if (!await wait(effects.reduced ? 500 : 1700, token)) return false;
+    toast.remove();
+  }
+  if (!live(token)) return false;
+  run.pendingAwakenings = run.pendingAwakenings.filter((pending) => pending !== id);
+  persist();
+  return true;
+}
 async function pump() {
   if (running || titleMode || !run || fatal) return;
   running = true;
   const token = epoch;
   let transitions = 0;
   try {
-    while (live(token) && (AUTO.has(run.phase) || run.pendingGrowth)) {
+    while (live(token) && hasAutomaticWork()) {
       if (++transitions > 500)
         throw new Error(
           "The automatic sequence was stopped to prevent an unexpected loop.",
@@ -562,6 +641,16 @@ async function pump() {
       }
       if (run.pendingGrowth && !["battle", "victoryBeat"].includes(run.phase)) {
         if (!await playGrowth(token)) break;
+        render();
+        continue;
+      }
+      if (run.pendingAwakenings?.length) {
+        if (!await playAwakening(token)) break;
+        render();
+        continue;
+      }
+      if (run.regionEntry) {
+        if (!await playRegionEntry(token)) break;
         render();
         continue;
       }
@@ -633,7 +722,7 @@ async function pump() {
       run &&
       !titleMode &&
       !fatal &&
-      (AUTO.has(run.phase) || run.pendingGrowth) &&
+      hasAutomaticWork() &&
       !paused &&
       !document.hidden
     )
@@ -665,7 +754,7 @@ async function dispatch(action, value) {
     openMenu("pause");
     return;
   }
-  if (["help", "upgrades", "journal", "retire", "guide", "partner"].includes(action)) {
+  if (["help", "upgrades", "journal", "retire", "guide", "partner", "builds"].includes(action)) {
     openMenu(action);
     return;
   }
@@ -757,6 +846,14 @@ async function dispatch(action, value) {
     }
     return;
   }
+  if (action === "reroll") {
+    if (E.rerollBonuses(run)) {
+      audio.play("reward");
+      persist();
+      render();
+    }
+    return;
+  }
   if (action === "bonus") {
     if (E.selectBonus(run, value)) {
       audio.play("reward");
@@ -780,6 +877,7 @@ async function dispatch(action, value) {
       audio.play("reward");
       persist();
       render();
+      pump();
     }
     return;
   }
@@ -849,6 +947,9 @@ async function boot() {
       "sanctuary-trail-base",
       "sanctuary-arch",
       "broken-sanctuary-column",
+      "flurry-talons",
+      "briar-bulwark",
+      "lifebloom-vessel",
       "parchment-panel",
       "gold-coins",
       "healing-berry",

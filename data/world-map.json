@@ -229,7 +229,9 @@
           0.46153379534091976,
           0.0525,
           0.045
-        ]
+        ],
+        "layer": "objects",
+        "collisionRole": "base-footprint"
       }
     },
     {
@@ -255,16 +257,18 @@
       "prop": {
         "id": "encounter-prop-4",
         "asset": "rest-spring",
-        "x": 0.28833883616597666,
-        "y": 0.35072928153793925,
+        "x": 0.33577300106850183,
+        "y": 0.6827684358556192,
         "w": 0.16,
         "h": 0.2,
         "collider": [
-          0.23233883616597667,
-          0.32822928153793923,
-          0.11199999999999999,
-          0.045
-        ]
+          0.2677730010685018,
+          0.5427684358556192,
+          0.136,
+          0.13999999999999999
+        ],
+        "layer": "ground",
+        "collisionRole": "ground-footprint"
       }
     },
     {
@@ -310,7 +314,9 @@
           0.3953869502743927,
           0.119,
           0.045
-        ]
+        ],
+        "layer": "objects",
+        "collisionRole": "base-footprint"
       }
     },
     {
@@ -345,7 +351,9 @@
           0.29905541469030145,
           0.0385,
           0.025
-        ]
+        ],
+        "layer": "objects",
+        "collisionRole": "base-footprint"
       }
     },
     {
@@ -371,16 +379,18 @@
       "prop": {
         "id": "encounter-prop-11",
         "asset": "supply-chest",
-        "x": 0.8146720828703241,
-        "y": 0.33739223619496916,
+        "x": 0.6505262119388054,
+        "y": 0.51248116518859,
         "w": 0.075,
         "h": 0.12,
         "collider": [
-          0.7884220828703241,
-          0.31489223619496914,
+          0.6242762119388054,
+          0.48998116518859,
           0.0525,
           0.045
-        ]
+        ],
+        "layer": "objects",
+        "collisionRole": "base-footprint"
       }
     },
     {
@@ -406,16 +416,18 @@
       "prop": {
         "id": "encounter-prop-13",
         "asset": "rest-spring",
-        "x": 0.8061804222794606,
-        "y": 0.35151358574269526,
+        "x": 0.849888286085538,
+        "y": 0.6361003434133735,
         "w": 0.16,
         "h": 0.2,
         "collider": [
-          0.7501804222794606,
-          0.32901358574269524,
-          0.11199999999999999,
-          0.045
-        ]
+          0.7818882860855381,
+          0.4961003434133735,
+          0.136,
+          0.13999999999999999
+        ],
+        "layer": "ground",
+        "collisionRole": "ground-footprint"
       }
     },
     {
@@ -536,7 +548,105 @@
           ]
         }
       ],
-      "preview": "assets/generated/woodland-layered-preview.webp"
+      "preview": "assets/generated/woodland-layered-preview.webp",
+      "encounters": [
+        {
+          "id": "stage-1",
+          "index": 0,
+          "kind": "wild",
+          "center": [
+            0.19296291557552162,
+            0.5879167199775381
+          ],
+          "radius": 0.012,
+          "prop": null
+        },
+        {
+          "id": "stage-2",
+          "index": 1,
+          "kind": "wild",
+          "center": [
+            0.32628616808799704,
+            0.464571277304001
+          ],
+          "radius": 0.012,
+          "prop": null
+        },
+        {
+          "id": "stage-3",
+          "index": 2,
+          "kind": "cache",
+          "center": [
+            0.4929284146238279,
+            0.5268275508241864
+          ],
+          "radius": 0.012,
+          "prop": {
+            "id": "encounter-prop-2",
+            "asset": "supply-chest",
+            "x": 0.4138202063168101,
+            "y": 0.43659512107493564,
+            "w": 0.075,
+            "h": 0.12,
+            "collider": [
+              0.3875702063168101,
+              0.4140951210749356,
+              0.0525,
+              0.045
+            ],
+            "layer": "objects",
+            "collisionRole": "base-footprint"
+          }
+        },
+        {
+          "id": "stage-4",
+          "index": 3,
+          "kind": "elite",
+          "center": [
+            0.6092403727902694,
+            0.38037089601390084
+          ],
+          "radius": 0.012,
+          "prop": null
+        },
+        {
+          "id": "stage-5",
+          "index": 4,
+          "kind": "camp",
+          "center": [
+            0.7599487099532529,
+            0.45057691558117463
+          ],
+          "radius": 0.012,
+          "prop": {
+            "id": "encounter-prop-4",
+            "asset": "rest-spring",
+            "x": 0.7690679250050048,
+            "y": 0.2946383381962315,
+            "w": 0.16,
+            "h": 0.2,
+            "collider": [
+              0.7010679250050047,
+              0.1546383381962315,
+              0.136,
+              0.13999999999999999
+            ],
+            "layer": "ground",
+            "collisionRole": "ground-footprint"
+          }
+        },
+        {
+          "id": "stage-6",
+          "index": 5,
+          "kind": "boss",
+          "center": [
+            0.93,
+            0.42
+          ],
+          "radius": 0.012,
+          "prop": null
+        }
+      ]
     },
     "lake": {
       "base": "assets/generated/lake-trail-base.webp",
@@ -668,6 +778,93 @@
             0.02
           ]
         }
+      ],
+      "encounters": [
+        {
+          "id": "stage-7",
+          "index": 6,
+          "kind": "wild",
+          "center": [
+            0.21680223916203928,
+            0.5589972010474509
+          ],
+          "radius": 0.012,
+          "prop": null
+        },
+        {
+          "id": "stage-8",
+          "index": 7,
+          "kind": "shop",
+          "center": [
+            0.3898728249763856,
+            0.4942875671712651
+          ],
+          "radius": 0.012,
+          "prop": {
+            "id": "encounter-prop-7",
+            "asset": "merchant-cart",
+            "x": 0.45785628372283377,
+            "y": 0.39540253626734123,
+            "w": 0.17,
+            "h": 0.26,
+            "collider": [
+              0.39835628372283377,
+              0.3729025362673412,
+              0.119,
+              0.045
+            ],
+            "layer": "objects",
+            "collisionRole": "base-footprint"
+          }
+        },
+        {
+          "id": "stage-9",
+          "index": 8,
+          "kind": "elite",
+          "center": [
+            0.5662434038420743,
+            0.4417951373684653
+          ],
+          "radius": 0.012,
+          "prop": null
+        },
+        {
+          "id": "stage-10",
+          "index": 9,
+          "kind": "shrine",
+          "center": [
+            0.7325991474045648,
+            0.4249367006917796
+          ],
+          "radius": 0.012,
+          "prop": {
+            "id": "encounter-prop-9",
+            "asset": "affinity-crystal",
+            "x": 0.6505262119388054,
+            "y": 0.51248116518859,
+            "w": 0.055,
+            "h": 0.1,
+            "collider": [
+              0.6312762119388055,
+              0.49998116518859,
+              0.0385,
+              0.025
+            ],
+            "layer": "objects",
+            "collisionRole": "base-footprint"
+          }
+        },
+        {
+          "id": "stage-11",
+          "index": 10,
+          "kind": "wild",
+          "center": [
+            0.93,
+            0.42
+          ],
+          "radius": 0.012,
+          "prop": null
+        }
       ]
     },
     "sanctuary": {
@@ -757,6 +954,82 @@
             0.05,
             0.025
           ]
+        }
+      ],
+      "encounters": [
+        {
+          "id": "stage-12",
+          "index": 11,
+          "kind": "cache",
+          "center": [
+            0.25193095401027765,
+            0.5150863074871529
+          ],
+          "radius": 0.012,
+          "prop": {
+            "id": "encounter-prop-11",
+            "asset": "supply-chest",
+            "x": 0.15822669687711416,
+            "y": 0.4401229017806218,
+            "w": 0.075,
+            "h": 0.12,
+            "collider": [
+              0.13197669687711416,
+              0.4176229017806218,
+              0.0525,
+              0.045
+            ],
+            "layer": "objects",
+            "collisionRole": "base-footprint"
+          }
+        },
+        {
+          "id": "stage-13",
+          "index": 12,
+          "kind": "elite",
+          "center": [
+            0.4929284146238279,
+            0.5268275508241864
+          ],
+          "radius": 0.012,
+          "prop": null
+        },
+        {
+          "id": "stage-14",
+          "index": 13,
+          "kind": "camp",
+          "center": [
+            0.6915748035815327,
+            0.3864763783576869
+          ],
+          "radius": 0.012,
+          "prop": {
+            "id": "encounter-prop-13",
+            "asset": "rest-spring",
+            "x": 0.7109213191827859,
+            "y": 0.2537145151058838,
+            "w": 0.16,
+            "h": 0.2,
+            "collider": [
+              0.6429213191827858,
+              0.11371451510588379,
+              0.136,
+              0.13999999999999999
+            ],
+            "layer": "ground",
+            "collisionRole": "ground-footprint"
+          }
+        },
+        {
+          "id": "stage-15",
+          "index": 14,
+          "kind": "boss",
+          "center": [
+            0.93,
+            0.42
+          ],
+          "radius": 0.012,
+          "prop": null
         }
       ]
     }

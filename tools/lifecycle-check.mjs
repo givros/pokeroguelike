@@ -65,7 +65,10 @@ try {
   await p.locator('[data-action="retry"]').click();
   const fresh = (await state(p)).run;
   await p.locator('[data-action="bonus"]').first().click();
-  await p.waitForTimeout(850);
+  await p.waitForFunction(() => {
+    const run = JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run;
+    return run.phase === "travel" && !run.regionEntry && run.travelProgress > 0;
+  }, {}, { timeout: 8000 });
   const after = (await state(p)).run;
   assert.equal(after.phase, "travel");
   assert.equal(after.actions, 0);
@@ -158,6 +161,7 @@ try {
   moving.starterId = 4;
   E.selectBonus(moving, moving.offers[0]);
   moving.travelProgress = 0.1;
+  moving.regionEntry = null;
   ({ p, c } = await fixture(moving));
   await p.locator('[data-action="pause"]').click();
   const origin = (await state(p)).run.travelProgress;

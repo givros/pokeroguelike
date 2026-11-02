@@ -1,3 +1,5 @@
+import { activeSynergies, awakenedBy } from "./builds.js";
+
 export const STAGES = [
   { kind: "wild", name: "Woodland Edge", pool: [10, 16, 19] },
   { kind: "wild", name: "Wildflower Meadow", pool: [23, 25, 43, 152] },
@@ -351,16 +353,20 @@ export function fighter(id, level, catalogue, upgrades = {}) {
     moves: selected.map((m) => ({ id: m.id, pp: m.pp, maxPp: m.pp })),
     xp: 0,
     guardUsed: false,
+    shield: 0,
   };
 }
-export function offerBonuses(run) {
-  const candidates = BONUSES.filter(
+function eligibleBonuses(run) {
+  return BONUSES.filter(
     (b) =>
       count(run, b.id) < b.max &&
       (b.id !== "pp_boost" ||
         run.hero.hp < run.hero.maxHp ||
         run.hero.moves.some((s) => s.pp < (s.maxPp || 35))),
   );
+ }
+export function offerBonuses(run) {
+  const candidates = eligibleBonuses(run);
   const chosen = [];
   while (candidates.length && chosen.length < 3) {
     chosen.push(
@@ -368,6 +374,26 @@ export function offerBonuses(run) {
     );
   }
   return chosen;
+}
+export function rerollCost(run) {
+  return (run.rerolls || 0) >= 3 ? null : 20 + (run.rerolls || 0) * 15;
+}
+export function canReroll(run) {
+  const cost = rerollCost(run);
+  return ["reward", "shrine"].includes(run.phase) && cost !== null && run.coins >= cost &&
+    eligibleBonuses(run).some((bonus) => !run.offers.includes(bonus.id));
+}
+export function rerollBonuses(run) {
+  if (!canReroll(run)) return false;
+  const cost = rerollCost(run), old = [...run.offers];
+  const alternatives = eligibleBonuses(run).filter((bonus) => !old.includes(bonus.id));
+  const guaranteed = alternatives[Math.floor(random(run) * alternatives.length)].id;
+  const next = offerBonuses(run).filter((id) => id !== guaranteed).slice(0, 2);
+  run.offers = [guaranteed, ...next];
+  run.coins -= cost;
+  run.rerolls = (run.rerolls || 0) + 1;
+  addLog(run, `Reforged the offered boons for ${cost} gold. ${3 - run.rerolls} reforges remain.`);
+  return true;
 }
 export function createRun(id, meta, catalogue, seed = Date.now()) {
   const run = {
@@ -379,11 +405,13 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
     partnerForms: [id],
     phase: "starter",
     stageIndex: 0,
+    routeMode: "regional",
     travelProgress: 0,
     hero: fighter(id, 5, catalogue, meta.permanentUpgrades),
     enemy: null,
     bonuses: [],
     offers: [],
+    rerolls: 0,
     pendingReward: false,
     coins: meta.gold,
     wins: 0,
@@ -392,7 +420,8 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
     nextSide: "ally",
     settled: false,
     log: ["A new expedition begins."],
-    stats: { damage: 0, healing: 0, criticals: 0, encounters: 0 },
+    stats: { damage: 0, healing: 0, criticals: 0, encounters: 0, shielding: 0, absorbed: 0, reflected: 0 },
+    pendingAwakenings: [],
     encounters: [],
     upgrades: { ...meta.permanentUpgrades },
   };
@@ -401,14 +430,10 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
   run.offers = offerBonuses(run);
   return run;
 }
-export function selectBonus(run, id) {
-  if (
-    !["starter", "reward", "shrine"].includes(run.phase) ||
-    !run.offers.includes(id)
-  )
-    return false;
+function grantBonus(run, id) {
   const b = BONUSES.find((b) => b.id === id);
   if (!b || count(run, id) >= b.max) return false;
+  const awakened = awakenedBy(run, id);
   run.bonuses.push(id);
   addLog(run, b.name + " acquired.");
   if (id === "hp_boost") {
@@ -423,18 +448,29 @@ export function selectBonus(run, id) {
       run.hero.hp + Math.ceil(run.hero.maxHp * 0.2),
     );
   }
+  for (const recipe of awakened) {
+    run.pendingAwakenings = [...new Set([...(run.pendingAwakenings || []), recipe.id])];
+    addLog(run, recipe.name + " awakened!");
+  }
+  return true;
+}
+export function selectBonus(run, id) {
+  if (!['starter', 'reward', 'shrine'].includes(run.phase) ||
+    !run.offers.includes(id) || !grantBonus(run, id)) return false;
   const previous = run.phase;
   run.offers = [];
   run.pendingReward = false;
   if (previous === "starter") {
     run.phase = "travel";
     run.travelProgress = 0;
+    if (run.routeMode === "regional") run.regionEntry = region(run).id;
   } else if (previous === "reward") run.phase = "arrival";
   else depart(run);
   return true;
 }
 export function arrive(run, catalogue) {
   if (run.phase !== "travel" || run.travelProgress < 1) return false;
+  run.regionEntry = null;
   if (run.pendingEvolution && run.hero.id === 133) {
     run.phase = "evolution";
     return true;
@@ -531,6 +567,7 @@ export function activateStage(run, catalogue) {
       run.enemy.hp = run.enemy.maxHp;
     }
     run.hero.guardUsed = false;
+    run.hero.shield = 0;
     run.preparedStrike = !!prepared;
     run.scouting = null;
     run.battleActions = 0;
@@ -620,6 +657,7 @@ export function battleStep(run, catalogue) {
     a = player ? run.hero : run.enemy,
     d = player ? run.enemy : run.hero,
     move = bestMove(run, catalogue);
+  const synergies = new Set(activeSynergies(run).map((recipe) => recipe.id));
   const slot = a.moves.find((s) => s.id === move.id);
   if (slot && slot.pp > 0) slot.pp--;
   const crit =
@@ -644,21 +682,45 @@ export function battleStep(run, catalogue) {
     damage *= 1.25;
     run.preparedStrike = false;
   }
-  if (!player && count(run, "first_guard") && !d.guardUsed) {
+  const guarded = !player && count(run, "first_guard") && !d.guardUsed;
+  if (guarded) {
     damage *= 0.5;
     d.guardUsed = true;
   }
   damage = Math.max(1, Math.floor(damage));
-  const actual = Math.min(d.hp, damage);
+  const absorbed = player ? 0 : Math.min(d.shield || 0, damage);
+  if (absorbed) {
+    d.shield -= absorbed;
+    damage -= absorbed;
+    run.stats.absorbed = (run.stats.absorbed || 0) + absorbed;
+  }
+  let actual = Math.min(d.hp, damage);
   d.hp = Math.max(0, d.hp - damage);
-  let healing = 0;
+  const echoDamage = player && synergies.has("flurry") ?
+    Math.min(d.hp, Math.max(1, Math.floor(damage * 0.25))) : 0;
+  d.hp -= echoDamage;
+  actual += echoDamage;
+  const reflectDamage = guarded && synergies.has("bulwark") ?
+    Math.min(a.hp, Math.ceil(a.maxHp * 0.2)) : 0;
+  if (reflectDamage) {
+    a.hp -= reflectDamage;
+    run.stats.reflected = (run.stats.reflected || 0) + reflectDamage;
+    run.stats.damage += reflectDamage;
+  }
+  let healing = 0, shielding = 0;
   if (player && count(run, "lifesteal")) {
+    const recovery = Math.ceil(actual * 0.15 * count(run, "lifesteal"));
     healing = Math.min(
       a.maxHp - a.hp,
-      Math.ceil(actual * 0.15 * count(run, "lifesteal")),
+      recovery,
     );
     a.hp += healing;
     run.stats.healing += healing;
+    if (synergies.has("lifebloom")) {
+      shielding = Math.max(0, Math.min(Math.ceil(a.maxHp * 0.2) - (a.shield || 0), recovery - healing));
+      a.shield = (a.shield || 0) + shielding;
+      run.stats.shielding = (run.stats.shielding || 0) + shielding;
+    }
   }
   if (move.id === 0) a.hp = Math.max(0, a.hp - Math.ceil(a.maxHp * 0.08));
   run.battleActions++;
@@ -671,7 +733,7 @@ export function battleStep(run, catalogue) {
   const eff = effectiveness(move.type, catalogue.pokemon[d.id].types);
   addLog(
     run,
-    `${catalogue.pokemon[a.id].name}: ${move.name}, ${actual} damage${crit ? " — critical hit!" : eff > 1 ? " — super effective!" : eff < 1 ? " — resisted." : "."}${prepared ? " Prepared strike!" : ""}`,
+    `${catalogue.pokemon[a.id].name}: ${move.name}, ${actual} damage${crit ? " — critical hit!" : eff > 1 ? " — super effective!" : eff < 1 ? " — resisted." : "."}${prepared ? " Prepared strike!" : ""}${echoDamage ? ` Echo: ${echoDamage}.` : ""}${absorbed ? ` Barrier absorbed ${absorbed}.` : ""}${reflectDamage ? ` Riposte: ${reflectDamage}.` : ""}`,
   );
   const result = {
     kind: "hit",
@@ -682,6 +744,10 @@ export function battleStep(run, catalogue) {
     crit,
     effectiveness: eff,
     prepared: !!prepared,
+    echoDamage,
+    reflectDamage,
+    shielding,
+    absorbed,
   };
   if (run.hero.hp <= 0) {
     run.phase = "defeat";
@@ -692,6 +758,7 @@ export function battleStep(run, catalogue) {
 function winBattle(run, catalogue) {
   if (run.phase !== "battle") return;
   run.wins++;
+  run.hero.shield = 0;
   const encounter = run.encounters?.at(-1);
   if (encounter?.stage === run.stageIndex) encounter.won = true;
   const node = stage(run),
@@ -734,7 +801,10 @@ export function depart(run) {
     run.phase = "complete";
     return true;
   }
+  const previousRegion = region(run).id;
   run.stageIndex++;
+  if (run.routeMode === "regional" && region(run).id !== previousRegion)
+    run.regionEntry = region(run).id;
   run.phase = "travel";
   run.travelProgress = 0;
   run.enemy = null;
@@ -830,7 +900,7 @@ export function buy(run, key) {
     );
   if (key === "full_heal")
     run.hero.moves.forEach((s) => (s.pp = s.maxPp || 35));
-  if (item.bonus) run.bonuses.push(item.bonus);
+  if (item.bonus) grantBonus(run, item.bonus);
   addLog(run, item.name + " purchased.");
   return true;
 }
@@ -908,9 +978,19 @@ export function pointOnRoute(route, t) {
   }
   return [...route.at(-1)];
 }
+export function routeFraction(run) {
+  const progress = clamp(run.travelProgress, 0, 1);
+  if (run.routeMode === "regional") {
+    const area = region(run);
+    return (run.stageIndex - area.from + progress) / (area.to - area.from + 1);
+  }
+  return (run.stageIndex + progress) / STAGES.length;
+}
 export function travelPosition(run, route) {
-  return pointOnRoute(
-    route,
-    (run.stageIndex + clamp(run.travelProgress, 0, 1)) / STAGES.length,
-  );
+  return pointOnRoute(route, routeFraction(run));
+}
+export function encounterZone(run, world) {
+  return run.routeMode === "regional" ?
+    world.regions?.[region(run).id]?.encounters?.find((node) => node.index === run.stageIndex) :
+    world.encounters[run.stageIndex];
 }

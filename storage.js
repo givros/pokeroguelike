@@ -1,4 +1,5 @@
-import { baseMeta, BONUSES, STAGES, clamp } from "./engine.js";
+import { baseMeta, BONUSES, STAGES, clamp, region } from "./engine.js";
+import { SYNERGIES } from "./builds.js";
 export const SAVE_KEY = "pokeRogueAdventureV3";
 const integer = (n, limit = 1e8) => clamp(Math.floor(Number(n) || 0), 0, limit);
 export function normalizeMeta(source) {
@@ -53,6 +54,7 @@ function validFighter(m, c) {
     Number.isFinite(m.maxHp) &&
     m.maxHp > 0 &&
     m.maxHp < 1e6 &&
+    (m.shield == null || (Number.isInteger(m.shield) && m.shield >= 0 && m.shield <= Math.ceil(m.maxHp * 0.2))) &&
     Number.isInteger(m.xp) &&
     m.xp >= 0 &&
     m.xp < 2 &&
@@ -152,6 +154,7 @@ export function validRun(r, c) {
     !r.offers.every((id) => BONUSES.some((b) => b.id === id))
   )
     return false;
+  if (r.rerolls !== undefined && (!Number.isInteger(r.rerolls) || r.rerolls < 0 || r.rerolls > 3)) return false;
   if (["starter", "reward"].includes(r.phase) && r.offers.length === 0)
     return false;
   if (
@@ -201,6 +204,15 @@ export function validRun(r, c) {
   if (r.pendingGrowth != null && (!c.pokemon[r.pendingGrowth.fromId] ||
     r.pendingGrowth.toId !== r.hero.id || r.pendingGrowth.fromId === r.pendingGrowth.toId))
     return false;
+  if (r.routeMode != null && !["regional", "legacy"].includes(r.routeMode)) return false;
+  if (r.regionEntry != null && (r.routeMode !== "regional" || r.phase !== "travel" ||
+    r.regionEntry !== region(r).id)) return false;
+  if (r.pendingAwakenings != null && (!Array.isArray(r.pendingAwakenings) ||
+    r.pendingAwakenings.length > SYNERGIES.length ||
+    new Set(r.pendingAwakenings).size !== r.pendingAwakenings.length ||
+    !r.pendingAwakenings.every((id) => SYNERGIES.some((recipe) => recipe.id === id)))) return false;
+  for (const key of ["shielding", "absorbed", "reflected"])
+    if (r.stats[key] != null && (!Number.isInteger(r.stats[key]) || r.stats[key] < 0)) return false;
   return true;
 }
 export function readState(storage, catalogue) {

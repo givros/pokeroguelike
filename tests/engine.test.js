@@ -526,10 +526,13 @@ test("normalization rejects nonfinite values, negative balances and excess upgra
 });
 test("all stage triggers lie exactly on the rendered route", () => {
   assert.equal(world.encounters.length, E.STAGES.length);
-  for (const z of world.encounters) {
+  for (const routeMode of ["legacy", "regional"])
+    for (let index = 0; index < E.STAGES.length; index++) {
     const r = initial();
-    r.stageIndex = z.index;
+    r.routeMode = routeMode;
+    r.stageIndex = index;
     r.travelProgress = 1;
+    const z = E.encounterZone(r, world);
     const p = E.travelPosition(r, world.route);
     assert.ok(Math.hypot(p[0] - z.center[0], p[1] - z.center[1]) < z.radius);
     assert.equal(z.kind, E.STAGES[z.index].kind);
@@ -542,6 +545,7 @@ test("the complete route avoids every authored prop collider", () => {
     for (const prop of [
       ...world.props,
       ...Object.values(world.regions || {}).flatMap((r) => r.props),
+      ...Object.values(world.regions || {}).flatMap((r) => r.encounters.map((e) => e.prop).filter(Boolean)),
       ...world.encounters.map((z) => z.prop).filter(Boolean),
     ]) {
       const [cx, cy, w, h] = prop.collider;
@@ -551,6 +555,46 @@ test("the complete route avoids every authored prop collider", () => {
       );
     }
   }
+});
+
+test("regional paths span the full map and legacy saves retain their coordinates", () => {
+  const run = initial();
+  for (const region of E.REGIONS) {
+    run.stageIndex = region.from;
+    run.travelProgress = 0;
+    assert.equal(E.routeFraction(run), 0);
+    assert.deepEqual(E.travelPosition(run, world.route), world.route[0]);
+    run.stageIndex = region.to;
+    run.travelProgress = 1;
+    assert.equal(E.routeFraction(run), 1);
+    assert.deepEqual(E.travelPosition(run, world.route), world.route.at(-1));
+  }
+  run.stageIndex = 8;
+  run.travelProgress = 0.47;
+  delete run.routeMode;
+  assert.equal(E.routeFraction(run), 8.47 / 15);
+  assert.deepEqual(E.encounterZone(run, world), world.encounters[8]);
+  const store = memory();
+  writeState(store, E.baseMeta(), run);
+  assert.deepEqual(readState(store, catalogue).run, run);
+});
+
+test("entering a new region queues one cosmetic introduction without changing rewards", () => {
+  const run = initial();
+  E.selectBonus(run, run.offers[0]);
+  assert.equal(run.regionEntry, "woodland");
+  run.travelProgress = 1;
+  E.arrive(run, catalogue);
+  assert.equal(run.regionEntry, null);
+  run.stageIndex = 5;
+  run.phase = "victoryBeat";
+  const wins = run.wins, coins = run.coins;
+  E.depart(run);
+  assert.equal(run.regionEntry, "lake");
+  assert.equal(run.travelProgress, 0);
+  assert.equal(run.coins, coins);
+  assert.equal(run.wins, wins);
+  assert.equal(E.depart(run), false);
 });
 
 test("every stage has a regional arena and a layered map with real assets", () => {

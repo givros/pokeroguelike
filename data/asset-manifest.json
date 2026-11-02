@@ -48,6 +48,18 @@
     "transparent": true
   },
   {
+    "id": "briar-bulwark",
+    "image": "assets/generated/briar-bulwark.webp",
+    "source": "assets/generated/briar-bulwark.png",
+    "prompt": "assets/generated/briar-bulwark.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      512
+    ],
+    "transparent": true
+  },
+  {
     "id": "broken-sanctuary-column",
     "image": "assets/generated/broken-sanctuary-column.webp",
     "source": "assets/generated/broken-sanctuary-column.png",
@@ -92,6 +104,18 @@
     "size": [
       512,
       345
+    ],
+    "transparent": true
+  },
+  {
+    "id": "flurry-talons",
+    "image": "assets/generated/flurry-talons.webp",
+    "source": "assets/generated/flurry-talons.png",
+    "prompt": "assets/generated/flurry-talons.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      510,
+      512
     ],
     "transparent": true
   },
@@ -200,6 +224,18 @@
     "size": [
       512,
       286
+    ],
+    "transparent": true
+  },
+  {
+    "id": "lifebloom-vessel",
+    "image": "assets/generated/lifebloom-vessel.webp",
+    "source": "assets/generated/lifebloom-vessel.png",
+    "prompt": "assets/generated/lifebloom-vessel.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      509
     ],
     "transparent": true
   },

@@ -1,0 +1,436 @@
+{
+  "id": "woodland-trail",
+  "mapMode": "scene_mode",
+  "visualModel": "layered_raster",
+  "runtimeObjectModel": "y_sorted_props + scene_hooks",
+  "collisionModel": "route_corridor + trigger_zones",
+  "size": {
+    "width": 1672,
+    "height": 941
+  },
+  "base": "assets/generated/woodland-trail-base.webp",
+  "route": [
+    [
+      0.045,
+      0.69
+    ],
+    [
+      0.12,
+      0.67
+    ],
+    [
+      0.2,
+      0.58
+    ],
+    [
+      0.28,
+      0.48
+    ],
+    [
+      0.34,
+      0.46
+    ],
+    [
+      0.42,
+      0.515
+    ],
+    [
+      0.49,
+      0.53
+    ],
+    [
+      0.55,
+      0.465
+    ],
+    [
+      0.62,
+      0.365
+    ],
+    [
+      0.69,
+      0.385
+    ],
+    [
+      0.77,
+      0.46
+    ],
+    [
+      0.84,
+      0.47
+    ],
+    [
+      0.93,
+      0.42
+    ]
+  ],
+  "routeHalfWidth": 0.04,
+  "camera": {
+    "fit": "contain",
+    "bounds": [
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  "props": [
+    {
+      "id": "tree-northwest",
+      "asset": "woodland-tree",
+      "x": 0.095,
+      "y": 0.3,
+      "w": 0.25,
+      "h": 0.34,
+      "collider": [
+        0.07,
+        0.255,
+        0.05,
+        0.055
+      ]
+    },
+    {
+      "id": "tree-northeast",
+      "asset": "woodland-tree",
+      "x": 0.91,
+      "y": 0.25,
+      "w": 0.25,
+      "h": 0.34,
+      "collider": [
+        0.885,
+        0.205,
+        0.05,
+        0.055
+      ]
+    },
+    {
+      "id": "tree-southwest",
+      "asset": "woodland-tree",
+      "x": 0.255,
+      "y": 0.96,
+      "w": 0.29,
+      "h": 0.395,
+      "collider": [
+        0.23,
+        0.915,
+        0.05,
+        0.045
+      ]
+    },
+    {
+      "id": "tree-southeast",
+      "asset": "woodland-tree",
+      "x": 0.965,
+      "y": 1.05,
+      "w": 0.23,
+      "h": 0.32,
+      "collider": [
+        0.94,
+        0.99,
+        0.05,
+        0.045
+      ]
+    },
+    {
+      "id": "rocks-north",
+      "asset": "mossy-rocks",
+      "x": 0.3,
+      "y": 0.29,
+      "w": 0.14,
+      "h": 0.17,
+      "collider": [
+        0.26,
+        0.245,
+        0.08,
+        0.045
+      ]
+    },
+    {
+      "id": "rocks-south",
+      "asset": "mossy-rocks",
+      "x": 0.7,
+      "y": 0.82,
+      "w": 0.17,
+      "h": 0.205,
+      "collider": [
+        0.65,
+        0.765,
+        0.1,
+        0.055
+      ]
+    },
+    {
+      "id": "waypoint",
+      "asset": "trail-sign",
+      "x": 0.795,
+      "y": 0.36,
+      "w": 0.075,
+      "h": 0.21,
+      "collider": [
+        0.78,
+        0.335,
+        0.025,
+        0.025
+      ]
+    }
+  ],
+  "zones": {
+    "arrivalRadius": 0.012,
+    "stageCount": 15,
+    "entry": [
+      0.045,
+      0.69
+    ],
+    "exit": [
+      0.93,
+      0.42
+    ]
+  },
+  "encounters": [
+    {
+      "id": "stage-1",
+      "index": 0,
+      "kind": "wild",
+      "center": [
+        0.11744621046708904,
+        0.6706810105421096
+      ],
+      "radius": 0.012,
+      "prop": null
+    },
+    {
+      "id": "stage-2",
+      "index": 1,
+      "kind": "wild",
+      "center": [
+        0.1680566321645437,
+        0.6159362888148884
+      ],
+      "radius": 0.012,
+      "prop": null
+    },
+    {
+      "id": "stage-3",
+      "index": 2,
+      "kind": "cache",
+      "center": [
+        0.21680223916203928,
+        0.5589972010474509
+      ],
+      "radius": 0.012,
+      "prop": {
+        "id": "encounter-prop-2",
+        "asset": "supply-chest",
+        "x": 0.1230979820288758,
+        "y": 0.4840337953409198,
+        "w": 0.075,
+        "h": 0.12,
+        "collider": [
+          0.0968479820288758,
+          0.46153379534091976,
+          0.0525,
+          0.045
+        ]
+      }
+    },
+    {
+      "id": "stage-4",
+      "index": 3,
+      "kind": "elite",
+      "center": [
+        0.2636405256263571,
+        0.5004493429670536
+      ],
+      "radius": 0.012,
+      "prop": null
+    },
+    {
+      "id": "stage-5",
+      "index": 4,
+      "kind": "camp",
+      "center": [
+        0.32628616808799704,
+        0.464571277304001
+      ],
+      "radius": 0.012,
+      "prop": {
+        "id": "encounter-prop-4",
+        "asset": "rest-spring",
+        "x": 0.28833883616597666,
+        "y": 0.35072928153793925,
+        "w": 0.16,
+        "h": 0.2,
+        "collider": [
+          0.23233883616597667,
+          0.32822928153793923,
+          0.11199999999999999,
+          0.045
+        ]
+      }
+    },
+    {
+      "id": "stage-6",
+      "index": 5,
+      "kind": "boss",
+      "center": [
+        0.3898728249763856,
+        0.4942875671712651
+      ],
+      "radius": 0.012,
+      "prop": null
+    },
+    {
+      "id": "stage-7",
+      "index": 6,
+      "kind": "wild",
+      "center": [
+        0.4575648184620341,
+        0.5230496039561502
+      ],
+      "radius": 0.012,
+      "prop": null
+    },
+    {
+      "id": "stage-8",
+      "index": 7,
+      "kind": "shop",
+      "center": [
+        0.5183564037516675,
+        0.49928056260236026
+      ],
+      "radius": 0.012,
+      "prop": {
+        "id": "encounter-prop-7",
+        "asset": "merchant-cart",
+        "x": 0.4301799903963686,
+        "y": 0.4178869502743927,
+        "w": 0.17,
+        "h": 0.26,
+        "collider": [
+          0.3706799903963686,
+          0.3953869502743927,
+          0.119,
+          0.045
+        ]
+      }
+    },
+    {
+      "id": "stage-9",
+      "index": 8,
+      "kind": "elite",
+      "center": [
+        0.5662434038420743,
+        0.4417951373684653
+      ],
+      "radius": 0.012,
+      "prop": null
+    },
+    {
+      "id": "stage-10",
+      "index": 9,
+      "kind": "shrine",
+      "center": [
+        0.6092403727902694,
+        0.38037089601390084
+      ],
+      "radius": 0.012,
+      "prop": {
+        "id": "encounter-prop-9",
+        "asset": "affinity-crystal",
+        "x": 0.5109325423279846,
+        "y": 0.31155541469030146,
+        "w": 0.055,
+        "h": 0.1,
+        "collider": [
+          0.4916825423279846,
+          0.29905541469030145,
+          0.0385,
+          0.025
+        ]
+      }
+    },
+    {
+      "id": "stage-11",
+      "index": 10,
+      "kind": "wild",
+      "center": [
+        0.6740523303656987,
+        0.3804435229616282
+      ],
+      "radius": 0.012,
+      "prop": null
+    },
+    {
+      "id": "stage-12",
+      "index": 11,
+      "kind": "cache",
+      "center": [
+        0.7325991474045648,
+        0.4249367006917796
+      ],
+      "radius": 0.012,
+      "prop": {
+        "id": "encounter-prop-11",
+        "asset": "supply-chest",
+        "x": 0.8146720828703241,
+        "y": 0.33739223619496916,
+        "w": 0.075,
+        "h": 0.12,
+        "collider": [
+          0.7884220828703241,
+          0.31489223619496914,
+          0.0525,
+          0.045
+        ]
+      }
+    },
+    {
+      "id": "stage-13",
+      "index": 12,
+      "kind": "elite",
+      "center": [
+        0.793472985349245,
+        0.4633532836213207
+      ],
+      "radius": 0.012,
+      "prop": null
+    },
+    {
+      "id": "stage-14",
+      "index": 13,
+      "kind": "camp",
+      "center": [
+        0.8644575740208966,
+        0.45641245887727966
+      ],
+      "radius": 0.012,
+      "prop": {
+        "id": "encounter-prop-13",
+        "asset": "rest-spring",
+        "x": 0.8061804222794606,
+        "y": 0.35151358574269526,
+        "w": 0.16,
+        "h": 0.2,
+        "collider": [
+          0.7501804222794606,
+          0.32901358574269524,
+          0.11199999999999999,
+          0.045
+        ]
+      }
+    },
+    {
+      "id": "stage-15",
+      "index": 14,
+      "kind": "boss",
+      "center": [
+        0.93,
+        0.42
+      ],
+      "radius": 0.012,
+      "prop": null
+    }
+  ],
+  "engineTarget": "project-native",
+  "artStyle": "clean_hd",
+  "preview": "assets/generated/woodland-layered-preview.webp"
+}

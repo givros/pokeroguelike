@@ -1,191 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Combat Pokémon</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="start-screen" id="start-screen">
-        <div class="start-container">
-            <h1 class="game-title">Combat Pokémon</h1>
-            
-            <!-- Stats globales -->
-            <div class="global-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Meilleur Score:</span>
-                    <span class="stat-value" id="best-score">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Victoires Totales:</span>
-                    <span class="stat-value" id="total-victories">0</span>
-                </div>
-                <div class="stat-item gold-item">
-                    <span class="stat-label">Gold:</span>
-                    <div class="gold-value-container">
-                        <span class="stat-value" id="player-gold">0</span>
-                        <span class="gold-icon">💰</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Améliorations permanentes -->
-            <div class="upgrades-section">
-                <h2>Améliorations</h2>
-                <div class="upgrade-grid">
-                    <div class="upgrade-item" onclick="purchaseUpgrade('maxHpBonus')">
-                        <h3>HP Max +5</h3>
-                        <p>Coût: <span class="gold-cost">100 <span class="gold-icon">💰</span></span></p>
-                        <span class="upgrade-level" id="maxHpBonus-upgrade-level">Niv. 0</span>
-                    </div>
-                    <div class="upgrade-item" onclick="purchaseUpgrade('attackBonus')">
-                        <h3>Attaque +3</h3>
-                        <p>Coût: <span class="gold-cost">150 <span class="gold-icon">💰</span></span></p>
-                        <span class="upgrade-level" id="attackBonus-upgrade-level">Niv. 0</span>
-                    </div>
-                    <div class="upgrade-item" onclick="purchaseUpgrade('defenseBonus')">
-                        <h3>Défense +3</h3>
-                        <p>Coût: <span class="gold-cost">150 <span class="gold-icon">💰</span></span></p>
-                        <span class="upgrade-level" id="defenseBonus-upgrade-level">Niv. 0</span>
-                    </div>
-                    <div class="upgrade-item" onclick="purchaseUpgrade('criticalChance')">
-                        <h3>Critique +5%</h3>
-                        <p>Coût: <span class="gold-cost">200 <span class="gold-icon">💰</span></span></p>
-                        <span class="upgrade-level" id="criticalChance-upgrade-level">Niv. 0</span>
-                    </div>
-                </div>
-            </div>
-
-            <h2 class="select-title">Choisissez votre Pokémon</h2>
-            <div class="starter-selection">
-                <div class="starter-pokemon" data-pokemon-id="1">
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png" alt="Bulbizarre">
-                    <h3>Bulbizarre</h3>
-                    <div class="type-tags">
-                        <span class="type-tag grass">Plante</span>
-                        <span class="type-tag poison">Poison</span>
-                    </div>
-                </div>
-                <div class="starter-pokemon" data-pokemon-id="4">
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png" alt="Salamèche">
-                    <h3>Salamèche</h3>
-                    <div class="type-tags">
-                        <span class="type-tag fire">Feu</span>
-                    </div>
-                </div>
-                <div class="starter-pokemon" data-pokemon-id="7">
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png" alt="Carapuce">
-                    <h3>Carapuce</h3>
-                    <div class="type-tags">
-                        <span class="type-tag water">Eau</span>
-                    </div>
-                </div>
-                <!-- Pokémon à débloquer -->
-                <div class="starter-pokemon locked" data-pokemon-id="25">
-                    <div class="lock-overlay">
-                        <span>Débloqué après 10 victoires</span>
-                    </div>
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" alt="Pikachu">
-                    <h3>Pikachu</h3>
-                    <div class="type-tags">
-                        <span class="type-tag electric">Électrik</span>
-                    </div>
-                </div>
-                <div class="starter-pokemon locked" data-pokemon-id="133">
-                    <div class="lock-overlay">
-                        <span>Débloqué après 25 victoires</span>
-                    </div>
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/133.png" alt="Évoli">
-                    <h3>Évoli</h3>
-                    <div class="type-tags">
-                        <span class="type-tag normal">Normal</span>
-                    </div>
-                </div>
-                <div class="starter-pokemon locked" data-pokemon-id="152">
-                    <div class="lock-overlay">
-                        <span>Débloqué après 50 victoires</span>
-                    </div>
-                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/152.png" alt="Germignon">
-                    <h3>Germignon</h3>
-                    <div class="type-tags">
-                        <span class="type-tag grass">Plante</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="battle-scene" id="battle-scene" style="display: none;">
-        <!-- Bandeau de progression -->
-        <div class="progress-banner">
-            <div class="progress-info">
-                <span class="progress-text">Progression:</span>
-                <span id="current-progress">Pokémon #1</span>
-            </div>
-            <div class="score-info">
-                <span class="score-text">Score:</span>
-                <span id="current-score">0</span>
-            </div>
-            <div class="gold-info">
-                <span class="gold-text">Gold:</span>
-                <div class="gold-value-container">
-                    <span id="battle-gold">0</span>
-                    <span class="gold-icon">💰</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pokémon adversaire (en haut à droite) -->
-        <div class="pokemon-battle enemy">
-            <div class="pokemon-info-card">
-                <div class="name-level">
-                    <h3 id="pokemon-name-right"></h3>
-                    <span class="level">Nv. 1</span>
-                </div>
-                <div class="hp-container">
-                    <div class="hp-text">
-                        HP: <span id="current-hp-right">100</span>/<span id="max-hp-right">100</span>
-                    </div>
-                    <div class="hp-bar">
-                        <div class="hp-bar-fill" id="hp-bar-right"></div>
-                    </div>
-                </div>
-            </div>
-            <img id="pokemon-image-right" class="pokemon-sprite enemy-sprite" src="" alt="Pokemon ennemi">
-        </div>
-
-        <!-- Pokémon allié (en bas à gauche) -->
-        <div class="pokemon-battle ally">
-            <img id="pokemon-image-left" class="pokemon-sprite ally-sprite" src="" alt="Pokemon allié">
-            <div class="pokemon-info-card">
-                <div class="name-level">
-                    <h3 id="pokemon-name-left"></h3>
-                    <span class="level">Nv. 1</span>
-                </div>
-                <div class="hp-container">
-                    <div class="hp-text">
-                        HP: <span id="current-hp-left">100</span>/<span id="max-hp-left">100</span>
-                    </div>
-                    <div class="hp-bar">
-                        <div class="hp-bar-fill" id="hp-bar-left"></div>
-                    </div>
-                </div>
-                <!-- Zone d'affichage des bonus actifs -->
-                <div class="active-bonuses" id="active-bonuses">
-                    <!-- Les bonus seront ajoutés dynamiquement ici -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Zone de combat (messages uniquement) -->
-        <div class="battle-controls">
-            <div class="message-box" id="message-box">
-                <p id="battle-message">Que le combat commence !</p>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html> 
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#172f32" />
+    <title>PokéRogue — Le sentier des gardiens</title>
+    <link rel="icon" href="assets/artwork/1.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main id="app" aria-label="PokéRogue">
+      <div class="loading-screen">
+        <h1>POKÉROGUE</h1>
+        <p>Le sentier des gardiens se prépare…</p>
+      </div>
+    </main>
+    <noscript>Activez JavaScript pour jouer.</noscript>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>

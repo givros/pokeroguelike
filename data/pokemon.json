@@ -1,0 +1,1150 @@
+{
+  "1": {
+    "id": 1,
+    "name": "Bulbasaur",
+    "types": [
+      "grass",
+      "poison"
+    ],
+    "stats": {
+      "hp": 45,
+      "attack": 49,
+      "defense": 49,
+      "special-attack": 65,
+      "special-defense": 65,
+      "speed": 45
+    },
+    "learnset": [
+      22,
+      33,
+      75,
+      188,
+      189
+    ],
+    "artwork": "assets/artwork/1.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/1"
+  },
+  "2": {
+    "id": 2,
+    "name": "Ivysaur",
+    "types": [
+      "grass",
+      "poison"
+    ],
+    "stats": {
+      "hp": 60,
+      "attack": 62,
+      "defense": 63,
+      "special-attack": 80,
+      "special-defense": 80,
+      "speed": 60
+    },
+    "learnset": [
+      22,
+      33,
+      75,
+      188,
+      189
+    ],
+    "artwork": "assets/artwork/2.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/2"
+  },
+  "3": {
+    "id": 3,
+    "name": "Venusaur",
+    "types": [
+      "grass",
+      "poison"
+    ],
+    "stats": {
+      "hp": 80,
+      "attack": 82,
+      "defense": 83,
+      "special-attack": 100,
+      "special-defense": 100,
+      "speed": 80
+    },
+    "learnset": [
+      22,
+      33,
+      75,
+      188,
+      189
+    ],
+    "artwork": "assets/artwork/3.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/3"
+  },
+  "4": {
+    "id": 4,
+    "name": "Charmander",
+    "types": [
+      "fire"
+    ],
+    "stats": {
+      "hp": 39,
+      "attack": 52,
+      "defense": 43,
+      "special-attack": 60,
+      "special-defense": 50,
+      "speed": 65
+    },
+    "learnset": [
+      44,
+      52,
+      53,
+      189,
+      225,
+      232,
+      246
+    ],
+    "artwork": "assets/artwork/4.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/4"
+  },
+  "5": {
+    "id": 5,
+    "name": "Charmeleon",
+    "types": [
+      "fire"
+    ],
+    "stats": {
+      "hp": 58,
+      "attack": 64,
+      "defense": 58,
+      "special-attack": 80,
+      "special-defense": 65,
+      "speed": 80
+    },
+    "learnset": [
+      44,
+      52,
+      53,
+      189,
+      225,
+      232,
+      246
+    ],
+    "artwork": "assets/artwork/5.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/5"
+  },
+  "6": {
+    "id": 6,
+    "name": "Charizard",
+    "types": [
+      "fire",
+      "flying"
+    ],
+    "stats": {
+      "hp": 78,
+      "attack": 84,
+      "defense": 78,
+      "special-attack": 109,
+      "special-defense": 85,
+      "speed": 100
+    },
+    "learnset": [
+      44,
+      52,
+      53,
+      189,
+      225,
+      232,
+      246
+    ],
+    "artwork": "assets/artwork/6.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/6"
+  },
+  "7": {
+    "id": 7,
+    "name": "Squirtle",
+    "types": [
+      "water"
+    ],
+    "stats": {
+      "hp": 44,
+      "attack": 48,
+      "defense": 65,
+      "special-attack": 50,
+      "special-defense": 64,
+      "speed": 43
+    },
+    "learnset": [
+      33,
+      44,
+      55,
+      58,
+      93,
+      189
+    ],
+    "artwork": "assets/artwork/7.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/7"
+  },
+  "8": {
+    "id": 8,
+    "name": "Wartortle",
+    "types": [
+      "water"
+    ],
+    "stats": {
+      "hp": 59,
+      "attack": 63,
+      "defense": 80,
+      "special-attack": 65,
+      "special-defense": 80,
+      "speed": 58
+    },
+    "learnset": [
+      33,
+      44,
+      55,
+      58,
+      189
+    ],
+    "artwork": "assets/artwork/8.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/8"
+  },
+  "9": {
+    "id": 9,
+    "name": "Blastoise",
+    "types": [
+      "water"
+    ],
+    "stats": {
+      "hp": 79,
+      "attack": 83,
+      "defense": 100,
+      "special-attack": 85,
+      "special-defense": 105,
+      "speed": 78
+    },
+    "learnset": [
+      33,
+      44,
+      55,
+      58,
+      189
+    ],
+    "artwork": "assets/artwork/9.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/9"
+  },
+  "10": {
+    "id": 10,
+    "name": "Caterpie",
+    "types": [
+      "bug"
+    ],
+    "stats": {
+      "hp": 45,
+      "attack": 30,
+      "defense": 35,
+      "special-attack": 20,
+      "special-defense": 20,
+      "speed": 45
+    },
+    "learnset": [
+      33,
+      450
+    ],
+    "artwork": "assets/artwork/10.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/10"
+  },
+  "12": {
+    "id": 12,
+    "name": "Butterfree",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "stats": {
+      "hp": 60,
+      "attack": 45,
+      "defense": 50,
+      "special-attack": 90,
+      "special-defense": 80,
+      "speed": 70
+    },
+    "learnset": [
+      16,
+      33,
+      93,
+      450
+    ],
+    "artwork": "assets/artwork/12.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/12"
+  },
+  "16": {
+    "id": 16,
+    "name": "Pidgey",
+    "types": [
+      "normal",
+      "flying"
+    ],
+    "stats": {
+      "hp": 40,
+      "attack": 45,
+      "defense": 40,
+      "special-attack": 35,
+      "special-defense": 35,
+      "speed": 56
+    },
+    "learnset": [
+      16,
+      33,
+      98,
+      189
+    ],
+    "artwork": "assets/artwork/16.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/16"
+  },
+  "19": {
+    "id": 19,
+    "name": "Rattata",
+    "types": [
+      "normal"
+    ],
+    "stats": {
+      "hp": 30,
+      "attack": 56,
+      "defense": 35,
+      "special-attack": 25,
+      "special-defense": 35,
+      "speed": 72
+    },
+    "learnset": [
+      33,
+      44,
+      55,
+      58,
+      98,
+      188,
+      189
+    ],
+    "artwork": "assets/artwork/19.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/19"
+  },
+  "23": {
+    "id": 23,
+    "name": "Ekans",
+    "types": [
+      "poison"
+    ],
+    "stats": {
+      "hp": 35,
+      "attack": 60,
+      "defense": 44,
+      "special-attack": 40,
+      "special-defense": 54,
+      "speed": 55
+    },
+    "learnset": [
+      40,
+      44,
+      188,
+      189
+    ],
+    "artwork": "assets/artwork/23.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/23"
+  },
+  "25": {
+    "id": 25,
+    "name": "Pikachu",
+    "types": [
+      "electric"
+    ],
+    "stats": {
+      "hp": 35,
+      "attack": 55,
+      "defense": 40,
+      "special-attack": 50,
+      "special-defense": 50,
+      "speed": 90
+    },
+    "learnset": [
+      84,
+      98,
+      189
+    ],
+    "artwork": "assets/artwork/25.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/25"
+  },
+  "27": {
+    "id": 27,
+    "name": "Sandshrew",
+    "types": [
+      "ground"
+    ],
+    "stats": {
+      "hp": 50,
+      "attack": 75,
+      "defense": 85,
+      "special-attack": 20,
+      "special-defense": 30,
+      "speed": 40
+    },
+    "learnset": [
+      40,
+      67,
+      189,
+      232
+    ],
+    "artwork": "assets/artwork/27.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/27"
+  },
+  "37": {
+    "id": 37,
+    "name": "Vulpix",
+    "types": [
+      "fire"
+    ],
+    "stats": {
+      "hp": 38,
+      "attack": 41,
+      "defense": 40,
+      "special-attack": 50,
+      "special-defense": 65,
+      "speed": 65
+    },
+    "learnset": [
+      33,
+      52,
+      53,
+      98
+    ],
+    "artwork": "assets/artwork/37.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/37"
+  },
+  "39": {
+    "id": 39,
+    "name": "Jigglypuff",
+    "types": [
+      "normal",
+      "fairy"
+    ],
+    "stats": {
+      "hp": 115,
+      "attack": 45,
+      "defense": 20,
+      "special-attack": 45,
+      "special-defense": 25,
+      "speed": 20
+    },
+    "learnset": [
+      53,
+      55,
+      58,
+      189
+    ],
+    "artwork": "assets/artwork/39.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/39"
+  },
+  "41": {
+    "id": 41,
+    "name": "Zubat",
+    "types": [
+      "poison",
+      "flying"
+    ],
+    "stats": {
+      "hp": 40,
+      "attack": 45,
+      "defense": 35,
+      "special-attack": 30,
+      "special-defense": 40,
+      "speed": 55
+    },
+    "learnset": [
+      16,
+      44,
+      98,
+      188
+    ],
+    "artwork": "assets/artwork/41.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/41"
+  },
+  "43": {
+    "id": 43,
+    "name": "Oddish",
+    "types": [
+      "grass",
+      "poison"
+    ],
+    "stats": {
+      "hp": 45,
+      "attack": 50,
+      "defense": 55,
+      "special-attack": 75,
+      "special-defense": 65,
+      "speed": 30
+    },
+    "learnset": [
+      75,
+      188
+    ],
+    "artwork": "assets/artwork/43.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/43"
+  },
+  "50": {
+    "id": 50,
+    "name": "Diglett",
+    "types": [
+      "ground"
+    ],
+    "stats": {
+      "hp": 10,
+      "attack": 55,
+      "defense": 25,
+      "special-attack": 35,
+      "special-defense": 45,
+      "speed": 95
+    },
+    "learnset": [
+      188,
+      189,
+      246
+    ],
+    "artwork": "assets/artwork/50.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/50"
+  },
+  "52": {
+    "id": 52,
+    "name": "Meowth",
+    "types": [
+      "normal"
+    ],
+    "stats": {
+      "hp": 40,
+      "attack": 45,
+      "defense": 35,
+      "special-attack": 40,
+      "special-defense": 40,
+      "speed": 90
+    },
+    "learnset": [
+      44,
+      55,
+      189,
+      232
+    ],
+    "artwork": "assets/artwork/52.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/52"
+  },
+  "54": {
+    "id": 54,
+    "name": "Psyduck",
+    "types": [
+      "water"
+    ],
+    "stats": {
+      "hp": 50,
+      "attack": 52,
+      "defense": 48,
+      "special-attack": 65,
+      "special-defense": 50,
+      "speed": 55
+    },
+    "learnset": [
+      55,
+      58,
+      67,
+      93,
+      189
+    ],
+    "artwork": "assets/artwork/54.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/54"
+  },
+  "58": {
+    "id": 58,
+    "name": "Growlithe",
+    "types": [
+      "fire"
+    ],
+    "stats": {
+      "hp": 55,
+      "attack": 70,
+      "defense": 45,
+      "special-attack": 70,
+      "special-defense": 50,
+      "speed": 60
+    },
+    "learnset": [
+      44,
+      52,
+      53,
+      189,
+      225
+    ],
+    "artwork": "assets/artwork/58.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/58"
+  },
+  "63": {
+    "id": 63,
+    "name": "Abra",
+    "types": [
+      "psychic"
+    ],
+    "stats": {
+      "hp": 25,
+      "attack": 20,
+      "defense": 15,
+      "special-attack": 105,
+      "special-defense": 55,
+      "speed": 90
+    },
+    "learnset": [
+      93
+    ],
+    "artwork": "assets/artwork/63.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/63"
+  },
+  "66": {
+    "id": 66,
+    "name": "Machop",
+    "types": [
+      "fighting"
+    ],
+    "stats": {
+      "hp": 70,
+      "attack": 80,
+      "defense": 50,
+      "special-attack": 35,
+      "special-defense": 35,
+      "speed": 35
+    },
+    "learnset": [
+      33,
+      53,
+      67,
+      189
+    ],
+    "artwork": "assets/artwork/66.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/66"
+  },
+  "74": {
+    "id": 74,
+    "name": "Geodude",
+    "types": [
+      "rock",
+      "ground"
+    ],
+    "stats": {
+      "hp": 40,
+      "attack": 80,
+      "defense": 100,
+      "special-attack": 30,
+      "special-defense": 30,
+      "speed": 20
+    },
+    "learnset": [
+      33,
+      53,
+      88,
+      189,
+      246
+    ],
+    "artwork": "assets/artwork/74.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/74"
+  },
+  "81": {
+    "id": 81,
+    "name": "Magnemite",
+    "types": [
+      "electric",
+      "steel"
+    ],
+    "stats": {
+      "hp": 25,
+      "attack": 35,
+      "defense": 70,
+      "special-attack": 95,
+      "special-defense": 55,
+      "speed": 45
+    },
+    "learnset": [
+      33,
+      84
+    ],
+    "artwork": "assets/artwork/81.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/81"
+  },
+  "92": {
+    "id": 92,
+    "name": "Gastly",
+    "types": [
+      "ghost",
+      "poison"
+    ],
+    "stats": {
+      "hp": 30,
+      "attack": 35,
+      "defense": 30,
+      "special-attack": 100,
+      "special-defense": 35,
+      "speed": 80
+    },
+    "learnset": [
+      122,
+      188
+    ],
+    "artwork": "assets/artwork/92.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/92"
+  },
+  "95": {
+    "id": 95,
+    "name": "Onix",
+    "types": [
+      "rock",
+      "ground"
+    ],
+    "stats": {
+      "hp": 35,
+      "attack": 45,
+      "defense": 160,
+      "special-attack": 30,
+      "special-defense": 45,
+      "speed": 70
+    },
+    "learnset": [
+      33,
+      88,
+      189,
+      225,
+      246
+    ],
+    "artwork": "assets/artwork/95.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/95"
+  },
+  "104": {
+    "id": 104,
+    "name": "Cubone",
+    "types": [
+      "ground"
+    ],
+    "stats": {
+      "hp": 50,
+      "attack": 50,
+      "defense": 95,
+      "special-attack": 40,
+      "special-defense": 50,
+      "speed": 35
+    },
+    "learnset": [
+      53,
+      55,
+      58,
+      67,
+      189,
+      246
+    ],
+    "artwork": "assets/artwork/104.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/104"
+  },
+  "111": {
+    "id": 111,
+    "name": "Rhyhorn",
+    "types": [
+      "ground",
+      "rock"
+    ],
+    "stats": {
+      "hp": 80,
+      "attack": 85,
+      "defense": 95,
+      "special-attack": 30,
+      "special-defense": 30,
+      "speed": 25
+    },
+    "learnset": [
+      33,
+      53,
+      58,
+      88,
+      189,
+      246
+    ],
+    "artwork": "assets/artwork/111.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/111"
+  },
+  "123": {
+    "id": 123,
+    "name": "Scyther",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "stats": {
+      "hp": 70,
+      "attack": 110,
+      "defense": 80,
+      "special-attack": 55,
+      "special-defense": 80,
+      "speed": 105
+    },
+    "learnset": [
+      98,
+      450
+    ],
+    "artwork": "assets/artwork/123.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/123"
+  },
+  "129": {
+    "id": 129,
+    "name": "Magikarp",
+    "types": [
+      "water"
+    ],
+    "stats": {
+      "hp": 20,
+      "attack": 10,
+      "defense": 55,
+      "special-attack": 15,
+      "special-defense": 20,
+      "speed": 80
+    },
+    "learnset": [
+      33
+    ],
+    "artwork": "assets/artwork/129.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/129"
+  },
+  "130": {
+    "id": 130,
+    "name": "Gyarados",
+    "types": [
+      "water",
+      "flying"
+    ],
+    "stats": {
+      "hp": 95,
+      "attack": 125,
+      "defense": 79,
+      "special-attack": 60,
+      "special-defense": 100,
+      "speed": 81
+    },
+    "learnset": [
+      33,
+      44,
+      53,
+      55,
+      58,
+      225
+    ],
+    "artwork": "assets/artwork/130.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/130"
+  },
+  "131": {
+    "id": 131,
+    "name": "Lapras",
+    "types": [
+      "water",
+      "ice"
+    ],
+    "stats": {
+      "hp": 130,
+      "attack": 85,
+      "defense": 80,
+      "special-attack": 85,
+      "special-defense": 95,
+      "speed": 60
+    },
+    "learnset": [
+      55,
+      58,
+      225,
+      246
+    ],
+    "artwork": "assets/artwork/131.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/131"
+  },
+  "133": {
+    "id": 133,
+    "name": "Eevee",
+    "types": [
+      "normal"
+    ],
+    "stats": {
+      "hp": 55,
+      "attack": 55,
+      "defense": 50,
+      "special-attack": 45,
+      "special-defense": 65,
+      "speed": 55
+    },
+    "learnset": [
+      33,
+      44,
+      98,
+      189
+    ],
+    "artwork": "assets/artwork/133.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/133"
+  },
+  "143": {
+    "id": 143,
+    "name": "Snorlax",
+    "types": [
+      "normal"
+    ],
+    "stats": {
+      "hp": 160,
+      "attack": 110,
+      "defense": 65,
+      "special-attack": 65,
+      "special-defense": 110,
+      "speed": 30
+    },
+    "learnset": [
+      33,
+      44,
+      53,
+      55,
+      58,
+      122,
+      189
+    ],
+    "artwork": "assets/artwork/143.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/143"
+  },
+  "147": {
+    "id": 147,
+    "name": "Dratini",
+    "types": [
+      "dragon"
+    ],
+    "stats": {
+      "hp": 41,
+      "attack": 64,
+      "defense": 45,
+      "special-attack": 50,
+      "special-defense": 50,
+      "speed": 50
+    },
+    "learnset": [
+      53,
+      55,
+      58,
+      225
+    ],
+    "artwork": "assets/artwork/147.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/147"
+  },
+  "149": {
+    "id": 149,
+    "name": "Dragonite",
+    "types": [
+      "dragon",
+      "flying"
+    ],
+    "stats": {
+      "hp": 91,
+      "attack": 134,
+      "defense": 95,
+      "special-attack": 100,
+      "special-defense": 100,
+      "speed": 80
+    },
+    "learnset": [
+      53,
+      55,
+      58,
+      67,
+      189,
+      225
+    ],
+    "artwork": "assets/artwork/149.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/149"
+  },
+  "150": {
+    "id": 150,
+    "name": "Mewtwo",
+    "types": [
+      "psychic"
+    ],
+    "stats": {
+      "hp": 106,
+      "attack": 110,
+      "defense": 90,
+      "special-attack": 154,
+      "special-defense": 90,
+      "speed": 130
+    },
+    "learnset": [
+      53,
+      55,
+      58,
+      67,
+      93,
+      189,
+      246
+    ],
+    "artwork": "assets/artwork/150.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/150"
+  },
+  "152": {
+    "id": 152,
+    "name": "Chikorita",
+    "types": [
+      "grass"
+    ],
+    "stats": {
+      "hp": 45,
+      "attack": 49,
+      "defense": 65,
+      "special-attack": 49,
+      "special-defense": 65,
+      "speed": 45
+    },
+    "learnset": [
+      22,
+      33,
+      75,
+      189,
+      246
+    ],
+    "artwork": "assets/artwork/152.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/152"
+  },
+  "26": {
+    "id": 26,
+    "name": "Raichu",
+    "types": [
+      "electric"
+    ],
+    "stats": {
+      "hp": 60,
+      "attack": 90,
+      "defense": 55,
+      "special-attack": 90,
+      "special-defense": 80,
+      "speed": 110
+    },
+    "learnset": [
+      84,
+      98,
+      189
+    ],
+    "artwork": "assets/artwork/26.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/26"
+  },
+  "134": {
+    "id": 134,
+    "name": "Vaporeon",
+    "types": [
+      "water"
+    ],
+    "stats": {
+      "hp": 130,
+      "attack": 65,
+      "defense": 60,
+      "special-attack": 110,
+      "special-defense": 95,
+      "speed": 65
+    },
+    "learnset": [
+      33,
+      44,
+      55,
+      58,
+      98,
+      189
+    ],
+    "artwork": "assets/artwork/134.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/134"
+  },
+  "135": {
+    "id": 135,
+    "name": "Jolteon",
+    "types": [
+      "electric"
+    ],
+    "stats": {
+      "hp": 65,
+      "attack": 65,
+      "defense": 60,
+      "special-attack": 110,
+      "special-defense": 95,
+      "speed": 130
+    },
+    "learnset": [
+      33,
+      44,
+      84,
+      98,
+      189
+    ],
+    "artwork": "assets/artwork/135.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/135"
+  },
+  "136": {
+    "id": 136,
+    "name": "Flareon",
+    "types": [
+      "fire"
+    ],
+    "stats": {
+      "hp": 65,
+      "attack": 130,
+      "defense": 60,
+      "special-attack": 95,
+      "special-defense": 110,
+      "speed": 65
+    },
+    "learnset": [
+      33,
+      44,
+      52,
+      53,
+      98,
+      189
+    ],
+    "artwork": "assets/artwork/136.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/136"
+  },
+  "153": {
+    "id": 153,
+    "name": "Bayleef",
+    "types": [
+      "grass"
+    ],
+    "stats": {
+      "hp": 60,
+      "attack": 62,
+      "defense": 80,
+      "special-attack": 63,
+      "special-defense": 80,
+      "speed": 60
+    },
+    "learnset": [
+      22,
+      33,
+      75,
+      189,
+      246
+    ],
+    "artwork": "assets/artwork/153.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/153"
+  },
+  "154": {
+    "id": 154,
+    "name": "Meganium",
+    "types": [
+      "grass"
+    ],
+    "stats": {
+      "hp": 80,
+      "attack": 82,
+      "defense": 100,
+      "special-attack": 83,
+      "special-defense": 100,
+      "speed": 80
+    },
+    "learnset": [
+      22,
+      33,
+      75,
+      189,
+      246
+    ],
+    "artwork": "assets/artwork/154.png",
+    "source": "https://pokeapi.co/api/v2/pokemon/154"
+  }
+}

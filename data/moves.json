@@ -1,0 +1,209 @@
+{
+  "33": {
+    "id": 33,
+    "name": "Tackle",
+    "power": 40,
+    "type": "normal",
+    "damageClass": "physical",
+    "pp": 35,
+    "source": "https://pokeapi.co/api/v2/move/33"
+  },
+  "52": {
+    "id": 52,
+    "name": "Ember",
+    "power": 40,
+    "type": "fire",
+    "damageClass": "special",
+    "pp": 25,
+    "source": "https://pokeapi.co/api/v2/move/52"
+  },
+  "55": {
+    "id": 55,
+    "name": "Water Gun",
+    "power": 40,
+    "type": "water",
+    "damageClass": "special",
+    "pp": 25,
+    "source": "https://pokeapi.co/api/v2/move/55"
+  },
+  "22": {
+    "id": 22,
+    "name": "Vine Whip",
+    "power": 45,
+    "type": "grass",
+    "damageClass": "physical",
+    "pp": 25,
+    "source": "https://pokeapi.co/api/v2/move/22"
+  },
+  "84": {
+    "id": 84,
+    "name": "Thunder Shock",
+    "power": 40,
+    "type": "electric",
+    "damageClass": "special",
+    "pp": 30,
+    "source": "https://pokeapi.co/api/v2/move/84"
+  },
+  "98": {
+    "id": 98,
+    "name": "Quick Attack",
+    "power": 40,
+    "type": "normal",
+    "damageClass": "physical",
+    "pp": 30,
+    "source": "https://pokeapi.co/api/v2/move/98"
+  },
+  "40": {
+    "id": 40,
+    "name": "Poison Sting",
+    "power": 15,
+    "type": "poison",
+    "damageClass": "physical",
+    "pp": 35,
+    "source": "https://pokeapi.co/api/v2/move/40"
+  },
+  "16": {
+    "id": 16,
+    "name": "Gust",
+    "power": 40,
+    "type": "flying",
+    "damageClass": "special",
+    "pp": 35,
+    "source": "https://pokeapi.co/api/v2/move/16"
+  },
+  "450": {
+    "id": 450,
+    "name": "Bug Bite",
+    "power": 60,
+    "type": "bug",
+    "damageClass": "physical",
+    "pp": 20,
+    "source": "https://pokeapi.co/api/v2/move/450"
+  },
+  "88": {
+    "id": 88,
+    "name": "Rock Throw",
+    "power": 50,
+    "type": "rock",
+    "damageClass": "physical",
+    "pp": 15,
+    "source": "https://pokeapi.co/api/v2/move/88"
+  },
+  "189": {
+    "id": 189,
+    "name": "Mud Slap",
+    "power": 20,
+    "type": "ground",
+    "damageClass": "special",
+    "pp": 10,
+    "source": "https://pokeapi.co/api/v2/move/189"
+  },
+  "93": {
+    "id": 93,
+    "name": "Confusion",
+    "power": 50,
+    "type": "psychic",
+    "damageClass": "special",
+    "pp": 25,
+    "source": "https://pokeapi.co/api/v2/move/93"
+  },
+  "122": {
+    "id": 122,
+    "name": "Lick",
+    "power": 30,
+    "type": "ghost",
+    "damageClass": "physical",
+    "pp": 30,
+    "source": "https://pokeapi.co/api/v2/move/122"
+  },
+  "67": {
+    "id": 67,
+    "name": "Low Kick",
+    "power": 40,
+    "type": "fighting",
+    "damageClass": "physical",
+    "pp": 20,
+    "source": "https://pokeapi.co/api/v2/move/67"
+  },
+  "225": {
+    "id": 225,
+    "name": "Dragon Breath",
+    "power": 60,
+    "type": "dragon",
+    "damageClass": "special",
+    "pp": 20,
+    "source": "https://pokeapi.co/api/v2/move/225"
+  },
+  "181": {
+    "id": 181,
+    "name": "Powder Snow",
+    "power": 40,
+    "type": "ice",
+    "damageClass": "special",
+    "pp": 25,
+    "source": "https://pokeapi.co/api/v2/move/181"
+  },
+  "232": {
+    "id": 232,
+    "name": "Metal Claw",
+    "power": 50,
+    "type": "steel",
+    "damageClass": "physical",
+    "pp": 35,
+    "source": "https://pokeapi.co/api/v2/move/232"
+  },
+  "44": {
+    "id": 44,
+    "name": "Bite",
+    "power": 60,
+    "type": "dark",
+    "damageClass": "physical",
+    "pp": 25,
+    "source": "https://pokeapi.co/api/v2/move/44"
+  },
+  "188": {
+    "id": 188,
+    "name": "Sludge Bomb",
+    "power": 90,
+    "type": "poison",
+    "damageClass": "special",
+    "pp": 10,
+    "source": "https://pokeapi.co/api/v2/move/188"
+  },
+  "58": {
+    "id": 58,
+    "name": "Ice Beam",
+    "power": 90,
+    "type": "ice",
+    "damageClass": "special",
+    "pp": 10,
+    "source": "https://pokeapi.co/api/v2/move/58"
+  },
+  "53": {
+    "id": 53,
+    "name": "Flamethrower",
+    "power": 90,
+    "type": "fire",
+    "damageClass": "special",
+    "pp": 15,
+    "source": "https://pokeapi.co/api/v2/move/53"
+  },
+  "75": {
+    "id": 75,
+    "name": "Razor Leaf",
+    "power": 55,
+    "type": "grass",
+    "damageClass": "physical",
+    "pp": 25,
+    "source": "https://pokeapi.co/api/v2/move/75"
+  },
+  "246": {
+    "id": 246,
+    "name": "Ancient Power",
+    "power": 60,
+    "type": "rock",
+    "damageClass": "special",
+    "pp": 5,
+    "source": "https://pokeapi.co/api/v2/move/246"
+  }
+}

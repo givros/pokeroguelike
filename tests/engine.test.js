@@ -1,0 +1,455 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, existsSync } from "node:fs";
+import * as E from "../engine.js";
+import {
+  readState,
+  writeState,
+  validRun,
+  normalizeMeta,
+  SAVE_KEY,
+} from "../storage.js";
+import { simulate } from "../tools/simulate.mjs";
+const catalogue = {
+  pokemon: JSON.parse(readFileSync("data/pokemon.json")),
+  moves: JSON.parse(readFileSync("data/moves.json")),
+};
+const world = JSON.parse(readFileSync("data/world-map.json"));
+const initial = (id = 7, seed = 2026) =>
+  E.createRun(id, E.baseMeta(), catalogue, seed);
+function battle(id = 7) {
+  const r = initial(id);
+  E.selectBonus(r, r.offers[0]);
+  r.travelProgress = 1;
+  E.arrive(r, catalogue);
+  E.activateStage(r, catalogue);
+  return r;
+}
+const memory = () => {
+  const m = new Map();
+  return { getItem: (k) => m.get(k) || null, setItem: (k, v) => m.set(k, v) };
+};
+test("the same seed produces the same automatic campaign", () => {
+  assert.deepEqual(simulate(2026, 4), simulate(2026, 4));
+});
+test("every starter can complete a finite campaign without permanent upgrades", () => {
+  for (const id of [1, 4, 7, 25, 133, 152]) {
+    const result = simulate(2026, id);
+    assert.equal(result.phase, "complete");
+    assert.equal(result.stage, 15);
+    assert.ok(result.actions < 9 * 81);
+  }
+});
+test("1200 seeded expeditions all terminate with no unhandled state", () => {
+  let complete = 0;
+  for (const id of [1, 4, 7, 25, 133, 152])
+    for (let i = 0; i < 200; i++) {
+      const r = simulate(i * 9001 + 2026, id);
+      assert.ok(["complete", "defeat"].includes(r.phase));
+      assert.ok(r.transitions < 3000);
+      assert.ok(r.actions <= 9 * 81);
+      if (r.phase === "complete") complete++;
+    }
+  assert.ok(complete > 100);
+});
+test("type effectiveness handles double weakness, resistance and immunity", () => {
+  assert.equal(E.effectiveness("fire", ["grass", "bug"]), 4);
+  assert.equal(E.effectiveness("grass", ["fire", "flying"]), 0.25);
+  assert.equal(E.effectiveness("electric", ["ground"]), 0);
+  assert.equal(E.effectiveness("neutral", ["ghost"]), 1);
+});
+test("moves come from each real species learnset and have finite PP", () => {
+  for (const s of Object.values(catalogue.pokemon)) {
+    const f = E.fighter(s.id, 10, catalogue);
+    assert.ok(f.moves.length > 0 && f.moves.length <= 4);
+    for (const slot of f.moves) {
+      assert.ok(slot.id === 0 || s.learnset.includes(slot.id));
+      assert.equal(slot.pp, slot.maxPp);
+      assert.ok(slot.pp > 0);
+    }
+  }
+});
+test("unusable PP falls back to Struggle and makes progress", () => {
+  const r = battle();
+  r.hero.moves.forEach((m) => (m.pp = 0));
+  assert.equal(E.bestMove(r, catalogue).id, 0);
+  const hp = r.enemy.hp;
+  E.battleStep(r, catalogue);
+  assert.ok(r.enemy.hp < hp);
+});
+test("an entirely immune move set also falls back to typeless Struggle", () => {
+  const r = battle();
+  r.enemy = E.fighter(92, 5, catalogue);
+  r.hero.moves = [{ id: 33, pp: 20, maxPp: 35 }];
+  assert.equal(E.bestMove(r, catalogue).id, 0);
+  const hp = r.enemy.hp;
+  E.battleStep(r, catalogue);
+  assert.ok(r.enemy.hp < hp);
+});
+test("a battle hard limit ends even deliberately impossible HP fixtures", () => {
+  const r = battle();
+  r.hero.hp = r.hero.maxHp = 1e6;
+  r.enemy.hp = r.enemy.maxHp = 1e6;
+  for (let i = 0; i < 100; i++) {
+    E.battleStep(r, catalogue);
+    if (r.phase !== "battle") break;
+  }
+  assert.equal(r.phase, "defeat");
+  assert.equal(r.battleActions, 80);
+});
+test("victory rewards cannot be applied twice", () => {
+  const r = battle();
+  r.enemy.hp = 1;
+  E.battleStep(r, catalogue);
+  assert.equal(r.phase, "victoryBeat");
+  const before = structuredClone(r);
+  assert.equal(E.battleStep(r, catalogue), null);
+  assert.deepEqual(r, before);
+});
+test("departing a completed encounter is atomic", () => {
+  const r = battle();
+  r.enemy.hp = 1;
+  E.battleStep(r, catalogue);
+  assert.ok(E.depart(r));
+  assert.equal(r.stageIndex, 1);
+  assert.equal(r.phase, "travel");
+  assert.equal(r.travelProgress, 0);
+  assert.equal(E.depart(r), false);
+  assert.equal(r.stageIndex, 1);
+});
+test("travel has a real destination trigger before the next stage activates", () => {
+  const r = initial();
+  E.selectBonus(r, r.offers[0]);
+  assert.equal(E.arrive(r, catalogue), false);
+  r.travelProgress = 1;
+  assert.ok(E.arrive(r, catalogue));
+  assert.equal(r.phase, "arrival");
+  assert.equal(E.arrive(r, catalogue), false);
+});
+test("victory starts travel before offering the next bonus at arrival", () => {
+  const r = battle();
+  r.enemy.hp = 1;
+  E.battleStep(r, catalogue);
+  E.depart(r);
+  assert.equal(r.phase, "travel");
+  assert.ok(r.pendingReward);
+  r.travelProgress = 1;
+  E.arrive(r, catalogue);
+  assert.equal(r.phase, "reward");
+  assert.equal(r.offers.length, 3);
+  assert.ok(E.selectBonus(r, r.offers[0]));
+  assert.equal(r.phase, "arrival");
+});
+test("bonuses require an actual offer and cannot be collected twice", () => {
+  const r = initial();
+  const offered = r.offers[0];
+  assert.equal(E.selectBonus(r, "not-a-bonus"), false);
+  assert.ok(E.selectBonus(r, offered));
+  assert.equal(E.selectBonus(r, offered), false);
+  assert.equal(E.count(r, offered), 1);
+});
+test("bonus offers never exceed the stack cap", () => {
+  const r = initial();
+  for (const b of E.BONUSES)
+    for (let i = 0; i < b.max; i++) r.bonuses.push(b.id);
+  assert.deepEqual(E.offerBonuses(r), []);
+  r.phase = "travel";
+  r.travelProgress = 1;
+  r.pendingReward = true;
+  E.arrive(r, catalogue);
+  assert.equal(r.phase, "arrival");
+});
+test("initial choices do not offer an immediate recovery with no benefit", () => {
+  for (let i = 1; i <= 100; i++)
+    assert.ok(!initial(7, i).offers.includes("pp_boost"));
+});
+test("permanent attack and defense bonuses are applied to the correct side", () => {
+  const r = battle();
+  const move = E.bestMove(r, catalogue);
+  const before = E.expectedDamage(r, r.hero, r.enemy, move, catalogue, true);
+  r.upgrades.attackBonus = 5;
+  assert.ok(
+    E.expectedDamage(r, r.hero, r.enemy, move, catalogue, true) > before,
+  );
+  r.enemy = E.fighter(150, 15, catalogue);
+  const enemyMove = catalogue.moves[93];
+  const hit = E.expectedDamage(r, r.enemy, r.hero, enemyMove, catalogue, false);
+  r.upgrades.defenseBonus = 5;
+  assert.ok(
+    E.expectedDamage(r, r.enemy, r.hero, enemyMove, catalogue, false) < hit,
+  );
+});
+test("first guard applies once per battle", () => {
+  const r = battle();
+  r.bonuses = ["first_guard"];
+  r.nextSide = "enemy";
+  E.battleStep(r, catalogue);
+  assert.equal(r.hero.guardUsed, true);
+  r.hero.hp = r.hero.maxHp;
+  r.nextSide = "enemy";
+  E.battleStep(r, catalogue);
+  assert.equal(r.hero.guardUsed, true);
+});
+test("lifesteal heals the hero and reports actual healing", () => {
+  const r = battle();
+  r.bonuses = ["lifesteal"];
+  r.hero.hp = 1;
+  const result = E.battleStep(r, catalogue);
+  assert.ok(result.healing > 0);
+  assert.equal(r.hero.hp, 1 + result.healing);
+});
+test("shop rejects unavailable and unaffordable purchases without mutation", () => {
+  const r = battle();
+  const before = structuredClone(r);
+  assert.equal(E.buy(r, "potion"), false);
+  assert.deepEqual(r, before);
+  r.phase = "shop";
+  r.coins = 0;
+  const copy = structuredClone(r);
+  assert.equal(E.buy(r, "full_heal"), false);
+  assert.deepEqual(r, copy);
+});
+test("shop healing and PP restoration are bounded by the actual maximum", () => {
+  const r = initial();
+  r.phase = "shop";
+  r.coins = 100;
+  r.hero.hp = 1;
+  r.hero.moves.forEach((m) => (m.pp = 0));
+  assert.ok(E.buy(r, "full_heal"));
+  assert.equal(r.hero.hp, r.hero.maxHp);
+  assert.equal(r.coins, 15);
+  assert.ok(r.hero.moves.every((m) => m.pp === m.maxPp));
+});
+test("camps restore an injured Pokemon and continue to the next stage once", () => {
+  const r = initial();
+  r.phase = "camp";
+  r.stageIndex = 4;
+  r.hero.hp = 1;
+  r.hero.moves.forEach((m) => (m.pp = 0));
+  assert.ok(E.resolveEncounter(r, "rest"));
+  assert.equal(r.hero.hp, r.hero.maxHp);
+  assert.ok(r.hero.moves.every((m) => m.pp === m.maxPp));
+  assert.equal(r.stageIndex, 5);
+  assert.equal(E.resolveEncounter(r, "rest"), false);
+});
+test("cache treasure is granted exactly once", () => {
+  const r = initial();
+  r.phase = "cache";
+  r.stageIndex = 2;
+  assert.ok(E.resolveEncounter(r, "gold"));
+  assert.ok(r.coins >= 50 && r.coins <= 80);
+  const coins = r.coins;
+  assert.equal(E.resolveEncounter(r, "gold"), false);
+  assert.equal(r.coins, coins);
+});
+test("shrine can be left without trapping the campaign", () => {
+  const r = initial();
+  r.phase = "shrine";
+  r.stageIndex = 9;
+  r.offers = [];
+  assert.ok(E.resolveEncounter(r, "leave"));
+  assert.equal(r.phase, "travel");
+  assert.equal(r.stageIndex, 10);
+});
+test("evolution and new attacks persist through campaign saves", () => {
+  const r = simulate(2026, 4).run;
+  assert.equal(r.hero.id, 6);
+  assert.ok(r.hero.moves.some((m) => m.id === 53));
+  assert.ok(validRun(JSON.parse(JSON.stringify(r)), catalogue));
+});
+test("the final guardian ends the campaign instead of creating a new travel loop", () => {
+  const r = simulate(2026, 7).run;
+  assert.equal(r.phase, "complete");
+  assert.equal(r.stageIndex, 14);
+  assert.equal(r.pendingReward, false);
+  assert.equal(E.depart(r), false);
+  assert.equal(E.battleStep(r, catalogue), null);
+});
+test("terminal settlement and unlocks are idempotent", () => {
+  const r = simulate(2026, 4).run,
+    m = E.baseMeta();
+  m.totalVictories = 9;
+  assert.ok(E.settle(r, m));
+  assert.ok(m.unlockedStarters[25]);
+  const before = structuredClone(m);
+  assert.equal(E.settle(r, m), false);
+  assert.deepEqual(m, before);
+  assert.ok(m.gold > 0);
+});
+test("retiring before any victory cannot generate free currency", () => {
+  const r = initial(),
+    m = E.baseMeta();
+  r.phase = "retired";
+  E.settle(r, m);
+  assert.equal(m.gold, 0);
+  assert.equal(m.totalVictories, 0);
+});
+test("upgrades charge the displayed cost and respect the cap", () => {
+  const m = E.baseMeta();
+  m.gold = 1000;
+  assert.ok(E.upgrade(m, "maxHpBonus"));
+  assert.equal(m.gold, 900);
+  assert.equal(m.permanentUpgrades.maxHpBonus, 1);
+  assert.ok(E.upgrade(m, "maxHpBonus"));
+  assert.equal(m.gold, 750);
+  m.permanentUpgrades.maxHpBonus = 10;
+  const before = m.gold;
+  assert.equal(E.upgrade(m, "maxHpBonus"), false);
+  assert.equal(m.gold, before);
+});
+test("save round trip retains RNG, HP, PP and the next automatic attacker", () => {
+  const r = battle();
+  E.battleStep(r, catalogue);
+  const store = memory();
+  assert.ok(writeState(store, E.baseMeta(), r));
+  const loaded = readState(store, catalogue).run;
+  assert.deepEqual(loaded, r);
+  E.battleStep(r, catalogue);
+  E.battleStep(loaded, catalogue);
+  assert.deepEqual(loaded, r);
+});
+test("save round trip can resume a partially completed map traversal", () => {
+  const r = initial();
+  E.selectBonus(r, r.offers[0]);
+  r.travelProgress = 0.473;
+  const store = memory();
+  writeState(store, E.baseMeta(), r);
+  assert.equal(readState(store, catalogue).run.travelProgress, 0.473);
+});
+test("legacy progression migrates without modifying the original save", () => {
+  const store = memory(),
+    legacy = {
+      gold: 333,
+      totalRuns: 7,
+      bestScore: 8,
+      totalVictories: 25,
+      permanentUpgrades: { maxHpBonus: 3 },
+    };
+  store.setItem("pokeBattleProgress", JSON.stringify(legacy));
+  const loaded = readState(store, catalogue);
+  assert.equal(loaded.meta.gold, 333);
+  assert.equal(loaded.meta.permanentUpgrades.maxHpBonus, 3);
+  assert.equal(loaded.meta.unlockedStarters[133], true);
+  assert.equal(store.getItem("pokeBattleProgress"), JSON.stringify(legacy));
+});
+test("corrupt saves and unavailable storage fail safely", () => {
+  const store = memory();
+  store.setItem(SAVE_KEY, "{bad json");
+  assert.equal(readState(store, catalogue).run, null);
+  assert.equal(
+    writeState(
+      {
+        setItem() {
+          throw Error("quota");
+        },
+      },
+      E.baseMeta(),
+      null,
+    ),
+    false,
+  );
+  const r = initial();
+  r.phase = "unknown";
+  store.setItem(SAVE_KEY, JSON.stringify({ meta: { gold: 35 }, run: r }));
+  const loaded = readState(store, catalogue);
+  assert.equal(loaded.run, null);
+  assert.equal(loaded.meta.gold, 35);
+  assert.ok(loaded.warning);
+});
+test("normalization rejects nonfinite values, negative balances and excess upgrade levels", () => {
+  const m = normalizeMeta({
+    gold: -10,
+    totalVictories: Infinity,
+    permanentUpgrades: { maxHpBonus: 999 },
+    battleSpeed: -5,
+  });
+  assert.equal(m.gold, 0);
+  assert.ok(Number.isFinite(m.totalVictories));
+  assert.equal(m.permanentUpgrades.maxHpBonus, 10);
+  assert.equal(m.battleSpeed, 1500);
+});
+test("all stage triggers lie exactly on the rendered route", () => {
+  assert.equal(world.encounters.length, E.STAGES.length);
+  for (const z of world.encounters) {
+    const r = initial();
+    r.stageIndex = z.index;
+    r.travelProgress = 1;
+    const p = E.travelPosition(r, world.route);
+    assert.ok(Math.hypot(p[0] - z.center[0], p[1] - z.center[1]) < z.radius);
+    assert.equal(z.kind, E.STAGES[z.index].kind);
+  }
+});
+test("the complete route avoids every authored prop collider", () => {
+  for (let i = 0; i <= 1500; i++) {
+    const [x, y] = E.pointOnRoute(world.route, i / 1500);
+    assert.ok(x >= 0 && x <= 1 && y >= 0 && y <= 1);
+    for (const prop of [
+      ...world.props,
+      ...world.encounters.map((z) => z.prop).filter(Boolean),
+    ]) {
+      const [cx, cy, w, h] = prop.collider;
+      assert.ok(
+        !(x > cx && x < cx + w && y > cy && y < cy + h),
+        prop.id + " blocks the path",
+      );
+    }
+  }
+});
+test("all final art and prompt files exist and runtime map uses separate props", () => {
+  const manifest = JSON.parse(readFileSync("data/asset-manifest.json"));
+  assert.ok(manifest.length >= 22);
+  for (const asset of manifest) {
+    assert.ok(existsSync(asset.image));
+    assert.ok(existsSync(asset.source));
+    assert.ok(readFileSync(asset.prompt, "utf8").trim().length > 60);
+  }
+  assert.ok(world.base.endsWith("-base.webp"));
+  assert.ok(world.props.length >= 7);
+  assert.ok(manifest.filter((a) => a.transparent).length >= 19);
+});
+
+test("Eevee chooses a native evolution at arrival and preserves its earned reward", () => {
+  for (const id of [134, 135, 136]) {
+    const r = initial(133);
+    r.hero.level = 7;
+    r.pendingEvolution = true;
+    r.pendingReward = true;
+    r.phase = "travel";
+    r.travelProgress = 1;
+    E.arrive(r, catalogue);
+    assert.equal(r.phase, "evolution");
+    assert.ok(validRun(r, catalogue));
+    const before = structuredClone(r);
+    assert.equal(E.chooseEvolution(r, 150, catalogue), false);
+    assert.deepEqual(r, before);
+    assert.ok(E.chooseEvolution(r, id, catalogue));
+    assert.equal(r.hero.id, id);
+    assert.equal(r.phase, "reward");
+    assert.equal(r.pendingEvolution, false);
+    assert.ok(r.offers.length > 0);
+    assert.equal(E.chooseEvolution(r, 134, catalogue), false);
+  }
+});
+
+test("unlocked partners have viable native evolved forms in completed runs", () => {
+  for (const [starter, form] of [
+    [25, 26],
+    [133, 134],
+    [152, 154],
+  ]) {
+    const r = simulate(2026, starter).run;
+    assert.equal(r.phase, "complete");
+    assert.equal(r.hero.id, form);
+    assert.ok(validRun(r, catalogue));
+  }
+});
+
+test("all official Pokemon artwork is present and all attacks are positive damaging moves", () => {
+  for (const p of Object.values(catalogue.pokemon))
+    assert.ok(existsSync(p.artwork));
+  for (const m of Object.values(catalogue.moves)) {
+    assert.ok(m.power > 0);
+    assert.notEqual(m.damageClass, "status");
+    assert.ok(m.source.startsWith("https://pokeapi.co/"));
+  }
+});

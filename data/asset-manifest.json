@@ -1,0 +1,266 @@
+[
+  {
+    "id": "affinity-crystal",
+    "image": "assets/generated/affinity-crystal.webp",
+    "source": "assets/generated/affinity-crystal.png",
+    "prompt": "assets/generated/affinity-crystal.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      512
+    ],
+    "transparent": true
+  },
+  {
+    "id": "attack-fang",
+    "image": "assets/generated/attack-fang.webp",
+    "source": "assets/generated/attack-fang.png",
+    "prompt": "assets/generated/attack-fang.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      502
+    ],
+    "transparent": true
+  },
+  {
+    "id": "brass-lock",
+    "image": "assets/generated/brass-lock.webp",
+    "source": "assets/generated/brass-lock.png",
+    "prompt": "assets/generated/brass-lock.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      492
+    ],
+    "transparent": true
+  },
+  {
+    "id": "critical-lens",
+    "image": "assets/generated/critical-lens.webp",
+    "source": "assets/generated/critical-lens.png",
+    "prompt": "assets/generated/critical-lens.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      494,
+      512
+    ],
+    "transparent": true
+  },
+  {
+    "id": "defense-shell",
+    "image": "assets/generated/defense-shell.webp",
+    "source": "assets/generated/defense-shell.png",
+    "prompt": "assets/generated/defense-shell.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      512
+    ],
+    "transparent": true
+  },
+  {
+    "id": "fire-wisp",
+    "image": "assets/generated/fire-wisp.webp",
+    "source": "assets/generated/fire-wisp.png",
+    "prompt": "assets/generated/fire-wisp.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      345
+    ],
+    "transparent": true
+  },
+  {
+    "id": "forest-arena",
+    "image": "assets/generated/forest-arena.webp",
+    "source": "assets/generated/forest-arena.png",
+    "prompt": "assets/generated/forest-arena.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
+  },
+  {
+    "id": "gold-coins",
+    "image": "assets/generated/gold-coins.webp",
+    "source": "assets/generated/gold-coins.png",
+    "prompt": "assets/generated/gold-coins.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      511
+    ],
+    "transparent": true
+  },
+  {
+    "id": "healing-berry",
+    "image": "assets/generated/healing-berry.webp",
+    "source": "assets/generated/healing-berry.png",
+    "prompt": "assets/generated/healing-berry.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      510,
+      512
+    ],
+    "transparent": true
+  },
+  {
+    "id": "healing-potion",
+    "image": "assets/generated/healing-potion.webp",
+    "source": "assets/generated/healing-potion.png",
+    "prompt": "assets/generated/healing-potion.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      503
+    ],
+    "transparent": true
+  },
+  {
+    "id": "impact-burst",
+    "image": "assets/generated/impact-burst.webp",
+    "source": "assets/generated/impact-burst.png",
+    "prompt": "assets/generated/impact-burst.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      507
+    ],
+    "transparent": true
+  },
+  {
+    "id": "leaf-wisp",
+    "image": "assets/generated/leaf-wisp.webp",
+    "source": "assets/generated/leaf-wisp.png",
+    "prompt": "assets/generated/leaf-wisp.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      286
+    ],
+    "transparent": true
+  },
+  {
+    "id": "merchant-cart",
+    "image": "assets/generated/merchant-cart.webp",
+    "source": "assets/generated/merchant-cart.png",
+    "prompt": "assets/generated/merchant-cart.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      463
+    ],
+    "transparent": true
+  },
+  {
+    "id": "mossy-rocks",
+    "image": "assets/generated/mossy-rocks.webp",
+    "source": "assets/generated/mossy-rocks.png",
+    "prompt": "assets/generated/mossy-rocks.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      768,
+      508
+    ],
+    "transparent": true
+  },
+  {
+    "id": "parchment-panel",
+    "image": "assets/generated/parchment-panel.webp",
+    "source": "assets/generated/parchment-panel.png",
+    "prompt": "assets/generated/parchment-panel.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      768,
+      733
+    ],
+    "transparent": true
+  },
+  {
+    "id": "rest-spring",
+    "image": "assets/generated/rest-spring.webp",
+    "source": "assets/generated/rest-spring.png",
+    "prompt": "assets/generated/rest-spring.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      465
+    ],
+    "transparent": true
+  },
+  {
+    "id": "supply-chest",
+    "image": "assets/generated/supply-chest.webp",
+    "source": "assets/generated/supply-chest.png",
+    "prompt": "assets/generated/supply-chest.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      507,
+      512
+    ],
+    "transparent": true
+  },
+  {
+    "id": "trail-sign",
+    "image": "assets/generated/trail-sign.webp",
+    "source": "assets/generated/trail-sign.png",
+    "prompt": "assets/generated/trail-sign.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      768,
+      703
+    ],
+    "transparent": true
+  },
+  {
+    "id": "water-wisp",
+    "image": "assets/generated/water-wisp.webp",
+    "source": "assets/generated/water-wisp.png",
+    "prompt": "assets/generated/water-wisp.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      259
+    ],
+    "transparent": true
+  },
+  {
+    "id": "woodland-dressed-reference",
+    "image": "assets/generated/woodland-dressed-reference.webp",
+    "source": "assets/generated/woodland-dressed-reference.png",
+    "prompt": "assets/generated/woodland-dressed-reference.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
+  },
+  {
+    "id": "woodland-trail-base",
+    "image": "assets/generated/woodland-trail-base.webp",
+    "source": "assets/generated/woodland-trail-base.png",
+    "prompt": "assets/generated/woodland-trail-base.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1672,
+      941
+    ],
+    "transparent": false
+  },
+  {
+    "id": "woodland-tree",
+    "image": "assets/generated/woodland-tree.webp",
+    "source": "assets/generated/woodland-tree.png",
+    "prompt": "assets/generated/woodland-tree.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      768,
+      597
+    ],
+    "transparent": true
+  }
+]

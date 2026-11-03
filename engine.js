@@ -323,6 +323,7 @@ export function baseMeta() {
     discoveries: {},
     expeditionHistory: [],
     battleSpeed: 1500,
+    language: "en",
     unlockedStarters: {
       1: true,
       4: true,

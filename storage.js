@@ -13,6 +13,7 @@ export function normalizeMeta(source) {
   for (const key of Object.keys(m.permanentUpgrades))
     m.permanentUpgrades[key] = integer(source.permanentUpgrades?.[key], 10);
   m.sound = !!source.sound;
+  m.language = source.language === "fr" ? "fr" : "en";
   if (source.discoveries && typeof source.discoveries === "object")
     for (const [key, value] of Object.entries(source.discoveries)) {
       const id = integer(key, 2000);

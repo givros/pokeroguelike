@@ -1,4 +1,5 @@
 import {BREATH_ORIGINS,artworkAnchor} from "./attack-origins.js";
+import {translate} from './localization.js';
 export const EVOLUTION_BATTLE_SCALE = 1.08;
 export const IMPACT_SEQUENCES = Object.freeze({
   fire:"fire-impact", water:"water-impact", grass:"leaf-impact", ice:"ice-impact", poison:"poison-impact",
@@ -198,7 +199,8 @@ export class BattleEffects {
     if (!scene || !point) return;
     const node = document.createElement("span");
     node.className = "damage-number " + cls;
-    node.textContent = label;
+    node.dataset.i18nSource = label;
+    node.textContent = translate(label);
     scene.append(node);
     const width = node.getBoundingClientRect().width * 1.1 + 8;
     node.style.left = Math.max(width / 2 + 12, Math.min(scene.clientWidth - width / 2 - 12, point.x)) + "px";

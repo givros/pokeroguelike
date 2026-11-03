@@ -5,14 +5,15 @@ import * as E from '../engine.js';
 import {simulate} from './simulate.mjs';
 const args=process.argv.slice(2),evolution=Number(args.find(arg=>arg.startsWith('--evolution='))?.split('=')[1]??134);assert.ok([134,135,136].includes(evolution));
 const threat=Number(args.find(arg=>arg.startsWith('--threat='))?.split('=')[1]??0),maximum=args.includes('--max-upgrades'),cache=args.find(arg=>arg.startsWith('--cache='))?.split('=')[1],camp=args.find(arg=>arg.startsWith('--camp='))?.split('=')[1]||'train',allowDefeat=args.includes('--allow-defeat');assert.ok(Number.isInteger(threat)&&threat>=0&&threat<=E.MAX_THREAT);assert.ok(!cache||['gold','heal','study'].includes(cache));assert.ok(['rest','train','scout'].includes(camp));
+const french=args.includes('--fr');
 const ids=args.filter(arg=>!arg.startsWith('--')).map(Number);if(!ids.length)ids.push(1,4,7,25,133,152);for(const id of ids)assert.ok([1,4,7,25,133,152].includes(id));
-const browser=await chromium.launch({headless:true}),out=`output/playwright/roster${evolution===134?'':`-evolution-${evolution}`}${threat?`-threat-${threat}`:''}${maximum?'-max':''}${cache?`-cache-${cache}`:''}${camp==='train'?'':`-camp-${camp}`}`,reports=[],errors=[];await mkdir(out,{recursive:true});
+const browser=await chromium.launch({headless:true}),out=`output/playwright/roster${french?'-fr':''}${evolution===134?'':`-evolution-${evolution}`}${threat?`-threat-${threat}`:''}${maximum?'-max':''}${cache?`-cache-${cache}`:''}${camp==='train'?'':`-camp-${camp}`}`,reports=[],errors=[];await mkdir(out,{recursive:true});
 const preference=['regeneration','lifesteal','attack_boost','defense_boost','hp_boost','first_guard','crit_chance','type_boost','momentum','focus_crit','pp_boost','gold_boost'];
 const gameplay=r=>Object.fromEntries(['phase','stageIndex','starterId','initialSeed','seed','threat','wins','actions','battleActions','coins','hero','enemy','bonuses','partnerForms','stats','encounters','upgrades','endBonus'].map(key=>[key,r[key]]));
 const progression=m=>Object.fromEntries(['gold','totalRuns','totalVictories','bestScore','unlockedThreat','selectedThreat','unlockedStarters','permanentUpgrades','discoveries','expeditionHistory'].map(key=>[key,m[key]]));
 try{
  for(const id of ids){
-  const meta=E.baseMeta();meta.totalVictories=50;meta.battleSpeed=750;for(const key of Object.keys(meta.unlockedStarters))meta.unlockedStarters[key]=true;
+  const meta=E.baseMeta();meta.language=french?'fr':'en';meta.totalVictories=50;meta.battleSpeed=750;for(const key of Object.keys(meta.unlockedStarters))meta.unlockedStarters[key]=true;
   if(threat){Object.assign(meta,{totalVictories:100,totalRuns:12,bestScore:9,unlockedThreat:threat});}if(maximum)for(const key of Object.keys(meta.permanentUpgrades))meta.permanentUpgrades[key]=10;
   const model=simulate(2026,id,{camp,evolution,threat,cache,upgrades:meta.permanentUpgrades}),expected=structuredClone(model.run),expectedMeta=structuredClone(meta);expectedMeta.selectedThreat=threat;assert.ok(allowDefeat?['complete','defeat'].includes(expected.phase):expected.phase==='complete');E.settle(expected,expectedMeta);
   const context=await browser.newContext({viewport:{width:1280,height:720},reducedMotion:'no-preference'});await context.addInitScript(meta=>{Date.now=()=>2026;if(!localStorage.getItem('pokeRogueAdventureV3'))localStorage.setItem('pokeRogueAdventureV3',JSON.stringify({version:3,meta,run:null}));},meta);

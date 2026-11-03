@@ -85,7 +85,8 @@ const scenarios = [
   { name: "upgrades", run: null, meta: { ...E.baseMeta(), gold: 100000000 }, menu: "upgrades" },
   { name: "help", run: null, menu: "help" },
 ];
-const scenarioFilter = process.argv.slice(2);
+const french=process.argv.includes("--fr");
+const scenarioFilter = process.argv.slice(2).filter(arg=>arg!=="--fr");
 // Keep native scrollbars visible when inspecting long game windows.
 const browser = await chromium.launch({ headless: true, ignoreDefaultArgs: ["--hide-scrollbars"] });
 const errors = [], results = [];
@@ -98,7 +99,7 @@ try {
         localStorage.setItem("pokeRogueAdventureV3", JSON.stringify(data));
         // Freeze simulation for layout fixtures without covering the world with Pause.
         Object.defineProperty(document, "hidden", { get: () => true });
-      }, { version: 3, meta: scenario.meta || E.baseMeta(), run: scenario.run });
+      }, { version: 3, meta: {...(scenario.meta || E.baseMeta()),language:french?"fr":"en"}, run: scenario.run });
       const page = await context.newPage();
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("response", (r) => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
@@ -134,6 +135,9 @@ try {
           const range = document.createRange();
           range.selectNodeContents(node);
           for (const rect of range.getClientRects()) {
+            // The movable map and bounded journal deliberately clip their offscreen content.
+            const clip=parent.closest('.route-viewport,.route-journal,.route-partner')?.getBoundingClientRect();
+            if(clip&&(rect.bottom<=clip.top||rect.top>=clip.bottom||rect.right<=clip.left||rect.left>=clip.right))continue;
             if (dialog) {
               const bounds = dialog.getBoundingClientRect();
               if (rect.left < bounds.left + 20 || rect.right > bounds.right - 20)
@@ -144,7 +148,7 @@ try {
           }
           text.push({ label, size });
         }
-        const rect = (selector) => document.querySelector(selector)?.getBoundingClientRect();
+        const rect = (selector) => {const node=document.querySelector(selector);return node&&getComputedStyle(node).visibility!=="hidden"?node.getBoundingClientRect():null;};
         const intersect = (a, b) => a && b && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
         const collisions = [];
         for (const [a, b] of [[".hud-left", ".stage-heading"], [".stage-heading", ".hud-controls"],
@@ -155,11 +159,11 @@ try {
           if (prop) for (const selector of [".hud-controls", ".hud-left", ".stage-heading", ".map-hero-card", ".encounter-dock"])
             if (intersect(prop, rect(selector))) collisions.push([asset, selector]);
         }
-        const actions = new Set(["select-route","route-zoom","choose-threat","idle-toggle","plans","set-plan","sound","close","reload","recover","save-notice","retry-save","dismiss-save-notice","pause","help","upgrades","journal","retire","guide","partner","opponent","guardians","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
+        const actions = new Set(["select-route","route-zoom","route-center","language","choose-threat","idle-toggle","plans","set-plan","sound","close","reload","recover","save-notice","retry-save","dismiss-save-notice","pause","help","upgrades","journal","retire","guide","partner","opponent","guardians","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
         const unknownActions = [...root.querySelectorAll("[data-action]")].filter(node=>!actions.has(node.dataset.action)).map(node=>({action:node.dataset.action,label:node.textContent.trim()}));
         return { small, overflow, collisions, brokenText, unknownActions, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
       });
-      await page.screenshot({ path: `${out}/${width}-${scenario.name}.png` });
+      await page.screenshot({ path: `${out}/${french?"fr-":""}${width}-${scenario.name}.png` });
       const scrolling = await page.evaluate(() => {
         const dialog = document.querySelector("dialog");
         const content = dialog?.querySelector(".menu-content");
@@ -179,15 +183,15 @@ try {
       if (scrolling) {
         assert.ok(scrolling.reachable, `${width} ${scenario.name}: final text unreachable: ${scrolling.lastText}`);
         assert.ok(scrolling.closeVisible, `${width} ${scenario.name}: Close hidden after scrolling`);
-        await page.waitForFunction(() => document.querySelector(".menu-scroll-note")?.textContent === "Scroll up to review");
-        await page.screenshot({ path: `${out}/${width}-${scenario.name}-scrolled.png` });
+        await page.waitForFunction(french => document.querySelector(".menu-scroll-note")?.textContent === (french?"Remontez pour relire":"Scroll up to review"),french);
+        await page.screenshot({ path: `${out}/${french?"fr-":""}${width}-${scenario.name}-scrolled.png` });
       }
       measured.scrolling = scrolling;
       results.push({ width, height, scenario: scenario.name, ...measured });
       await context.close();
     }
   }
-  await writeFile(`${out}/${scenarioFilter.length ? "focused-" + scenarioFilter.join("-") : "results"}.json`, JSON.stringify({ results, errors }, null, 2));
+  await writeFile(`${out}/${french?"fr-":""}${scenarioFilter.length ? "focused-" + scenarioFilter.join("-") : "results"}.json`, JSON.stringify({ results, errors }, null, 2));
   const failures = results.filter((r) => r.small.length || r.overflow.length || r.collisions.length || r.brokenText.length || r.unknownActions.length);
   console.log(JSON.stringify({ scenes: results.length, failures, errors }, null, 2));
   assert.ok(results.length, "No matching readability scenarios");

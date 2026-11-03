@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check route-graph.js && node --check engine.js && node --check builds.js && node --check guardians.js && node --check artwork-layout.js && node --check attack-origins.js && node --check checkpoint.js && node --check plans.js && node --check idle.js && node --check landmarks.js && node --check script.js && node --check presentation.js && node --check storage.js && node --check field-guide.js && node --check audio.js && node --check server.js",
+    "check": "node --check localization.js && node --check route-camera.js && node --check route-graph.js && node --check engine.js && node --check builds.js && node --check guardians.js && node --check artwork-layout.js && node --check attack-origins.js && node --check checkpoint.js && node --check plans.js && node --check idle.js && node --check landmarks.js && node --check script.js && node --check presentation.js && node --check storage.js && node --check field-guide.js && node --check audio.js && node --check server.js",
     "test": "node --test tests/*.test.js",
     "test:browser": "node tools/adventure-check.mjs && node tools/lifecycle-check.mjs",
     "test:expansion": "node tools/expansion-check.mjs",
@@ -41,6 +41,8 @@
     "test:pause-scheduling": "node tools/pause-scheduling-check.mjs",
     "test:restart-stability": "node tools/restart-stability-check.mjs",
     "test:paused-visibility": "node tools/paused-visibility-check.mjs",
+    "test:localization": "node tools/localization-check.mjs",
+    "test:map-quality": "node tools/map-quality-check.mjs",
     "test:routes": "node tools/branching-check.mjs",
     "test:roster": "node tools/roster-campaign-check.mjs",
     "test:scene-replacement": "node tools/scene-replacement-check.mjs",

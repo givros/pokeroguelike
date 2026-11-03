@@ -1,5 +1,7 @@
 import * as E from "./engine.js";
 import * as L from "./landmarks.js";
+import {RouteCamera} from "./route-camera.js";
+import {configureTranslations,setLocale,PresentationLocalizer} from "./localization.js";
 import { routeGraph, ROUTE_KINDS } from "./route-graph.js";
 import { mapArtworkStyle, applyMapArtwork } from "./artwork-layout.js";
 import { JourneyCheckpoint } from "./checkpoint.js";
@@ -12,11 +14,12 @@ import { discoveryRecords } from "./field-guide.js";
 import { GameAudio } from "./audio.js";
 import { SYNERGIES, activeSynergies } from "./builds.js";
 const app = document.getElementById("app");
+const localizer = new PresentationLocalizer(app);
 const effects = new BattleEffects();
 const audio = new GameAudio();
 const checkpoint = new JourneyCheckpoint();
 let saveStorage;
-let routeZoom = false;
+const routeCamera = new RouteCamera();
 try {
   saveStorage = window.localStorage;
 } catch {
@@ -138,6 +141,7 @@ function recoverJourney() {
   invalidateWork();
   effects.clear();
   meta = state.meta;
+  setLocale(meta.language);
   run = state.run;
   fatal = "";
   narration = "";
@@ -193,7 +197,7 @@ function heroCard() {
 }
 function titleView() {
   const saved = run && !TERMINAL.has(run.phase);
-  return `<div class="title-scene"><div class="title-shade"></div><div class="title-brand"><small>ROGUELIKE · AUTOMATIC BATTLES</small><h1>POKÉ<span>ROGUE</span></h1><p>THE GUARDIAN TRAIL</p></div><div class="title-stats"><span>Record <b>${meta.bestScore}</b></span><span>Victories <b>${meta.totalVictories}</b></span><span class="title-gold">${art("gold-coins")}<b>${meta.gold}</b></span></div>
+  return `<div class="title-scene"><div class="title-shade"></div>${languageControl()}<div class="title-brand"><small>ROGUELIKE · AUTOMATIC BATTLES</small><h1>POKÉ<span>ROGUE</span></h1><p>THE GUARDIAN TRAIL</p></div><div class="title-stats"><span>Record <b>${meta.bestScore}</b></span><span>Victories <b>${meta.totalVictories}</b></span><span class="title-gold">${art("gold-coins")}<b>${meta.gold}</b></span></div>
  ${saved ? `<div class="resume-adventure">${button(`Resume expedition · stage ${run.stageIndex + 1}`, "resume", "", "paper-panel main-button")}</div>` : ""}
  <h2 class="starter-heading">${saved ? "Or choose a new partner" : "Choose your partner"}</h2><div class="starter-line">${STARTERS.map(
    (id) => {
@@ -237,13 +241,13 @@ function routeView() {
   const graph=routeGraph(run.branchSeed,E.STAGES), choices=E.routeChoices(run), available=new Set(choices.map(n=>n.id)), path=new Set(run.branchPath);
   const ready=E.needsRouteChoice(run)&&!run.pendingGrowth&&!run.pendingAwakenings?.length;
   const focus=choices[0]||graph.byId.get(run.branchPath.at(-1))||graph.rows[run.stageIndex][0];
-  const lines=graph.nodes.flatMap(n=>n.next.map(id=>{const target=graph.byId.get(id);return `<line class="${path.has(n.id)&&path.has(id)?'traversed':''}" x1="${n.x*600}" y1="${n.y}" x2="${target.x*600}" y2="${target.y}"/>`;})).join('');
+  const lines=graph.nodes.flatMap(n=>n.next.map(id=>{const target=graph.byId.get(id);return `<line data-from="${n.id}" data-to="${id}" class="${path.has(n.id)&&path.has(id)?'traversed':''}" x1="${n.x*600}" y1="${n.y}" x2="${target.x*600}" y2="${target.y}"/>`;})).join('');
   const nodes=graph.nodes.map(n=>{
     const visited=path.has(n.id),info=ROUTE_KINDS[visited?n.stage.kind:n.kind],current=visited&&n.row===run.stageIndex;
     return `<button class="route-node ${n.kind==='boss'?'route-boss':''} ${visited?'visited':''} ${current?'current':''} ${available.has(n.id)&&ready?'available':''}" data-route-node="${n.id}" data-action="select-route" data-value="${n.id}" style="left:${n.x*100}%;top:${n.y/graph.height*100}%" aria-label="Stage ${n.row+1}: ${info.name}${visited?', visited':available.has(n.id)?', available':', unreachable'}" aria-disabled="${!(ready&&available.has(n.id))}">${art(info.asset)}<span class="route-node-caption">${info.name}</span></button>`;
   }).join('');
   const h=run.hero,dock=encounterDock();
-  return `<div id="map-scene" class="route-scene"><div class="route-layout" ${dock?"inert":""}><aside class="route-partner paper-panel"><small>YOUR PARTNER</small><div id="map-actor" class="route-avatar">${mon(visualHeroId(),'body-art')}</div><h2>${catalogue.pokemon[h.id].name}</h2><p>Level ${h.level}</p><strong>${h.hp} / ${h.maxHp} HP</strong>${health(h)}<p>${run.wins} victories<br>${run.bonuses.length} boon ranks</p>${button('Partner & moves','partner','','route-inspect')}${run.preparedStrike?'<p>Opening strike +25%</p>':''}</aside><section class="route-map"><div class="route-map-heading"><strong>${ready?'Choose your next encounter':'Your expedition route'}</strong><span>Paths ascend toward the guardian</span></div><div class="route-viewport ${routeZoom?"detailed":"overview"}" tabindex="0" aria-label="Expedition routes; scroll to explore"><div class="route-board" style="height:${graph.height}px"><svg viewBox="0 0 600 ${graph.height}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}<span class="route-start">EXPEDITION START</span></div></div><div class="route-map-footer">${button(routeZoom?"Entire route":"Zoom in","route-zoom","","route-zoom")}<span>${ready?'Select a glowing connected encounter to continue.':'The selected encounter is in progress.'}</span></div></section><aside class="route-journal paper-panel" aria-live="polite"><small>ENCOUNTER</small><div id="route-preview">${routePreview(focus)}</div><div class="route-key"><p>Golden trail: your chosen path</p><p>Glowing tokens: available choices</p><p>Hover a token to inspect it. Zoom in for a closer view.</p></div></aside></div>${dock}</div>`;
+  return `<div id="map-scene" class="route-scene"><div class="route-layout" ${dock?"inert":""}><aside class="route-partner paper-panel"><small>YOUR PARTNER</small><div id="map-actor" class="route-avatar">${mon(visualHeroId(),'body-art')}</div><h2>${catalogue.pokemon[h.id].name}</h2><p>Level ${h.level}</p><strong>${h.hp} / ${h.maxHp} HP</strong>${health(h)}<p>${run.wins} victories<br>${run.bonuses.length} boon ranks</p>${button('Partner & moves','partner','','route-inspect')}${run.preparedStrike?'<p>Opening strike +25%</p>':''}</aside><section class="route-map"><div class="route-map-heading"><strong>${ready?'Choose your next encounter':'Your expedition route'}</strong><span>Paths ascend toward the guardian</span></div><div class="route-viewport pannable" tabindex="0" aria-label="Expedition routes; drag to move, wheel to zoom"><div class="route-board" style="height:${graph.height}px"><svg viewBox="0 0 600 ${graph.height}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}<span class="route-start">EXPEDITION START</span></div></div><div class="route-map-footer"><div class="route-camera-controls">${button("Zoom out","route-zoom","out","route-zoom")}<span data-map-zoom>110%</span>${button("Zoom in","route-zoom","in","route-zoom")}${button("Recenter","route-center","","route-zoom")}</div><span>${ready?'Select a glowing connected encounter to continue.':'The selected encounter is in progress.'}</span></div></section><aside class="route-journal paper-panel" aria-live="polite"><small>ENCOUNTER</small><div id="route-preview">${routePreview(focus)}</div><div class="route-key"><p>Golden trail: your chosen path</p><p>Glowing tokens: available choices</p><p>Drag the map to explore. Use the wheel or zoom buttons to inspect a route.</p></div></aside></div>${dock}</div>`;
 }
 function routePreview(node) {
   const info=ROUTE_KINDS[run.branchPath.includes(node.id)?node.stage.kind:node.kind];
@@ -422,9 +426,11 @@ function endingView() {
 }
 function render() {
   effects.clear();
+  routeCamera.detach();
   menuReturnFocus = null;
   if (fatal) {
     app.innerHTML = `<div class="game-screen recovery-screen">${recoveryView()}</div>`;
+    localizer.refresh();
     const dialog = q(".fatal-panel");
     dialog.showModal();
     dialog.addEventListener("cancel",event=>event.preventDefault());
@@ -456,8 +462,10 @@ function render() {
     }
   }
   if (modal) renderMenu();
+  localizer.refresh();
   const viewport=q('.route-viewport');
-  if(viewport&&routeZoom){const node=E.routeChoices(run)[0]||routeGraph(run.branchSeed,E.STAGES).byId.get(run.branchPath.at(-1));if(node)viewport.scrollTop=node.y-viewport.clientHeight*.72;}
+  if(viewport){const graph=routeGraph(run.branchSeed,E.STAGES),node=E.routeChoices(run)[0]||graph.byId.get(run.branchPath.at(-1))||graph.rows[run.stageIndex][0];routeCamera.mount(viewport,{id:run.id,stage:run.stageIndex,targetY:node.y,height:graph.height});}
+
 }
 function updateBattle() {
   for (const [side, m] of [
@@ -561,6 +569,9 @@ function audioControl() {
   const supported = !!(globalThis.AudioContext || globalThis.webkitAudioContext);
   return `<button class="paper-panel sound-control" data-action="sound" aria-pressed="${meta.sound}" ${supported ? "" : "disabled"}>${supported ? `Sound: ${meta.sound ? "On" : "Off"}` : "Sound unavailable"}</button>`;
 }
+function languageControl() {
+  return `<div class="language-picker paper-panel" role="group" aria-label="Language"><span>Language</span>${['en','fr'].map(language=>`<button data-action="language" data-value="${language}" aria-pressed="${meta.language===language}" class="${meta.language===language?'selected':''}" aria-label="${language==='fr'?'Français':'English'}">${language.toUpperCase()}</button>`).join('')}</div>`;
+}
 function plansView() {
   return `<h2>Expedition plan</h2><p>Choose a strategy for this expedition. An active plan selects boons, supplies and spring actions, and may spend expedition gold at the merchant. Reforges and Eevee’s evolution remain your decisions.</p><div class="plan-options">${PLANS.map(plan=>choice(plan.asset, plan.name + ((run.plan || "manual") === plan.id ? " · Selected" : ""), plan.text, "set-plan", plan.id)).join("")}</div><p>Plans run while this game is visible. Pause or switch to Manual at any time.</p>${button(`Away progression: ${run.idleEnabled ? "On" : "Off"}`, "idle-toggle", "", "paper-panel", !run.plan || run.plan === "manual")}<p>When enabled, your plan can progress after this window is hidden or closed, for up to eight hours. Pause stops away progression. Eevee waits for your evolution choice. Each expedition ends at victory or defeat; another expedition requires your choice.</p>`;
 }
@@ -633,12 +644,13 @@ function renderMenu() {
   const host = q("#menu-host");
   if (!host) return;
   host.innerHTML = modal
-    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top"><span class="menu-scroll-note" hidden></span>${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}</div></dialog>`
+    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top"><span class="menu-scroll-note" hidden></span>${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}${['help','pause'].includes(modal)?languageControl():''}</div></dialog>`
     : "";
   if (modal) {
     const d = host.querySelector("dialog");
     d.querySelector("h2").id = "menu-heading";
     d.showModal();
+    localizer.refresh();
     updateMenuScroll();
     d.querySelector(".menu-content").addEventListener("scroll", updateMenuScroll, { passive:true });
     d.addEventListener("cancel", (e) => {
@@ -801,7 +813,7 @@ async function playGrowth(token) {
     const label = document.createElement("span");
     label.className = "vfx evolution-caption";
     label.textContent = `${catalogue.pokemon[growth.fromId].name} is evolving…`;
-    const reading = q(".battle-narration"), previousReading = reading?.textContent;
+    const reading = q(".battle-narration"), previousReading = narration || run.log.at(-1);
     if (reading) reading.replaceChildren(label);
     else node.closest("#battle-scene,#map-scene").append(label);
     q(".victory-banner")?.remove();
@@ -986,8 +998,14 @@ async function pump() {
   }
 }
 async function dispatch(action, value) {
+  if(action==='language'&&meta&&['en','fr'].includes(value)){
+    meta.language=value;setLocale(value);persist();
+    for(const node of app.querySelectorAll('[data-action="language"]')){node.classList.toggle('selected',node.dataset.value===value);node.setAttribute('aria-pressed',String(node.dataset.value===value));}
+    localizer.refresh();updateMenuScroll();localizer.refresh();return;
+  }
   if (fatal && !["recover","reload"].includes(action)) return;
-  if (action === 'route-zoom') {routeZoom=!routeZoom;render();pump();return;}
+  if (action === 'route-zoom' && !modal && !paused) {routeCamera.zoomBy(value === 'out' ? 0.8 : 1.25);return;}
+  if (action === 'route-center' && !modal && !paused) {routeCamera.center();routeCamera.apply();return;}
   if (action === 'select-route' && run && !paused && !modal) {
     if (E.selectRoute(run,value,catalogue)) { persist(); render(); pump(); }
     return;
@@ -1242,7 +1260,7 @@ window.addEventListener("pagehide", () => {
 async function boot() {
   try {
     const response = await Promise.all(
-      ["data/pokemon.json", "data/moves.json", "data/world-map.json", "data/artwork-layout.json"].map(
+      ["data/pokemon.json", "data/moves.json", "data/world-map.json", "data/artwork-layout.json", "data/locales/fr.json"].map(
         async (path) => {
           const r = await fetch(path, { signal: AbortSignal.timeout(8000) });
           if (!r.ok) throw new Error("Missing resource: " + path);
@@ -1254,6 +1272,7 @@ async function boot() {
     world = response[2];
     const state = readState(saveStorage, catalogue);
     meta = state.meta;
+    configureTranslations(response[4]);setLocale(meta.language);localizer.refresh();
     run = state.run;
     E.enableBranching(run);
     warning = state.warning;

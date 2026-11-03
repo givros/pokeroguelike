@@ -1,0 +1,172 @@
+{
+  "target": "asset",
+  "mode": "impact",
+  "prompt": "Use the stone-impact image just shown only as a reference for its clean HD hand-painted anime finish, shaded material detail and four-frame chronological layout. Create a completely different bite attack animation, shown as a brief magical impression of two curved rows of individually sculpted ivory fangs closing around an invisible target. Teeth must have rounded curved conical volume, pointed tips, cool blue-grey shaded undersides and warm ivory highlights; varied large canines and smaller teeth, never flat triangles or a zigzag icon. No gums, lips, skull, head or literal animal body. Small short amber contact sparks with shaded smoke wisps only at the closing instant. Exactly four equal square cells in a 2 by 2 grid, read top-left, top-right, bottom-left, bottom-right. Fixed center and consistent source scale across all frames. Frame 1: upper and lower crescent rows open, separated vertically, tooth tips pointing inward toward a large empty center. Frame 2: the same rows snap close together around a narrow open gap with a small bright amber contact glint; retain the separate teeth and their volume. Frame 3: the two impressions break apart into curved fading tooth streaks and a few tiny amber flecks, leaving the middle empty. Frame 4: just a few tiny fading ivory and amber traces. An evolving action, not four equally sized icons or four copies. Keep generous open space and restrained sparks so the creature below remains recognizable. Do not include a circular border, emblem, symbol, rune, text, label, grid line, background scenery or ground. No blood or injury. Do not make pixel art. Keep every tooth and spark within the central 65 percent of its cell, with generous margins on all sides and nothing crossing a cell edge. Completely flat solid pure magenta #FF00FF background throughout, including between cells; no gradient or background halo. Use ivory, grey-blue, amber and charcoal only in the effect itself, no pink, violet or magenta material. Game-ready chroma-keyed bite impact for both Bite and Bug Bite attacks.\n",
+  "role": "",
+  "input": "assets\\effects\\bite-impact-raw.png",
+  "threshold": 90,
+  "edge_threshold": 120,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 512,
+  "fit_scale": 0.86,
+  "trim_border": 4,
+  "edge_clean_depth": 2,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 12,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "impact-1",
+    "impact-2",
+    "impact-3",
+    "impact-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 2,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        106,
+        99,
+        515,
+        507
+      ],
+      "edge_touch": false,
+      "output_size": [
+        414,
+        413
+      ],
+      "paste_position": [
+        49,
+        49
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 11,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        106,
+        176,
+        503,
+        437
+      ],
+      "edge_touch": false,
+      "output_size": [
+        402,
+        264
+      ],
+      "paste_position": [
+        55,
+        124
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 15,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        95,
+        138,
+        529,
+        446
+      ],
+      "edge_touch": false,
+      "output_size": [
+        440,
+        312
+      ],
+      "paste_position": [
+        36,
+        100
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 7,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        153,
+        184,
+        438,
+        417
+      ],
+      "edge_touch": false,
+      "output_size": [
+        289,
+        236
+      ],
+      "paste_position": [
+        111,
+        138
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "promptFile": "assets/effects/bite-impact.prompt.txt",
+  "reference": "assets/effects/stone-impact-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "promptHashNormalization": "LF",
+  "refinementPrompt": "assets/effects/bite-impact-refinement.prompt.txt",
+  "refinementReference": "assets/effects/bite-impact-reference.png",
+  "residualChromaCleanup": {
+    "predicate": "r>150 and b>100 and g<100",
+    "removedPixels": 1272
+  },
+  "sourceSha256": "103ed93e2889ff22843b499ab3d895e680b4dd26a799a33cc4b337b3c0237122",
+  "rawSha256": "265dc39aab0c06406f2df69b86a3088e370865ceef24d8a805508a60eea34f65",
+  "refinementReferenceSha256": "b312b6e4b6f4a6598df150c735502ced40a3f1d90da0046c229c61898d6b5472",
+  "promptSha256": "05e4d9f9b609b506122fbd3623b3333451e37d6755fe49fae97ba7192283dd55",
+  "refinementPromptSha256": "1d70a3ccf2987d6d6e0ee36e958d08c21cd7ba1b27b95a679380577aa8d518cc"
+}

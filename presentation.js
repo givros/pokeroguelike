@@ -3,8 +3,16 @@ export const IMPACT_SEQUENCES = Object.freeze({
   electric:"electric-burst", psychic:"spectral-pulse", ghost:"spectral-pulse", dark:"spectral-pulse",
   ground:"stone-impact", rock:"stone-impact", steel:"stone-impact",
 });
-export const IMPACT_ASSETS = Object.freeze([...new Set(Object.values(IMPACT_SEQUENCES))]);
-export const impactSequence = type => Object.hasOwn(IMPACT_SEQUENCES,type) ? IMPACT_SEQUENCES[type] : null;
+export const MOVE_IMPACTS = Object.freeze({44:"bite-impact",450:"bite-impact"});
+export const IMPACT_ASSETS = Object.freeze([...new Set([...Object.values(IMPACT_SEQUENCES),...Object.values(MOVE_IMPACTS)])]);
+export const impactSequence = (type,moveId) => Object.hasOwn(MOVE_IMPACTS,moveId) ? MOVE_IMPACTS[moveId] : Object.hasOwn(IMPACT_SEQUENCES,type) ? IMPACT_SEQUENCES[type] : null;
+export function projectileAsset(move) {
+  if(move.id===450)return null;
+  if(move.type==="fire")return "fire-wisp";
+  if(move.type==="water"||move.type==="ice")return "water-wisp";
+  if(move.type==="grass"||move.type==="bug")return "leaf-wisp";
+  return null;
+}
 export class BattleEffects {
   constructor() {
     this.animations = new Set();
@@ -124,14 +132,7 @@ export class BattleEffects {
     const from = this.point(side),
       to = this.point(side === "ally" ? "enemy" : "ally");
     if (!from || !to) return;
-    const asset =
-      move.type === "fire"
-        ? "fire-wisp"
-        : move.type === "water" || move.type === "ice"
-          ? "water-wisp"
-          : move.type === "grass" || move.type === "bug"
-            ? "leaf-wisp"
-            : null;
+    const asset = projectileAsset(move);
     if (asset) {
       const projectile = this.image(
         asset,
@@ -198,7 +199,7 @@ export class BattleEffects {
       point = this.point(target);
     if (!point) return;
     const width = Math.min(250, innerWidth * 0.18) * (result.crit ? 1.25 : 1),
-      sequence = impactSequence(result.move.type),
+      sequence = impactSequence(result.move.type,result.move.id),
       burst = sequence ? this.sprite(sequence, point, width * 1.5) :
         this.image("impact-burst", point, width, "impact");
     if (burst) {

@@ -6,10 +6,12 @@ import {ELEMENTAL_CASES,elementalBattle} from "./elemental-fixtures.mjs";
 const c={pokemon:JSON.parse(await readFile("data/pokemon.json")),moves:JSON.parse(await readFile("data/moves.json"))};
 const browser=await chromium.launch({headless:true}),checks=[],errors=[];
 try{
- for(const [type,starter] of ELEMENTAL_CASES){
-  const r=elementalBattle(type,"ally",starter,c);
+ for(const [type,starter,,moveId,sides] of ELEMENTAL_CASES){
+  const side=sides&&!sides.includes("ally")?"enemy":"ally";
+  const r=elementalBattle(type,side,starter,c);
   r.bonuses=["attack_boost","attack_boost","crit_chance","regeneration","lifesteal"];
   assert.equal(E.bestMove(r,c).type,type);
+  if(moveId)assert.equal(E.bestMove(r,c).id,moveId);
   const context=await browser.newContext({viewport:{width:1024,height:768},reducedMotion:"reduce"});
   await context.addInitScript(data=>{if(!localStorage.getItem("pokeRogueAdventureV3"))localStorage.setItem("pokeRogueAdventureV3",JSON.stringify(data));},{version:3,meta:E.baseMeta(),run:r});
   const page=await context.newPage();page.on("pageerror",e=>errors.push(e.message));await page.goto("http://127.0.0.1:5173");await page.locator('[data-action="resume"]').click();

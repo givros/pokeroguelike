@@ -534,6 +534,23 @@
     "transparent": true
   },
   {
+    "id": "bite-impact",
+    "image": "assets/effects/bite-impact-sheet.webp",
+    "source": "assets/effects/bite-impact-sheet.png",
+    "rawSource": "assets/effects/bite-impact-raw.png",
+    "prompt": "assets/effects/bite-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/bite-impact.qc.json"
+  },
+  {
     "id": "electric-burst",
     "image": "assets/effects/electric-burst-sheet.webp",
     "source": "assets/effects/electric-burst-sheet.png",

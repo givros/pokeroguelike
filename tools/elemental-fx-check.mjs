@@ -8,13 +8,15 @@ const browser=await chromium.launch({headless:true}),checks=[],errors=[];
 const filter=process.argv.slice(2),types=ELEMENTAL_CASES.filter(([type])=>!filter.length||filter.includes(type));
 assert.ok(types.length,"No matching elemental fixtures");
 try{
- for(const [type,starter,effect] of types)for(const side of ["ally","enemy"])for(const critical of [false,true])for(const [width,height] of [[1440,900],[1280,720],[1024,768]]){
+ for(const [type,starter,effect,moveId,sides=["ally","enemy"]] of types)for(const side of sides)for(const critical of [false,true])for(const [width,height] of [[1440,900],[1280,720],[1024,768]]){
   const r=elementalBattle(type,side,starter,c);r.seed=critical?1:123456789;
   assert.equal(E.bestMove(r,c).type,type);
+  if(moveId)assert.equal(E.bestMove(r,c).id,moveId);
   assert.equal(E.battleStep(structuredClone(r),c).crit,critical);
-  const name=`${effect}-${width}-${side}-${critical?"critical":"normal"}`;
+  const name=`${effect}-${type}-${width}-${side}-${critical?"critical":"normal"}`;
   const context=await browser.newContext({viewport:{width,height}}),meta=E.baseMeta();meta.battleSpeed=750;
   await context.addInitScript(data=>{if(!localStorage.getItem("pokeRogueAdventureV3"))localStorage.setItem("pokeRogueAdventureV3",JSON.stringify(data));},{version:3,meta,run:r});
+  if(moveId)await context.addInitScript(()=>{window.__projectiles=[];new MutationObserver(records=>{for(const record of records)for(const n of record.addedNodes)if(n.nodeType===1){if(n.matches("img.projectile"))window.__projectiles.push(n.getAttribute("src"));for(const image of n.querySelectorAll("img.projectile"))window.__projectiles.push(image.getAttribute("src"));}}).observe(document,{subtree:true,childList:true});});
   const page=await context.newPage();page.on("pageerror",e=>errors.push(e.message));page.on("response",res=>{if(res.status()>=400)errors.push(`${res.status()} ${res.url()}`);});
   await page.goto("http://127.0.0.1:5173");await page.locator('[data-action="resume"]').click();
   await page.waitForFunction(id=>{const node=document.querySelector(`.effect-sprite[data-effect="${id}"]`);if(node&&getComputedStyle(node).backgroundPosition==="100% 0%"){
@@ -32,6 +34,7 @@ try{
   },effect);
   assert.equal(measured.covered,0);assert.equal(measured.frame,"100% 0%");assert.ok(measured.labels.length);assert.deepEqual(measured.labelsOverHud,[]);
   if(side==="enemy")assert.ok(measured.labels.some(label=>label.startsWith("BARRIER")));
+  if(moveId)assert.deepEqual(await page.evaluate(()=>window.__projectiles),[],"Bite must not send a leaf or elemental projectile during windup");
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run);await page.waitForTimeout(250);assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run),saved);
   await page.screenshot({path:`output/playwright/${name}.png`});
   const frames=await sprite.evaluate(node=>{const animation=node.getAnimations().find(a=>a.effect.getKeyframes().some(k=>k.backgroundPosition));return [0,170,330,490].map(time=>{animation.currentTime=time;return getComputedStyle(node).backgroundPosition;});});assert.deepEqual(frames,["0% 0%","100% 0%","0% 100%","100% 100%"]);

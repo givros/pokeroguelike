@@ -155,7 +155,7 @@ try {
           if (prop) for (const selector of [".hud-controls", ".hud-left", ".stage-heading", ".map-hero-card", ".encounter-dock"])
             if (intersect(prop, rect(selector))) collisions.push([asset, selector]);
         }
-        const actions = new Set(["choose-threat","idle-toggle","plans","set-plan","sound","close","reload","recover","save-notice","pause","help","upgrades","journal","retire","guide","partner","opponent","guardians","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
+        const actions = new Set(["choose-threat","idle-toggle","plans","set-plan","sound","close","reload","recover","save-notice","retry-save","dismiss-save-notice","pause","help","upgrades","journal","retire","guide","partner","opponent","guardians","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
         const unknownActions = [...root.querySelectorAll("[data-action]")].filter(node=>!actions.has(node.dataset.action)).map(node=>({action:node.dataset.action,label:node.textContent.trim()}));
         return { small, overflow, collisions, brokenText, unknownActions, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
       });

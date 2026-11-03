@@ -268,7 +268,7 @@ export function readState(storage, catalogue) {
     return {
       meta: baseMeta(),
       run: null,
-      warning: "Local save unavailable. Keep this window open to retain your expedition.",
+      warning: "The previous save could not be read. A new camp has been prepared.",
     };
   }
 }

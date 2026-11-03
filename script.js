@@ -88,8 +88,31 @@ function persist() {
   if (run?.idleEnabled) run.idleAt = !paused && !titleMode && !TERMINAL.has(run.phase) ? Date.now() : null;
   checkpoint.capture(meta,run);
   saveAvailable = writeState(saveStorage, meta, run);
-  if (!saveAvailable)
-    warning = "Saving is unavailable. Keep this window open to retain your expedition.";
+  syncSaveNotice();
+  return saveAvailable;
+}
+function saveMessage() {
+  return saveAvailable ? warning : "Saving is unavailable. Keep this window open to retain your expedition.";
+}
+function saveAdvice() {
+  return saveAvailable ? "Your current progress has been saved on this device." : "The current checkpoint is still held in this window.";
+}
+function saveNoticeView() {
+  const message = saveMessage();
+  return message ? `<button class="save-warning paper-panel" data-action="save-notice" aria-label="Save notice: ${esc(message)}">${art("field-notes")}<span>Save notice</span></button>` : "";
+}
+function syncSaveNotice() {
+  const root = q(".game-screen");
+  if (!root || fatal) return;
+  const notice = root.querySelector(".save-warning"), message = saveMessage();
+  if (!message) notice?.remove();
+  else if (notice) notice.setAttribute("aria-label",`Save notice: ${message}`);
+  else root.insertAdjacentHTML("beforeend",saveNoticeView());
+  const copy = q("[data-save-message]"), advice = q("[data-save-advice]"), dismiss = q('[data-action="dismiss-save-notice"]');
+  if (copy) copy.textContent = message || "Saving is working.";
+  if (advice) advice.textContent = saveAdvice();
+  if (dismiss) dismiss.hidden = !saveAvailable || !warning;
+  if (modal === "save-notice") updateMenuScroll();
 }
 function interruptJourney(error) {
   epoch++;
@@ -392,7 +415,7 @@ function render() {
         : run.enemy && ["battle", "victoryBeat"].includes(run.phase)
           ? "battle"
           : "map";
-  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${warning ? `<button class="save-warning paper-panel" data-action="save-notice" aria-label="Save notice: ${esc(warning)}">${art("field-notes")}<span>Save notice</span></button>` : ""}<div id="menu-host"></div></div>`;
+  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${saveNoticeView()}<div id="menu-host"></div></div>`;
   if (!titleMode && run) {
     const heading = q(".stage-heading small");
     if (heading) heading.textContent = `${run.threat ? `THREAT ${run.threat}` : E.region(run).name.toUpperCase()} · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}`;
@@ -536,7 +559,7 @@ function menuContent() {
   if (modal === "partner" && run) return partnerView();
   if (modal === "opponent" && run?.enemy) return opponentView();
   if (modal === "guardians") return guardiansView();
-  if (modal === "save-notice") return `<h2>Save notice</h2><p>${esc(warning)}</p><p>${warning.includes("cannot be resumed") ? "You can start a new expedition from camp." : "You can keep playing in this window. Keep it open to retain this journey."}</p>`;
+  if (modal === "save-notice") return `<h2>Save notice</h2><p data-save-message>${esc(saveMessage() || "Saving is working.")}</p><p data-save-advice>${saveAdvice()}</p><div class="pause-actions">${button("Try saving","retry-save","","paper-panel")}<button class="paper-panel" data-action="dismiss-save-notice" ${saveAvailable && warning ? "" : "hidden"}>Dismiss notice</button></div>`;
   if (modal === "pause")
     return `<h2>Pause</h2><p>Battle and travel are paused.</p>${audioControl()}<div class="pause-actions">${button("Resume", "close", "", "paper-panel main-button")}${button("Expedition plan", "plans", "", "paper-panel")}${button("Partner & moves", "partner", "", "paper-panel")}${button("Expedition boons", "journal", "", "paper-panel")}${button("Know the guardians", "guardians", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}${button("Return to camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
   if (modal === "retire" || modal === "replace")
@@ -901,6 +924,8 @@ async function dispatch(action, value) {
   if (fatal && !["recover","reload"].includes(action)) return;
   if (action === "recover") { recoverJourney(); return; }
   if (action === "save-notice") { openMenu("save-notice"); return; }
+  if (action === "retry-save" && modal === "save-notice") { persist(); return; }
+  if (action === "dismiss-save-notice" && modal === "save-notice" && saveAvailable) { warning = ""; closeMenu(); syncSaveNotice(); return; }
   if (action === "choose-threat" && modal === "threats" && (!run || TERMINAL.has(run.phase))) {
     if (E.chooseThreat(meta, Number(value))) { persist(); render(); }
     return;

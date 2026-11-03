@@ -611,7 +611,7 @@ test("every stage has a regional arena and a layered map with real assets", () =
 });
 
 test("elemental animation sheets retain all four equal frames and their prompts", () => {
-  for (const [type, id] of [["fire", "fire-impact"], ["water", "water-impact"], ["grass", "leaf-impact"], ["electric", "electric-burst"], ["psychic", "spectral-pulse"],
+  for (const [type, id] of [["fire", "fire-impact"], ["water", "water-impact"], ["grass", "leaf-impact"], ["ice", "ice-impact"], ["electric", "electric-burst"], ["psychic", "spectral-pulse"],
     ["ghost", "spectral-pulse"], ["dark", "spectral-pulse"],
     ["ground", "stone-impact"], ["rock", "stone-impact"], ["steel", "stone-impact"]]) {
     assert.equal(impactSequence(type), id);

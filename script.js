@@ -6,7 +6,7 @@ import { GUARDIANS, guardianAbility, guardianState } from "./guardians.js";
 import { advanceIdle } from "./idle.js";
 import { PLANS, planDecision, applyPlanDecision } from "./plans.js";
 import { readState, writeState } from "./storage.js";
-import { BattleEffects } from "./presentation.js";
+import { BattleEffects, IMPACT_ASSETS } from "./presentation.js";
 import { discoveryRecords } from "./field-guide.js";
 import { GameAudio } from "./audio.js";
 import { SYNERGIES, activeSynergies } from "./builds.js";
@@ -1228,7 +1228,7 @@ async function boot() {
     ];
     const sources = [
       ...required.map((name) => "assets/generated/" + name + ".webp"),
-      ...["fire-impact", "water-impact", "leaf-impact", "electric-burst", "spectral-pulse", "stone-impact", "evolution-aura"].map((name) =>
+      ...[...IMPACT_ASSETS, "evolution-aura"].map((name) =>
         "assets/effects/" + name + "-sheet.webp"),
       ...Object.values(catalogue.pokemon).map((p) => p.artwork),
     ];

@@ -583,6 +583,23 @@
     "qc": "assets/effects/fire-impact.qc.json"
   },
   {
+    "id": "ice-impact",
+    "image": "assets/effects/ice-impact-sheet.webp",
+    "source": "assets/effects/ice-impact-sheet.png",
+    "rawSource": "assets/effects/ice-impact-raw.png",
+    "prompt": "assets/effects/ice-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/ice-impact.qc.json"
+  },
+  {
     "id": "leaf-impact",
     "image": "assets/effects/leaf-impact-sheet.webp",
     "source": "assets/effects/leaf-impact-sheet.png",

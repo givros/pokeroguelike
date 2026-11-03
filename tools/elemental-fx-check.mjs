@@ -2,18 +2,14 @@ import assert from "node:assert/strict";
 import {readFile,writeFile} from "node:fs/promises";
 import {chromium} from "playwright";
 import * as E from "../engine.js";
+import {ELEMENTAL_CASES,elementalBattle} from "./elemental-fixtures.mjs";
 const c={pokemon:JSON.parse(await readFile("data/pokemon.json")),moves:JSON.parse(await readFile("data/moves.json"))};
 const browser=await chromium.launch({headless:true}),checks=[],errors=[];
-const types=[["fire",4,"fire-impact"],["water",7,"water-impact"],["grass",1,"leaf-impact"]];
+const filter=process.argv.slice(2),types=ELEMENTAL_CASES.filter(([type])=>!filter.length||filter.includes(type));
+assert.ok(types.length,"No matching elemental fixtures");
 try{
  for(const [type,starter,effect] of types)for(const side of ["ally","enemy"])for(const critical of [false,true])for(const [width,height] of [[1440,900],[1280,720],[1024,768]]){
-  const hero=side==="ally"?starter:({fire:1,water:4,grass:7})[type];
-  const r=E.createRun(hero,E.baseMeta(),c,2026);E.selectBonus(r,r.offers[0]);
-  if(side==="ally"){r.travelProgress=1;E.arrive(r,c);}
-  else {const [index,id]=({fire:[3,58],water:[10,54],grass:[1,43]})[type];Object.assign(r,{phase:"arrival",stageIndex:index,regionEntry:null,scouting:{stageIndex:index,speciesId:id}});}
-  E.activateStage(r,c);r.nextSide=side;r.seed=critical?1:123456789;
-  r.hero.hp=r.hero.maxHp=r.enemy.hp=r.enemy.maxHp=600;
-  if(side==="enemy"){r.bonuses.push("regeneration","lifesteal");r.hero.shield=1;}
+  const r=elementalBattle(type,side,starter,c);r.seed=critical?1:123456789;
   assert.equal(E.bestMove(r,c).type,type);
   assert.equal(E.battleStep(structuredClone(r),c).crit,critical);
   const name=`${effect}-${width}-${side}-${critical?"critical":"normal"}`;
@@ -44,5 +40,5 @@ try{
   await page.locator('[data-action="retire"]').click();await page.locator('[data-action="confirm-retire"]').click();assert.equal(await page.locator(".vfx,.damage-number").count(),0);
   checks.push({type,effect,width,side,critical,...measured,frames});await context.close();
  }
- assert.deepEqual(errors,[]);await writeFile("output/playwright/elemental-fx-results.json",JSON.stringify({checks,errors},null,2));console.log(JSON.stringify({cases:checks.length,effects:[...new Set(checks.map(c=>c.effect))],maxHudPixelsCovered:Math.max(...checks.map(c=>c.covered)),errors},null,2));
+ assert.deepEqual(errors,[]);await writeFile(`output/playwright/elemental-fx${filter.length?"-"+filter.join("-"):""}-results.json`,JSON.stringify({checks,errors},null,2));console.log(JSON.stringify({cases:checks.length,effects:[...new Set(checks.map(c=>c.effect))],maxHudPixelsCovered:Math.max(...checks.map(c=>c.covered)),errors},null,2));
 }finally{await browser.close();}

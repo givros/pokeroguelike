@@ -1,0 +1,164 @@
+{
+  "target": "asset",
+  "mode": "impact",
+  "prompt": "Create a NEW ice-element battle impact sheet using the visible stone-impact image only as a painterly style and four-cell chronological layout reference. Keep the clean HD hand-painted anime finish, detailed internal shading and readable isolated silhouettes. Replace the rocks entirely with irregular translucent cyan ice splinters, long tapered frozen shards, chipped frosted edges, deep blue refracted facets and a little pale cold mist. Natural fractured crystal surfaces, varied sizes and asymmetric shapes; not simple triangles, diamonds, cubes, flat vector shapes or a snowflake emblem. Exactly four equal square cells in a 2 by 2 grid, read top-left, top-right, bottom-left, bottom-right. One evolving impact at a fixed center: frame 1 several compressed glinting ice splinters and a short puff of frost; frame 2 a broad asymmetric fracture burst of distinct tapered ice shards radiating outward, with clear negative space between shards and a small luminous cold center; frame 3 the shards spread into smaller chips and the mist thins; frame 4 only a few shrinking ice flecks and short mist wisps. Preserve a common source scale across frames; natural expansion and dissipation, not four equally sized icons. Keep the creature beneath recognizable through gaps. No water waves, liquid ribbons, lightning forks, flames, symbols, runes or perfect geometric rings. Restrict the ice to cool cyan, sky blue, deep blue and ivory; no pink or violet ice. Entire effect and every chip must stay inside the central 65 percent of its cell, with generous margins. Completely solid flat pure magenta #FF00FF background, including between cells; no gradients or halos on the background. No scenery, ground plane, characters, objects, text, numbers, labels, borders, grid lines or UI. Chroma-keyed transparent FX for an HD creature battle.\n",
+  "role": "",
+  "input": "assets/effects/ice-impact-raw.png",
+  "threshold": 160,
+  "edge_threshold": 230,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 512,
+  "fit_scale": 0.86,
+  "trim_border": 4,
+  "edge_clean_depth": 4,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 12,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "impact-1",
+    "impact-2",
+    "impact-3",
+    "impact-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 23,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        177,
+        207,
+        427,
+        418
+      ],
+      "edge_touch": false,
+      "output_size": [
+        222,
+        187
+      ],
+      "paste_position": [
+        145,
+        162
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 38,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        45,
+        95,
+        540,
+        500
+      ],
+      "edge_touch": false,
+      "output_size": [
+        440,
+        360
+      ],
+      "paste_position": [
+        36,
+        76
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 52,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        56,
+        89,
+        535,
+        510
+      ],
+      "edge_touch": false,
+      "output_size": [
+        426,
+        374
+      ],
+      "paste_position": [
+        43,
+        69
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 11,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        120,
+        147,
+        490,
+        474
+      ],
+      "edge_touch": false,
+      "output_size": [
+        329,
+        290
+      ],
+      "paste_position": [
+        91,
+        111
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "promptFile": "assets/effects/ice-impact.prompt.txt",
+  "reference": "assets/effects/stone-impact-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "sourceSha256": "1ddd79dc23dab3ce38379addbe925cf1afc49c140842e6e9e772aed962b48e34",
+  "rawSha256": "08e76c3a1a93db6ad05569b204a1f5c2cd38848528b8a5cf46bb9fa2afe559ea",
+  "promptSha256": "3da95ea49902f207ae3ad52bf07888563bd971dfd6edd5c0bdc96d7dc75e9b49",
+  "promptHashNormalization": "LF"
+}

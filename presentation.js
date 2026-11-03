@@ -1,12 +1,10 @@
-export function impactSequence(type) {
-  if (type === "fire") return "fire-impact";
-  if (type === "water") return "water-impact";
-  if (type === "grass") return "leaf-impact";
-  if (type === "electric") return "electric-burst";
-  if (["psychic", "ghost", "dark"].includes(type)) return "spectral-pulse";
-  if (["ground", "rock", "steel"].includes(type)) return "stone-impact";
-  return null;
-}
+export const IMPACT_SEQUENCES = Object.freeze({
+  fire:"fire-impact", water:"water-impact", grass:"leaf-impact", ice:"ice-impact",
+  electric:"electric-burst", psychic:"spectral-pulse", ghost:"spectral-pulse", dark:"spectral-pulse",
+  ground:"stone-impact", rock:"stone-impact", steel:"stone-impact",
+});
+export const IMPACT_ASSETS = Object.freeze([...new Set(Object.values(IMPACT_SEQUENCES))]);
+export const impactSequence = type => Object.hasOwn(IMPACT_SEQUENCES,type) ? IMPACT_SEQUENCES[type] : null;
 export class BattleEffects {
   constructor() {
     this.animations = new Set();

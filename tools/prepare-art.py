@@ -29,7 +29,7 @@ for p in Path('assets/effects').glob('*-sheet.png'):
  target=p.with_suffix('.webp')
  if not target.exists() or target.stat().st_mtime < p.stat().st_mtime:
   temporary=target.with_suffix('.webp.tmp')
-  im.save(temporary,format='WEBP',quality=96,method=6,lossless=p.stem=='dragon-impact-sheet')
+  im.save(temporary,format='WEBP',quality=96,method=6,lossless=p.stem in ['dragon-impact-sheet','contact-impact-sheet'])
   temporary.replace(target)
  name=p.stem.removesuffix('-sheet')
  manifest.append({'id':name,'image':target.as_posix(),'source':p.as_posix(),'rawSource':p.with_name(name+'-raw.png').as_posix(),'prompt':p.with_name(name+'.prompt.txt').as_posix(),'generator':'built-in imagegen','size':im.size,'transparent':True,'rows':2,'columns':2,'frames':4})

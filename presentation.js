@@ -5,6 +5,7 @@ export const IMPACT_SEQUENCES = Object.freeze({
   electric:"electric-burst", psychic:"spectral-pulse", ghost:"spectral-pulse", dark:"spectral-pulse",
   ground:"stone-impact", rock:"stone-impact", steel:"stone-impact",
   flying:"wind-impact",dragon:"dragon-impact",
+  normal:"contact-impact",fighting:"contact-impact",
 });
 export const MOVE_IMPACTS = Object.freeze({44:"bite-impact",450:"bite-impact"});
 export const IMPACT_ASSETS = Object.freeze([...new Set([...Object.values(IMPACT_SEQUENCES),...Object.values(MOVE_IMPACTS)])]);
@@ -224,9 +225,15 @@ export class BattleEffects {
     const target = result.side === "ally" ? "enemy" : "ally",
       point = this.point(target);
     if (!point) return;
+    const lowKick = result.move.id === 67, hitPoint = {...point};
+    if (lowKick) {
+      const body = document.querySelector(".actor-" + target + " .body-art").getBoundingClientRect(),
+        scene = document.querySelector("#battle-scene").getBoundingClientRect();
+      hitPoint.y = body.top + body.height * 0.7 - scene.top;
+    }
     const width = Math.min(250, innerWidth * 0.18) * (result.crit ? 1.25 : 1),
       sequence = impactSequence(result.move.type,result.move.id),
-      burst = sequence ? this.sprite(sequence, point, width * 1.5) :
+      burst = sequence ? this.sprite(sequence, hitPoint, width * 1.5 * (lowKick ? 0.6 : 1)) :
         this.image("impact-burst", point, width, "impact");
     if (burst) {
       const a = this.animate(
@@ -262,7 +269,7 @@ export class BattleEffects {
       const angle = i * 2.399 + result.damage * 0.1,
         particle = this.image(
           "impact-burst",
-          point,
+          hitPoint,
           14 + (i % 3) * 8,
           "particle",
         );

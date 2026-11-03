@@ -1,0 +1,171 @@
+{
+  "target": "asset",
+  "mode": "impact",
+  "prompt": "",
+  "role": "",
+  "input": "assets\\effects\\contact-impact-raw.png",
+  "threshold": 90,
+  "edge_threshold": 120,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 512,
+  "fit_scale": 0.86,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 12,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "impact-1",
+    "impact-2",
+    "impact-3",
+    "impact-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 6,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        194,
+        226,
+        433,
+        418
+      ],
+      "edge_touch": false,
+      "output_size": [
+        240,
+        193
+      ],
+      "paste_position": [
+        136,
+        159
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 10,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        63,
+        146,
+        501,
+        504
+      ],
+      "edge_touch": false,
+      "output_size": [
+        440,
+        359
+      ],
+      "paste_position": [
+        36,
+        76
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 9,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        141,
+        153,
+        461,
+        436
+      ],
+      "edge_touch": false,
+      "output_size": [
+        321,
+        284
+      ],
+      "paste_position": [
+        95,
+        114
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 4,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        182,
+        198,
+        401,
+        402
+      ],
+      "edge_touch": false,
+      "output_size": [
+        220,
+        205
+      ],
+      "paste_position": [
+        146,
+        153
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "promptFile": "assets/effects/contact-impact.prompt.txt",
+  "reference": "assets/effects/wind-impact-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "promptHashNormalization": "LF",
+  "residualChromaCleanup": {
+    "predicate": "r>150 and b>100 and g<100",
+    "removedPixels": 1120
+  },
+  "sourceSha256": "df891ecd701ab9cdaf1423ff485c201531973c6bc480ad85a6f61ff6d97b355d",
+  "rawSha256": "83c1882eef65e127939cc51592da30bf88ff834d19287dbf5efa3b85606298c1",
+  "promptSha256": "25cf7db6fb252a709c5c14839a5b4eb2f72b01e0ed425ffc02f2dede4de411e3",
+  "compiledOpaqueMagentaPixels": 0,
+  "compiledSha256": "4865925053bacab4fa745f53755dbcc060bb8b96889d30859933ed44f853dc14",
+  "compiledEdgePolicy": "Lossless WebP preserves extracted alpha contours and avoids chroma-key fringe."
+}

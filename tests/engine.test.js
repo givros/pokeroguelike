@@ -613,7 +613,7 @@ test("every stage has a regional arena and a layered map with real assets", () =
 test("elemental animation sheets retain all four equal frames and their prompts", () => {
   for (const [type, id] of [["fire", "fire-impact"], ["water", "water-impact"], ["grass", "leaf-impact"], ["ice", "ice-impact"], ["poison", "poison-impact"], ["electric", "electric-burst"], ["psychic", "spectral-pulse"],
     ["ghost", "spectral-pulse"], ["dark", "spectral-pulse"],
-    ["ground", "stone-impact"], ["rock", "stone-impact"], ["steel", "stone-impact"], ["flying", "wind-impact"], ["dragon", "dragon-impact"]]) {
+    ["ground", "stone-impact"], ["rock", "stone-impact"], ["steel", "stone-impact"], ["flying", "wind-impact"], ["dragon", "dragon-impact"], ["normal", "contact-impact"], ["fighting", "contact-impact"]]) {
     assert.equal(impactSequence(type), id);
     const png = readFileSync(`assets/effects/${id}-sheet.png`);
     assert.equal(png.readUInt32BE(16), 1024);
@@ -621,7 +621,7 @@ test("elemental animation sheets retain all four equal frames and their prompts"
     assert.ok(existsSync(`assets/effects/${id}-sheet.webp`));
     assert.match(readFileSync(`assets/effects/${id}.prompt.txt`, "utf8"),/2 by 2|2-by-2|2x2/);
   }
-  assert.equal(impactSequence("normal"), null);
+  assert.equal(impactSequence("unknown"), null);
 });
 
 test("camp strategies remain finite and preserve valid saves across seeded runs", () => {

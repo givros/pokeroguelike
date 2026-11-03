@@ -579,6 +579,23 @@
     "qc": "assets/effects/bite-impact.qc.json"
   },
   {
+    "id": "contact-impact",
+    "image": "assets/effects/contact-impact-sheet.webp",
+    "source": "assets/effects/contact-impact-sheet.png",
+    "rawSource": "assets/effects/contact-impact-raw.png",
+    "prompt": "assets/effects/contact-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/contact-impact.qc.json"
+  },
+  {
     "id": "dragon-impact",
     "image": "assets/effects/dragon-impact-sheet.webp",
     "source": "assets/effects/dragon-impact-sheet.png",

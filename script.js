@@ -686,12 +686,15 @@ async function waitForActivity(token) {
     await new Promise(resolve => workWaiters.add(resolve));
   return live(token);
 }
-async function wait(ms, token) {
+async function wait(ms, token, owner) {
+  // Interface changes can replace a scene while the same expedition continues.
+  const current = () => live(token) && (owner === undefined || owner?.isConnected);
   let previous = performance.now(),
     elapsed = 0;
-  while (elapsed < ms && live(token)) {
+  while (elapsed < ms && current()) {
     if (paused || document.hidden) {
       if (!await waitForActivity(token)) break;
+      if (!current()) break;
       previous = performance.now();
     }
     await new Promise((resolve) =>
@@ -701,7 +704,7 @@ async function wait(ms, token) {
     if (!paused && !document.hidden) elapsed += Math.min(100, now - previous);
     previous = now;
   }
-  return live(token);
+  return current();
 }
 async function travel(token) {
   let previous = performance.now();
@@ -781,10 +784,10 @@ async function playGrowth(token) {
     else node.closest("#battle-scene,#map-scene").append(label);
     q(".victory-banner")?.remove();
     const completed = await effects.evolve(node, catalogue.pokemon[growth.toId].artwork,
-      name, (ms) => wait(ms, token), () => {node.dataset.species=String(growth.toId);applyMapArtwork(node.closest("#map-actor"), catalogue.artworkLayout[growth.toId]);});
+      name, (ms) => wait(ms, token, node), () => {node.dataset.species=String(growth.toId);applyMapArtwork(node.closest("#map-actor"), catalogue.artworkLayout[growth.toId]);});
     if (!completed || !live(token)) return false;
     label.textContent = `${name} joins your journey!`;
-    if (!await wait(650, token)) return false;
+    if (!await wait(650, token, label)) return false;
     label.remove();
     if (reading?.isConnected) reading.textContent = previousReading;
   }
@@ -810,7 +813,7 @@ async function playRegionEntry(token) {
       { opacity: 0 }, { opacity: 1, offset: 0.15 },
       { opacity: 1, offset: 0.75 }, { opacity: 0 },
     ], { duration, easing: "linear" });
-    if (!await wait(duration, token)) return false;
+    if (!await wait(duration, token, entry)) return false;
     entry.remove();
   }
   if (!live(token)) return false;
@@ -832,7 +835,7 @@ async function playAwakening(token) {
       { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, offset: 0.2 },
       { opacity: 1, offset: 0.8 }, { opacity: 0, scale: 1.05 },
     ], { duration: effects.reduced ? 1 : 1700, easing: "linear" });
-    if (!await wait(effects.reduced ? 500 : 1700, token)) return false;
+    if (!await wait(effects.reduced ? 500 : 1700, token, toast)) return false;
     toast.remove();
   }
   if (!live(token)) return false;
@@ -899,6 +902,9 @@ async function pump() {
         continue;
       }
       if (run.phase === "battle") {
+        const scene = q("#battle-scene");
+        if (!scene?.querySelector(".actor-ally .body-art") || !scene.querySelector(".actor-enemy .body-art"))
+          throw new Error("The battle scene is unavailable.");
         const side = run.nextSide,
           move = E.bestMove(run, catalogue),
           actor = side === "ally" ? run.hero : run.enemy;
@@ -907,7 +913,7 @@ async function pump() {
         audio.play("windup", move.type);
         updateBattle();
         const duration = Math.max(450, speed * 0.65);
-        const completed = await effects.windup(side, move, (ms) => wait(ms, token), duration);
+        const completed = await effects.windup(side, move, (ms) => wait(ms, token, scene), duration);
         if (!completed || !live(token) || run.phase !== "battle") break;
         const result = E.battleStep(run, catalogue);
         narration = run.log.at(-1);

@@ -168,5 +168,8 @@
   "rawSha256": "265dc39aab0c06406f2df69b86a3088e370865ceef24d8a805508a60eea34f65",
   "refinementReferenceSha256": "b312b6e4b6f4a6598df150c735502ced40a3f1d90da0046c229c61898d6b5472",
   "promptSha256": "05e4d9f9b609b506122fbd3623b3333451e37d6755fe49fae97ba7192283dd55",
-  "refinementPromptSha256": "1d70a3ccf2987d6d6e0ee36e958d08c21cd7ba1b27b95a679380577aa8d518cc"
+  "refinementPromptSha256": "1d70a3ccf2987d6d6e0ee36e958d08c21cd7ba1b27b95a679380577aa8d518cc",
+  "compiledOpaqueMagentaPixels": 0,
+  "compiledSha256": "c71eb054f5e139872873c32933f6e287ac395908e1816092d6169ae1187549fb",
+  "compiledEdgePolicy": "Lossless WebP preserves extracted alpha contours and avoids chroma-key fringe."
 }

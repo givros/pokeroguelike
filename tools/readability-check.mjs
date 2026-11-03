@@ -23,7 +23,13 @@ battle.coins = 100000000;
 const idleRun = E.createRun(4, E.baseMeta(), catalogue, 2026);
 Object.assign(idleRun, { plan:"predator", idleEnabled:true, idleAt:Date.now()-3600000 });
 const threatBattle = simulate(2026,4,{threat:6,stopAt:r=>r.phase==="battle"}).run;
+const empoweredShrine = checkpoint(9,"shrine");
+Object.assign(empoweredShrine,{bonuses:[],offers:["attack_boost","regeneration","first_guard"],shrineEmpowered:true});
+empoweredShrine.hero.hp=empoweredShrine.hero.maxHp;
+const legacyShrine = structuredClone(empoweredShrine); legacyShrine.routeMode="legacy"; legacyShrine.shrineEmpowered=false;
 const scenarios = [
+  { name:"legacy-shrine", run:legacyShrine },
+  { name:"shrine-offering", run:empoweredShrine },
   { name: "threats", run:null, menu:"threats", meta:{...E.baseMeta(),unlockedThreat:6,selectedThreat:6} },
   { name: "threat-battle", run:threatBattle },
   { name: "idle-summary", run: idleRun },
@@ -103,6 +109,9 @@ try {
         for (const [a, b] of [[".hud-left", ".stage-heading"], [".stage-heading", ".hud-controls"],
           [".encounter-dock", "#map-actor .body-art"], [".relic-rail", ".battle-narration"], [".initial-bonus-dock", ".bonus-partner"]])
           if (!dialog && intersect(rect(a), rect(b))) collisions.push([a, b]);
+        const shrine = rect('.map-prop[src$="wayside-shrine.webp"]');
+        if (shrine && !dialog) for (const selector of [".hud-controls", ".hud-left", ".stage-heading", ".map-hero-card", ".encounter-dock"])
+          if (intersect(shrine, rect(selector))) collisions.push(["wayside shrine", selector]);
         return { small, overflow, collisions, brokenText, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
       });
       await page.screenshot({ path: `${out}/${width}-${scenario.name}.png` });

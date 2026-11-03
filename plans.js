@@ -15,7 +15,7 @@ export function planDecision(run) {
     const recipe = SYNERGIES.find(r=>r.id===plan.recipe);
     const missing = Object.entries(recipe.requires).filter(([id,n])=>E.count(run,id)<n).map(([id])=>id);
     const order = [...missing,...plan.priorities,"focus_crit","pp_boost","gold_boost"];
-    const offers = [...run.offers].sort((a,b)=>{
+    const offers = run.offers.filter((id)=>E.canSelectBonus(run,id)).sort((a,b)=>{
       const score=id=>{const i=order.indexOf(id); return i<0?100:i;};
       return score(a)-score(b);
     });

@@ -69,7 +69,8 @@
       512,
       510
     ],
-    "transparent": true
+    "transparent": true,
+    "rawSource": "assets/generated/broken-sanctuary-column-raw.png"
   },
   {
     "id": "critical-lens",
@@ -249,7 +250,8 @@
       512,
       485
     ],
-    "transparent": true
+    "transparent": true,
+    "rawSource": "assets/generated/lakeside-reeds-raw.png"
   },
   {
     "id": "leaf-wisp",
@@ -324,6 +326,18 @@
     "transparent": true
   },
   {
+    "id": "offering-bowl",
+    "image": "assets/generated/offering-bowl.webp",
+    "source": "assets/generated/offering-bowl.png",
+    "prompt": "assets/generated/offering-bowl.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      510,
+      512
+    ],
+    "transparent": true
+  },
+  {
     "id": "opening-guard",
     "image": "assets/generated/opening-guard.webp",
     "source": "assets/generated/opening-guard.png",
@@ -381,7 +395,8 @@
       512,
       429
     ],
-    "transparent": true
+    "transparent": true,
+    "rawSource": "assets/generated/sanctuary-arch-raw.png"
   },
   {
     "id": "sanctuary-dressed-reference",
@@ -417,7 +432,8 @@
       768,
       700
     ],
-    "transparent": true
+    "transparent": true,
+    "rawSource": "assets/generated/silver-willow-raw.png"
   },
   {
     "id": "supply-chest",
@@ -466,6 +482,19 @@
       512
     ],
     "transparent": true
+  },
+  {
+    "id": "wayside-shrine",
+    "image": "assets/generated/wayside-shrine.webp",
+    "source": "assets/generated/wayside-shrine.png",
+    "prompt": "assets/generated/wayside-shrine.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      505,
+      512
+    ],
+    "transparent": true,
+    "rawSource": "assets/generated/wayside-shrine-raw.png"
   },
   {
     "id": "woodland-dressed-reference",

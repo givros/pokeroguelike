@@ -402,6 +402,7 @@ export function rerollBonuses(run) {
   const guaranteed = alternatives[Math.floor(random(run) * alternatives.length)].id;
   const next = offerBonuses(run).filter((id) => id !== guaranteed).slice(0, 2);
   run.offers = [guaranteed, ...next];
+  if (run.shrineEmpowered && !run.offers.some((id) => canEmpowerBonus(run, id))) run.shrineEmpowered = false;
   run.coins -= cost;
   run.rerolls = (run.rerolls || 0) + 1;
   addLog(run, `Reforged the offered boons for ${cost} gold. ${3 - run.rerolls} reforges remain.`);
@@ -468,9 +469,39 @@ function grantBonus(run, id) {
   }
   return true;
 }
+export function shrineOfferingCost(run) {
+  return Math.ceil(run.hero.maxHp * 0.25);
+}
+export function canEmpowerBonus(run, id) {
+  const boon = BONUSES.find((b) => b.id === id);
+  return !!boon && id !== "pp_boost" && count(run, id) + 2 <= boon.max;
+}
+export function canOfferVitality(run) {
+  return run.phase === "shrine" && run.hero.hp > shrineOfferingCost(run) &&
+    run.offers.some((id) => canEmpowerBonus(run, id));
+}
+export function setShrineOffering(run, enabled) {
+  if (run.phase !== "shrine" || typeof enabled !== "boolean" || (enabled && !canOfferVitality(run))) return false;
+  run.shrineEmpowered = enabled;
+  return true;
+}
+export function canSelectBonus(run, id) {
+  const boon = BONUSES.find((b) => b.id === id);
+  return ['starter', 'reward', 'shrine'].includes(run.phase) && run.offers.includes(id) &&
+    !!boon && count(run, id) < boon.max && (!run.shrineEmpowered ||
+      (run.phase === "shrine" && canEmpowerBonus(run, id) && run.hero.hp > shrineOfferingCost(run)));
+}
 export function selectBonus(run, id) {
-  if (!['starter', 'reward', 'shrine'].includes(run.phase) ||
-    !run.offers.includes(id) || !grantBonus(run, id)) return false;
+  if (!canSelectBonus(run, id)) return false;
+  const empowered = !!run.shrineEmpowered;
+  if (empowered) {
+    const cost = shrineOfferingCost(run);
+    run.hero.hp -= cost;
+    addLog(run, `The shrine accepts ${cost} HP for two boon ranks.`);
+  }
+  grantBonus(run, id);
+  if (empowered) grantBonus(run, id);
+  run.shrineEmpowered = false;
   const previous = run.phase;
   run.offers = [];
   run.pendingReward = false;
@@ -816,6 +847,7 @@ export function depart(run) {
     return true;
   }
   const previousRegion = region(run).id;
+  run.shrineEmpowered = false;
   run.stageIndex++;
   if (run.routeMode === "regional" && region(run).id !== previousRegion)
     run.regionEntry = region(run).id;

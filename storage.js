@@ -161,6 +161,8 @@ export function validRun(r, c) {
   if (r.idleAt != null && (!Number.isSafeInteger(r.idleAt) || r.idleAt < 0)) return false;
   if (r.idleCredit != null && (!Number.isInteger(r.idleCredit) || r.idleCredit < 0 || r.idleCredit > 28800000)) return false;
   if (r.threat !== undefined && (!Number.isInteger(r.threat) || r.threat < 0 || r.threat > MAX_THREAT)) return false;
+  if (r.shrineEmpowered !== undefined && (typeof r.shrineEmpowered !== "boolean" ||
+    (r.shrineEmpowered && r.phase !== "shrine"))) return false;
   if (r.plan !== undefined && !["manual", "predator", "warden", "siphon"].includes(r.plan)) return false;
   if (r.rerolls !== undefined && (!Number.isInteger(r.rerolls) || r.rerolls < 0 || r.rerolls > 3)) return false;
   if (["starter", "reward"].includes(r.phase) && r.offers.length === 0)

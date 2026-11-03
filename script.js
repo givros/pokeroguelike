@@ -171,12 +171,22 @@ function bonusChoices(action = "bonus") {
   return run.offers
     .map((id) => {
       const b = E.BONUSES.find((b) => b.id === id);
-      const rank = E.count(run, id) + 1;
-      const next = awakenedBy(run, id);
+      const empowered = run.phase === "shrine" && run.shrineEmpowered;
+      const eligible = !empowered || E.canEmpowerBonus(run, id);
+      const rank = Math.min(b.max, E.count(run, id) + (empowered ? 2 : 1));
+      const current = new Set(activeSynergies(run).map((recipe) => recipe.id));
+      const next = empowered ? activeSynergies({ ...run, bonuses:[...run.bonuses,id,id] }).filter((recipe)=>!current.has(recipe.id)) : awakenedBy(run, id);
+      const description = empowered ? eligible ? `Gain two ranks. Each rank: ${b.text}` : "This boon cannot gain two ranks. Cancel the offering to take one rank." : b.text;
       return choice(b.asset, b.name + (b.max > 1 ? ` · ${b.id === "pp_boost" ? "use " : ""}${rank}/${b.max}` : ""),
-        b.text + (next.length ? ` Awakens ${next.map((recipe) => recipe.name).join(", ")}!` : ""), action, id);
+        description + (eligible && next.length ? ` Awakens ${next.map((recipe) => recipe.name).join(", ")}!` : ""), action, id, !eligible);
     })
     .join("");
+}
+function offeringControl() {
+  const enabled = !!run.shrineEmpowered;
+  const cost = E.shrineOfferingCost(run);
+  const hint = enabled ? `Pay ${cost} HP when choosing a compatible boon. Click here to cancel.` : E.canOfferVitality(run) ? `Offer ${cost} HP for two ranks of a compatible boon.` : run.hero.hp <= cost ? `More than ${cost} HP required.` : "No offered boon can gain two ranks.";
+  return `<div class="shrine-footer"><button type="button" class="shrine-offering" data-action="offering" data-value="${enabled ? "off" : "on"}" aria-pressed="${enabled}" ${!enabled && !E.canOfferVitality(run) ? "disabled" : ""}>${art("offering-bowl")}<span><strong>Vitality offering: ${enabled ? "On" : "Off"}</strong><small>${hint}</small></span></button>${button("Continue without a boon", "encounter", "leave", "dock-builds")}</div>`;
 }
 function trainingDescription() {
   if (run.hero.level >= 100) return "Maximum level reached.";
@@ -224,6 +234,8 @@ function encounterDock() {
       choice(
         "field-notes",
       "guardian-crest",
+      "offering-bowl",
+      "wayside-shrine",
         "Train",
         trainingDescription(),
         "encounter",
@@ -258,15 +270,7 @@ function encounterDock() {
   }
   if (run.phase === "shrine") {
     title = "A gift from the ancients";
-    content =
-      bonusChoices() +
-      choice(
-        "trail-sign",
-        "Continue",
-        "Leave the shrine undisturbed.",
-        "encounter",
-        "leave",
-      );
+    content = bonusChoices();
   }
   if (run.phase === "shop") {
     title = "The wayfarer trading post";
@@ -291,7 +295,7 @@ function encounterDock() {
   }
   const note = run.log.at(-1) !== E.stage(run).name + "." ? run.log.at(-1) : "";
   return title
-    ? `<section class="encounter-dock paper-panel"><h2>${title}</h2><div class="dock-choices">${content}</div>${["reward", "shrine"].includes(run.phase) ? `<div class="reward-tools">${button("View build combinations", "builds", "", "dock-builds")}${rerollControl()}</div>` : ""}${note ? `<p class="dock-note">${esc(note)}</p>` : ""}</section>`
+    ? `<section class="encounter-dock paper-panel"><h2>${title}</h2><div class="dock-choices">${content}</div>${run.phase === "shrine" ? offeringControl() : ""}${["reward", "shrine"].includes(run.phase) ? `<div class="reward-tools">${button("View build combinations", "builds", "", "dock-builds")}${rerollControl()}</div>` : ""}${note ? `<p class="dock-note">${esc(note)}</p>` : ""}</section>`
     : "";
 }
 function starterBonusView() {
@@ -476,7 +480,7 @@ function menuContent() {
         })
         .join("") || "<p>No boons acquired yet.</p>"
     }</div><h3>Battle journal</h3><div class="log-list">${run.log.map((s) => `<p>${esc(s)}</p>`).join("")}</div>`;
-  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
+  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Offer vitality at the shrine</h3><p>Take one free boon, or offer 25% maximum HP to gain two ranks of a compatible boon. The offering cannot faint your partner. Unique boons and instant recovery cannot be empowered. Activate or cancel freely; HP is paid only when you choose the boon.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
 }
 function renderMenu() {
   const host = q("#menu-host");
@@ -921,6 +925,10 @@ async function dispatch(action, value) {
     }
     return;
   }
+  if (action === "offering") {
+    if (E.setShrineOffering(run, value === "on")) { persist(); render(); }
+    return;
+  }
   if (action === "bonus") {
     if (E.selectBonus(run, value)) {
       audio.play("reward");
@@ -1046,6 +1054,8 @@ async function boot() {
       "guardian-eye",
       "field-notes",
       "guardian-crest",
+      "offering-bowl",
+      "wayside-shrine",
       "parchment-panel",
       "gold-coins",
       "healing-berry",

@@ -35,6 +35,7 @@ export function simulate(seed, starter = 7, options = {}) {
       case "starter":
       case "reward":
       case "shrine": {
+        if (r.phase === "shrine" && options.offerVitality) E.setShrineOffering(r, true);
         const preference = [
           "regeneration",
           "lifesteal",
@@ -49,7 +50,7 @@ export function simulate(seed, starter = 7, options = {}) {
           "pp_boost",
           "gold_boost",
         ];
-        const id = preference.find((id) => r.offers.includes(id));
+        const id = preference.find((id) => E.canSelectBonus(r, id));
         if (id) E.selectBonus(r, id);
         else E.resolveEncounter(r, "leave");
         break;

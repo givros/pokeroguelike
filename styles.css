@@ -1778,3 +1778,11 @@ summary {
 .fighter-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .fighter-meta > small { font:inherit; text-transform:uppercase; letter-spacing:.8px; }
 .barrier-label { text-transform:none; letter-spacing:0; white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+.shrine-footer { display:flex; align-items:center; justify-content:space-between; gap:18px; padding-top:8px; margin-top:8px; border-top:1px solid #52644755; }
+.shrine-offering { display:flex; align-items:center; gap:12px; padding:4px 6px; border:0; background:none; text-align:left; color:var(--ink); max-width:76%; }
+.shrine-offering .item-art { width:42px; height:42px; flex:0 0 42px; }
+.shrine-offering strong { font-size:16px; }
+.shrine-offering small { display:block; font-size:14px; line-height:1.45; margin-top:4px; }
+.shrine-offering[aria-pressed="true"] strong { color:#733c28; text-decoration:underline; text-underline-offset:3px; }
+.shrine-footer > .dock-builds { margin:0; max-width:23%; }

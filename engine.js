@@ -70,14 +70,14 @@ export const BONUSES = [
   {
     id: "lifesteal",
     name: "Ravenous Fang",
-    asset: "attack-fang",
+    asset: "ravenous-fang-v2",
     text: "Heal for 15% of damage dealt.",
     max: 2,
   },
   {
     id: "first_guard",
     name: "Opening Guard",
-    asset: "defense-shell",
+    asset: "opening-guard",
     text: "Take 50% less damage from the first hit.",
     max: 1,
   },
@@ -91,7 +91,7 @@ export const BONUSES = [
   {
     id: "momentum",
     name: "Wayfarer Momentum",
-    asset: "affinity-crystal",
+    asset: "wayfarer-spur",
     text: "Damage +3% per battle action, up to +30%.",
     max: 1,
   },
@@ -105,7 +105,7 @@ export const BONUSES = [
   {
     id: "focus_crit",
     name: "Guardian Eye",
-    asset: "critical-lens",
+    asset: "guardian-eye",
     text: "Critical hits deal 25% additional damage.",
     max: 1,
   },

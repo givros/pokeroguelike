@@ -144,6 +144,18 @@
     "transparent": true
   },
   {
+    "id": "guardian-eye",
+    "image": "assets/generated/guardian-eye.webp",
+    "source": "assets/generated/guardian-eye.png",
+    "prompt": "assets/generated/guardian-eye.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      504,
+      512
+    ],
+    "transparent": true
+  },
+  {
     "id": "healing-berry",
     "image": "assets/generated/healing-berry.webp",
     "source": "assets/generated/healing-berry.png",
@@ -288,6 +300,18 @@
     "transparent": true
   },
   {
+    "id": "opening-guard",
+    "image": "assets/generated/opening-guard.webp",
+    "source": "assets/generated/opening-guard.png",
+    "prompt": "assets/generated/opening-guard.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      493,
+      512
+    ],
+    "transparent": true
+  },
+  {
     "id": "parchment-panel",
     "image": "assets/generated/parchment-panel.webp",
     "source": "assets/generated/parchment-panel.png",
@@ -296,6 +320,18 @@
     "size": [
       768,
       733
+    ],
+    "transparent": true
+  },
+  {
+    "id": "ravenous-fang-v2",
+    "image": "assets/generated/ravenous-fang-v2.webp",
+    "source": "assets/generated/ravenous-fang-v2.png",
+    "prompt": "assets/generated/ravenous-fang-v2.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      511,
+      512
     ],
     "transparent": true
   },
@@ -392,6 +428,18 @@
     "size": [
       512,
       259
+    ],
+    "transparent": true
+  },
+  {
+    "id": "wayfarer-spur",
+    "image": "assets/generated/wayfarer-spur.webp",
+    "source": "assets/generated/wayfarer-spur.png",
+    "prompt": "assets/generated/wayfarer-spur.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      512
     ],
     "transparent": true
   },

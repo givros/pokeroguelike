@@ -494,6 +494,7 @@
       512
     ],
     "transparent": true,
+    "qc": "assets/generated/wayside-shrine.qc.json",
     "rawSource": "assets/generated/wayside-shrine-raw.png"
   },
   {
@@ -565,6 +566,40 @@
     "frames": 4
   },
   {
+    "id": "fire-impact",
+    "image": "assets/effects/fire-impact-sheet.webp",
+    "source": "assets/effects/fire-impact-sheet.png",
+    "rawSource": "assets/effects/fire-impact-raw.png",
+    "prompt": "assets/effects/fire-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/fire-impact.qc.json"
+  },
+  {
+    "id": "leaf-impact",
+    "image": "assets/effects/leaf-impact-sheet.webp",
+    "source": "assets/effects/leaf-impact-sheet.png",
+    "rawSource": "assets/effects/leaf-impact-raw.png",
+    "prompt": "assets/effects/leaf-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/leaf-impact.qc.json"
+  },
+  {
     "id": "spectral-pulse",
     "image": "assets/effects/spectral-pulse-sheet.webp",
     "source": "assets/effects/spectral-pulse-sheet.png",
@@ -595,5 +630,22 @@
     "rows": 2,
     "columns": 2,
     "frames": 4
+  },
+  {
+    "id": "water-impact",
+    "image": "assets/effects/water-impact-sheet.webp",
+    "source": "assets/effects/water-impact-sheet.png",
+    "rawSource": "assets/effects/water-impact-raw.png",
+    "prompt": "assets/effects/water-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/water-impact.qc.json"
   }
 ]

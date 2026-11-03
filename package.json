@@ -26,7 +26,9 @@
     "test:map-grounding": "node tools/map-visibility-check.mjs && node tools/map-grounding-check.mjs",
     "test:choice-previews": "node tools/choice-preview-check.mjs",
     "test:recovery": "node tools/recovery-check.mjs && node tools/load-notice-check.mjs && node tools/save-transition-check.mjs",
-    "test:save-transitions": "node tools/save-transition-check.mjs"
+    "test:save-transitions": "node tools/save-transition-check.mjs",
+    "test:elemental-fx": "node tools/elemental-fx-check.mjs && node tools/reduced-feedback-check.mjs",
+    "test:reduced-feedback": "node tools/reduced-feedback-check.mjs"
   },
   "devDependencies": {
     "playwright": "^1.64.1"

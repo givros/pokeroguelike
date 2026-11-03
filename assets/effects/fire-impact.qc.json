@@ -1,0 +1,164 @@
+{
+  "target": "asset",
+  "mode": "impact",
+  "prompt": "Create a NEW fire-element variant of the referenced impact sheet. Use the image just shown as a style and layout reference only. Keep its clean HD hand-painted anime battle-FX finish and chronological 2-by-2 layout, but replace the electric design entirely with organic licking flame tongues, molten amber curls, ivory hot cores and a few red-orange embers. Not pixel art, not a vector icon, not a geometric starburst. Exactly four equal square cells in a 2x2 grid, read top-left, top-right, bottom-left, bottom-right. This is ONE short fire impact evolving through four genuinely different stages at a fixed center: frame 1 a tightly compressed hot flame seed; frame 2 a broad asymmetric eruption of curled flames with an open readable silhouette; frame 3 the flame tongues peel outward and break into embers; frame 4 only a few shrinking cinders and narrow fading curls. Preserve a common source scale across the sequence; the fire grows and then dissipates naturally rather than becoming four equally sized icons. Keep every flame and ember inside the central 65 percent of its cell with generous safe margin. Background must be completely solid flat pure magenta #FF00FF, including the spaces between cells. No black background, no scenery, ground plane, characters, objects, symbols, runes, letters, numbers, labels, borders, grid lines or UI. Do not copy lightning forks or cold-blue energy from the reference. Avoid colored halos bleeding into the magenta background. The finished sheet will be chroma-keyed and displayed as a readable translucent impact over an HD creature battle.\n",
+  "role": "",
+  "input": "assets/effects/fire-impact-raw.png",
+  "threshold": 160,
+  "edge_threshold": 230,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 512,
+  "fit_scale": 0.86,
+  "trim_border": 4,
+  "edge_clean_depth": 4,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 12,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "impact-1",
+    "impact-2",
+    "impact-3",
+    "impact-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 7,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        211,
+        193,
+        416,
+        425
+      ],
+      "edge_touch": false,
+      "output_size": [
+        180,
+        204
+      ],
+      "paste_position": [
+        166,
+        154
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 34,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        41,
+        75,
+        541,
+        500
+      ],
+      "edge_touch": false,
+      "output_size": [
+        440,
+        374
+      ],
+      "paste_position": [
+        36,
+        69
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 26,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        97,
+        117,
+        505,
+        489
+      ],
+      "edge_touch": false,
+      "output_size": [
+        359,
+        327
+      ],
+      "paste_position": [
+        76,
+        92
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 8,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        122,
+        148,
+        487,
+        476
+      ],
+      "edge_touch": false,
+      "output_size": [
+        321,
+        288
+      ],
+      "paste_position": [
+        95,
+        112
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "promptFile": "assets/effects/fire-impact.prompt.txt",
+  "reference": "assets/effects/electric-burst-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "sourceSha256": "5bf2c0b204379b590dcfacd94820327987d96776942a8572463b655b2d5a90be",
+  "rawSha256": "306d7d53b61c2c716e1d18d4f8065cf5d8bdbf938cc0b4e9d92ed264bdb90303",
+  "promptSha256": "b590621259bfd5c9722e4379e28463da3f14284becd499580cc8c69f2c808115",
+  "promptHashNormalization": "LF"
+}

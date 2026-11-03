@@ -1,0 +1,164 @@
+{
+  "target": "asset",
+  "mode": "impact",
+  "prompt": "Create a NEW water-element variant of the visible battle impact sheet. Use the image just shown as the style and four-cell chronological layout reference, not as a fire silhouette to recolor. Match its clean HD hand-painted anime FX finish, crisp readable contour and finely painted internal highlights. Replace the fire completely with flowing turquoise and deep-blue liquid ribbons, irregular ivory foam crests, torn curved sheets of water and a few rounded droplets. Exactly four equal square cells in a 2 by 2 grid, read top-left, top-right, bottom-left, bottom-right. One evolving impact at a fixed center: frame 1 a tight twisting contact splash; frame 2 a wide asymmetric splash crown, open at the center with broken curved water ribbons and foaming crests; frame 3 the ribbons separate into smaller splashes and outward droplets; frame 4 only a few tiny falling drops and short shrinking wisps of water. Keep open negative space so the creature beneath remains recognizable. The water must feel fluid, not like flames, a starburst, a perfect geometric ring, a droplet icon, ice crystals or lightning. Common source scale across all frames, with natural expansion and dissipation, not four equally sized icons. Entire effect and every droplet contained inside the central 65 percent of each cell, generous safe margin on all sides. Background completely solid flat pure magenta #FF00FF, including between cells. No background gradients, ground, scenery, objects, characters, symbols, runes, text, numbers, labels, borders, grid lines or UI. No glow spilling into the magenta. This sheet will be chroma-keyed and layered over an HD creature battle.\n",
+  "role": "",
+  "input": "assets/effects/water-impact-raw.png",
+  "threshold": 160,
+  "edge_threshold": 230,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 512,
+  "fit_scale": 0.86,
+  "trim_border": 4,
+  "edge_clean_depth": 4,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 12,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "impact-1",
+    "impact-2",
+    "impact-3",
+    "impact-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 14,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        199,
+        191,
+        420,
+        431
+      ],
+      "edge_touch": false,
+      "output_size": [
+        171,
+        186
+      ],
+      "paste_position": [
+        170,
+        163
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 41,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        21,
+        97,
+        589,
+        509
+      ],
+      "edge_touch": false,
+      "output_size": [
+        440,
+        319
+      ],
+      "paste_position": [
+        36,
+        96
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 45,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        96,
+        108,
+        522,
+        464
+      ],
+      "edge_touch": false,
+      "output_size": [
+        330,
+        275
+      ],
+      "paste_position": [
+        91,
+        118
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 14,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        122,
+        152,
+        501,
+        468
+      ],
+      "edge_touch": false,
+      "output_size": [
+        293,
+        244
+      ],
+      "paste_position": [
+        109,
+        134
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "promptFile": "assets/effects/water-impact.prompt.txt",
+  "reference": "assets/effects/fire-impact-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "sourceSha256": "6858c97cc6944753ef9141e616755541fd6e617502e09998e694d9098ff0f5cc",
+  "rawSha256": "c78025867caff0b2102835945dc32c0d245e487416a309c1ee94862ac56f7ea7",
+  "promptSha256": "2fd9c2d6178d7274fe2e1a9ae36a89c0f718adff096d7a8add8753914c82f2cc",
+  "promptHashNormalization": "LF"
+}

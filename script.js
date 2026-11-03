@@ -1228,7 +1228,7 @@ async function boot() {
     ];
     const sources = [
       ...required.map((name) => "assets/generated/" + name + ".webp"),
-      ...["electric-burst", "spectral-pulse", "stone-impact", "evolution-aura"].map((name) =>
+      ...["fire-impact", "water-impact", "leaf-impact", "electric-burst", "spectral-pulse", "stone-impact", "evolution-aura"].map((name) =>
         "assets/effects/" + name + "-sheet.webp"),
       ...Object.values(catalogue.pokemon).map((p) => p.artwork),
     ];

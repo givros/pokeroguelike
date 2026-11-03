@@ -27,6 +27,8 @@ for p in Path('assets/effects').glob('*-sheet.png'):
  name=p.stem.removesuffix('-sheet')
  manifest.append({'id':name,'image':target.as_posix(),'source':p.as_posix(),'rawSource':p.with_name(name+'-raw.png').as_posix(),'prompt':p.with_name(name+'.prompt.txt').as_posix(),'generator':'built-in imagegen','size':im.size,'transparent':True,'rows':2,'columns':2,'frames':4})
 for item in manifest:
+ qc=Path(item['source']).with_name(item['id']+'.qc.json')
+ if qc.exists():item['qc']=qc.as_posix()
  raw=Path(item['source']).with_name(item['id']+'-raw.png')
  if raw.exists() and 'rawSource' not in item: item['rawSource']=raw.as_posix()
 Path('data/asset-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8')

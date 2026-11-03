@@ -1,4 +1,7 @@
 export function impactSequence(type) {
+  if (type === "fire") return "fire-impact";
+  if (type === "water") return "water-impact";
+  if (type === "grass") return "leaf-impact";
   if (type === "electric") return "electric-burst";
   if (["psychic", "ghost", "dark"].includes(type)) return "spectral-pulse";
   if (["ground", "rock", "steel"].includes(type)) return "stone-impact";
@@ -12,9 +15,10 @@ export class BattleEffects {
   }
   animate(node, frames, options) {
     if (!node) return null;
+    const { reducedDuration = 1, ...timing } = options;
     const a = node.animate(frames, {
-      ...options,
-      duration: this.reduced ? 1 : options.duration,
+      ...timing,
+      duration: this.reduced ? reducedDuration : timing.duration,
     });
     this.animations.add(a);
     if (this.paused) a.pause();
@@ -173,11 +177,17 @@ export class BattleEffects {
     const width = node.getBoundingClientRect().width * 1.1 + 8;
     node.style.left = Math.max(width / 2 + 12, Math.min(scene.clientWidth - width / 2 - 12, point.x)) + "px";
     node.style.top = Math.max(100, Math.min(scene.clientHeight - 60, point.y)) + "px";
-    const animation = this.animate(node, [
+    const frames = this.reduced ? [
+      { translate:"-50% 0",opacity:1,scale:1 },
+      { translate:"-50% 0",opacity:1,scale:1,offset:.8 },
+      { translate:"-50% 0",opacity:0,scale:1 },
+    ] : [
       { translate: "-50% 0", opacity: 1, scale: .9 },
       { opacity: 1, scale: 1.08, offset: .25 },
       { translate: "-50% -65px", opacity: 0, scale: 1 },
-    ], { duration: 1000, delay, fill: "backwards", easing: "ease-out" });
+    ];
+    const animation = this.animate(node, frames,
+      { duration: 1000, reducedDuration:1000, delay, fill: "backwards", easing: "ease-out" });
     animation?.finished.catch(() => {}).finally(() => node.remove());
   }
   impact(result) {

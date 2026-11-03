@@ -1,0 +1,164 @@
+{
+  "target": "asset",
+  "mode": "impact",
+  "prompt": "Create a NEW grass-element impact sheet in the same clean HD hand-painted anime battle-FX family as the visible water sheet. Use the image just shown for painterly finish, contained composition and four-cell chronological layout only. Replace the water entirely with a fast botanical slash of fresh emerald and yellow-green leaves, pale ivory wind ribbons and tiny broken leaf flecks. The leaves must have natural pointed silhouettes, painted veins, curled or folded surfaces and varied sizes; not simple flat leaf icons or identical pasted shapes. Exactly four equal square cells in a 2 by 2 grid, chronological order top-left, top-right, bottom-left, bottom-right. One impact evolving around a fixed center: frame 1 a compressed twisting handful of leaves with a short wind curl; frame 2 an energetic asymmetric fan of eight to twelve veined leaves sweeping outward along several curved paths, with narrow pale wind streaks and open negative space at the center; frame 3 the fan breaks into separated tumbling leaves and shorter curls; frame 4 only a few shrinking leaf fragments. Natural expansion and dissipation at a common source scale, not four equally sized icons. Keep the creature beneath recognizable through gaps. No flower emblem, perfect circle, geometric starburst, vines wrapping a body, water, fire or lightning. All leaves, fragments and streaks stay inside the central 65 percent of each cell, with generous safe margin. Completely solid flat pure magenta #FF00FF background, including between cells; no gradients, halos or shadows on that background. No characters, scenery, ground plane, text, numbers, labels, runes, symbols, borders, grid lines or UI. This sheet will be chroma-keyed and layered over an HD creature battle.\n",
+  "role": "",
+  "input": "assets/effects/leaf-impact-raw.png",
+  "threshold": 220,
+  "edge_threshold": 245,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 512,
+  "fit_scale": 0.86,
+  "trim_border": 4,
+  "edge_clean_depth": 4,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 12,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "impact-1",
+    "impact-2",
+    "impact-3",
+    "impact-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 17,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        206,
+        189,
+        410,
+        412
+      ],
+      "edge_touch": false,
+      "output_size": [
+        172,
+        188
+      ],
+      "paste_position": [
+        170,
+        162
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 32,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        27,
+        101,
+        548,
+        494
+      ],
+      "edge_touch": false,
+      "output_size": [
+        440,
+        332
+      ],
+      "paste_position": [
+        36,
+        90
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 33,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        100,
+        130,
+        520,
+        485
+      ],
+      "edge_touch": false,
+      "output_size": [
+        354,
+        300
+      ],
+      "paste_position": [
+        79,
+        106
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 10,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        125,
+        157,
+        485,
+        455
+      ],
+      "edge_touch": false,
+      "output_size": [
+        304,
+        251
+      ],
+      "paste_position": [
+        104,
+        130
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "promptFile": "assets/effects/leaf-impact.prompt.txt",
+  "reference": "assets/effects/water-impact-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "sourceSha256": "3ba02a6f81db827ace871a4d37e22e09d65c926a38b884b6485b1994c5e86535",
+  "rawSha256": "7ed4a613daac56cb959d046775307ea7ebc662d2f6affa04901ea12190323562",
+  "promptSha256": "142d26ba36005fcb9d132e032e5a84a93f7a8e2398d46df6cbcbdbb4b1b0d094",
+  "promptHashNormalization": "LF"
+}

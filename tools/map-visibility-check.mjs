@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import {readFile,mkdir,writeFile} from "node:fs/promises";
 import {chromium} from "playwright";
 import * as E from "../engine.js";
-const baseline=process.argv.includes("--baseline");
-const out=`output/playwright/map-visibility${baseline?"-before":""}`;
+const baseline=process.argv.includes("--baseline"),scouted=process.argv.includes("--scouted");
+const out=`output/playwright/map-visibility${baseline?"-before":scouted?"-scouted":""}`;
 await mkdir(out,{recursive:true});
 const catalogue={pokemon:JSON.parse(await readFile("data/pokemon.json")),moves:JSON.parse(await readFile("data/moves.json"))};
 const world=JSON.parse(await readFile("data/world-map.json"));
@@ -17,6 +17,8 @@ try{
   const page=await context.newPage();page.on("pageerror",e=>errors.push(e.message));
   await page.goto("http://127.0.0.1:5173");await page.locator('[data-action="resume"]').click();
   await page.locator("img").evaluateAll(images=>Promise.all(images.map(img=>img.decode())));
+  // Audit the largest live caption separately from the frozen map-only save fixture.
+  if(scouted)await page.locator(".travel-caption").evaluate(root=>{const report=document.createElement("span");report.className="scouting-report";report.textContent="Scouted: Dragonite · Multiscale · Opening strike +25%";root.append(report);});
   const measured=await page.evaluate(async({forms,route,approaches,baseline})=>{
    const {pointOnRoute}=await import("/engine.js");
    const layout=baseline?null:await fetch("/data/artwork-layout.json").then(r=>r.json());

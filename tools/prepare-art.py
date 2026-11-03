@@ -10,11 +10,18 @@ for p in root.glob('*.png'):
   bounds=alpha.getbbox();im=im.crop(bounds)
   cap=768 if p.stem in ['woodland-tree','silver-willow','mossy-rocks','trail-sign','parchment-panel'] else 512
   im.thumbnail((cap,cap),Image.Resampling.LANCZOS)
+  if p.stem=='trail-banner':
+   # Resampling a keyed edge can blend a near-magenta fringe back into one pixel.
+   pixels=im.load()
+   for y in range(im.height):
+    for x in range(im.width):
+     r,g,b,a=pixels[x,y]
+     if a and r>150 and b>100 and g<100:pixels[x,y]=(0,0,0,0)
  target=p.with_suffix('.webp')
  if not target.exists() or target.stat().st_mtime < p.stat().st_mtime:
   prepared=im if transparent else im.convert('RGB')
   temporary=target.with_suffix('.webp.tmp')
-  prepared.save(temporary,format='WEBP',quality=94 if transparent else 92,method=6)
+  prepared.save(temporary,format='WEBP',quality=94 if transparent else 92,method=6,lossless=p.stem=='trail-banner')
   temporary.replace(target)
  manifest.append({'id':p.stem,'image':p.with_suffix('.webp').as_posix(),'source':p.as_posix(),'prompt':p.with_suffix('.prompt.txt').as_posix(),'generator':'built-in imagegen','size':im.size,'transparent':transparent})
 for p in Path('assets/effects').glob('*-sheet.png'):

@@ -146,6 +146,7 @@ button:not(:disabled):hover {
   text-align: center;
   text-shadow: 0 3px 7px #173a30;
 }
+.title-shade { background:linear-gradient(#0a2624e6, #102e2cd9 44%, #0a2624e6); }
 .title-brand > small {
   letter-spacing: 5px;
   font-size: 14px;
@@ -467,18 +468,21 @@ button:not(:disabled):hover {
 .stage-heading {
   text-align: center;
   position: absolute;
-  top: 10px;
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  text-shadow:
-    0 2px 4px #173c30,
-    0 0 18px #183c3499;
-  max-width: 36%;
+  width: min(330px, 26vw);
+  border: solid transparent;
+  border-width: 8px 12px;
+  border-image: url("assets/generated/trail-banner.webp") 28 44 fill / 8px 12px stretch;
+  padding: 0 4px;
+  text-shadow: none;
   pointer-events: none;
 }
 .stage-heading > small {
   font-size: 14px;
-  letter-spacing: 1.4px;
+  line-height:16px;
+  letter-spacing: .6px;
   color: #f4e7bb;
   white-space: nowrap;
   font-weight: 700;
@@ -486,10 +490,11 @@ button:not(:disabled):hover {
 .stage-heading > strong {
   display: block;
   font-size: 17px;
-  line-height: 1.3;
-  margin-top: 7px;
+  line-height: 1.2;
+  margin-top: 2px;
   color: #fff6d6;
 }
+.mode-battle .stage-heading { top:0; border-width:12px 18px; border-image-width:12px 18px; padding:2px 4px; }
 .hud-controls {
   display: flex;
   gap: 10px;
@@ -1471,12 +1476,9 @@ summary {
     border-image-width: 12px;
     font-size: 14px;
   }
-  .stage-heading {
-    top: 6px;
-  }
   .stage-heading > strong {
     font-size: 15px;
-    margin-top: 5px;
+    margin-top: 2px;
   }
   .stage-heading > small {
     font-size: 14px;
@@ -1640,12 +1642,17 @@ summary {
   }
 }
 .battle-kind {
-  left: 50%;
-  top: 12.5%;
-  transform: translateX(-50%);
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
   text-align: center;
-  width: 220px;
+  width: auto;
+  margin-top: 6px;
+  letter-spacing: .6px;
+  text-shadow: none;
 }
+.stage-heading .battle-kind small { margin-top:3px; }
 .bonus-partner {
   top: auto;
   bottom: 52%;

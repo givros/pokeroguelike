@@ -1,11 +1,11 @@
-export async function readingContrast(page,selector){
- const texts=await page.locator(selector).evaluate(root=>{
+export async function readingContrast(page,selector,{includeButtons=false}={}){
+ const texts=await page.locator(selector).evaluate((root,includeButtons)=>{
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),texts=[];let n;
-  while(n=walker.nextNode())if(n.textContent.trim()&&!n.parentElement.closest("button")){
+  while(n=walker.nextNode())if(n.textContent.trim()&&(includeButtons||!n.parentElement.closest("button"))){
    const css=getComputedStyle(n.parentElement);if(css.visibility==="hidden"||css.display==="none")continue;
    const range=document.createRange();range.selectNodeContents(n);for(const r of range.getClientRects())if(r.width&&r.height)texts.push({text:n.textContent,color:css.color,rect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom}});
   }return texts;
- });
+ },includeButtons);
  const hide=await page.addStyleTag({content:`${selector},${selector} *{color:transparent!important;text-shadow:none!important;-webkit-text-stroke:0 transparent!important}`});
  const background=await page.screenshot();await hide.evaluate(n=>n.remove());
  const samples=await page.evaluate(async({background,texts})=>{

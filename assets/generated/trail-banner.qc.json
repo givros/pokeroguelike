@@ -1,0 +1,37 @@
+{
+  "target": "asset",
+  "mode": "single",
+  "prompt": "Use the merchant-cart image just shown only as the material and painterly style reference: warm woodland fantasy illustration, woven green canvas, aged golden piping, soft detailed hand-painted volume and natural little leaves. Create ONE separate front-facing empty horizontal cloth banner frame for a video game's trail status header. A broad deep forest-green cloth reading field with subtle low-contrast woven texture, restrained folds confined to the edges, fine aged-gold stitched piping and short tucked fabric ends. Two small carved wood corner fasteners and a few tiny ivy leaves at the outer corners only. Richly illustrated assembled material, no flat vector rectangle or generic application panel. The central 80 percent of the width and central 70 percent of the height must be completely blank, uniformly DARK forest green (approximately #16392F), without light stripes, mottled highlights, ornaments or intrusive folds; live ivory game text will be placed there later. The reading field must be opaque and continuous. Straight gently irregular outer edges suitable for nine-slice resizing, preserving the decorated corners while stretching the quiet centre. Overall banner body about three times wider than tall. No pointed central pendant or large hanging ornament. No emblem, rune, star, arrow, circle, icon, text, letter, number, label, button or painted control. Do not include the cart, roof, posts, bottles or any scenery. Single isolated banner centred in a wide image, entirely within the central 70 percent safe area with generous margins on every side. Crisp fully opaque foreground material and contour, no translucent glow, blur, pink or red edge fringe. Pure solid flat magenta #FF00FF background everywhere outside the banner, no background gradients. No grid or multiple variants. Clean HD hand-painted game artwork, not pixel art.\n",
+  "role": "",
+  "input": "assets\\generated\\trail-banner-raw.png",
+  "threshold": 90,
+  "edge_threshold": 120,
+  "duration": 200,
+  "single_size": 1024,
+  "promptFile": "assets/generated/trail-banner.prompt.txt",
+  "reference": "assets/generated/merchant-cart.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "promptHashNormalization": "LF",
+  "residualChromaCleanup": {
+    "predicate": "r>150 and b>100 and g<100",
+    "removedPixels": 422
+  },
+  "sourceSha256": "b017ec7dc095aa398a1eb8f175bb2d1933341fc603c6ca953bdcb8c8eadfe237",
+  "rawSha256": "be84f7fffebaabf377bfc4dd63e25ba39549e1f32414ac5291c62dc48da4ea3f",
+  "promptSha256": "719dabdd4a4b034c2bd1d7094464b25bfffbca2abfa3f2b4c60e2201e65e759b",
+  "compiledSize": [
+    512,
+    120
+  ],
+  "nineSlice": {
+    "top": 28,
+    "right": 44,
+    "bottom": 28,
+    "left": 44
+  },
+  "compiledSha256": "0a869bb9360b95df42b6c7ee2a1cf80358ff5bce80de3c846f26c9acddebf319",
+  "compiledOpaqueMagentaPixels": 0,
+  "compiledEdgePolicy": "Residual chroma cleanup after Lanczos resize, lossless WebP"
+}

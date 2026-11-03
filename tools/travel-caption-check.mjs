@@ -14,6 +14,8 @@ for(const stage of [2,4,7,9,11,13]){
  const returning=structuredClone(run);returning.phase="travel";returning.stageIndex++;returning.landmark.state="returning";fixtures.push({name:`return-${stage}`,run:returning});
 }
 const legacy=structuredClone(fixtures[0].run);legacy.routeMode="legacy";fixtures.push({name:"legacy",run:legacy});
+const scout=simulate(2026,4,{stopAt:r=>r.stageIndex===13&&r.phase==="camp"}).run;E.resolveEncounter(scout,"scout",c);Object.assign(scout,{pendingGrowth:null,pendingAwakenings:[],regionEntry:null,travelProgress:.5});
+for(const speciesId of [150,149,131]){const run=structuredClone(scout);run.scouting.speciesId=speciesId;fixtures.push({name:`scouted-${speciesId}`,run});}
 const baseline=process.argv.includes("--baseline"),out=`output/playwright/travel-caption${baseline?"-before":""}`;await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true}),checks=[],errors=[];
 try{

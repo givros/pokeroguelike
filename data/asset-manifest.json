@@ -462,6 +462,20 @@
     "transparent": true
   },
   {
+    "id": "trail-banner",
+    "image": "assets/generated/trail-banner.webp",
+    "source": "assets/generated/trail-banner.png",
+    "prompt": "assets/generated/trail-banner.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      120
+    ],
+    "transparent": true,
+    "qc": "assets/generated/trail-banner.qc.json",
+    "rawSource": "assets/generated/trail-banner-raw.png"
+  },
+  {
     "id": "trail-sign",
     "image": "assets/generated/trail-sign.webp",
     "source": "assets/generated/trail-sign.png",

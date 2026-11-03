@@ -153,9 +153,13 @@ function recoveryView() {
 function health(m) {
   return `<div class="health-frame"><div class="health-fill ${m.hp / m.maxHp < 0.25 ? "danger" : m.hp / m.maxHp < 0.5 ? "low" : ""}" style="width:${(m.hp / m.maxHp) * 100}%"></div></div>`;
 }
+function battleKindView() {
+  if (!run.enemy || !["battle","victoryBeat"].includes(run.phase)) return "";
+  return `<div class="battle-kind">${E.stage(run).kind === "boss" ? "GUARDIAN" : E.stage(run).kind === "elite" ? "ELITE ENCOUNTER" : "AUTOMATIC BATTLE"}<small id="turn-label">Action ${run.battleActions + 1}${run.plan && run.plan !== "manual" ? ` · ${PLANS.find(p=>p.id===run.plan).name}` : ""}</small></div>`;
+}
 function hud() {
   const stage = E.stage(run);
-  return `<header class="game-hud"><div class="hud-left paper-panel">${art("gold-coins")}<strong id="hud-coins">${run.coins}</strong><span class="hud-score">${run.wins} ${run.wins === 1 ? "victory" : "victories"}</span></div><div class="stage-heading"><small>THE GUARDIAN TRAIL · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}</small><strong>${stage.name}</strong></div><div class="hud-controls"><div class="speed-select paper-panel">${[
+  return `<header class="game-hud"><div class="hud-left paper-panel">${art("gold-coins")}<strong id="hud-coins">${run.coins}</strong><span class="hud-score">${run.wins} ${run.wins === 1 ? "victory" : "victories"}</span></div><div class="stage-heading"><small>THE GUARDIAN TRAIL · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}</small><strong>${stage.name}</strong>${battleKindView()}</div><div class="hud-controls"><div class="speed-select paper-panel">${[
     ["Slow", 2000],
     ["Normal", 1500],
     ["Fast", 750],
@@ -213,7 +217,7 @@ function battleCard(m, side) {
 function battleView() {
   const h = { ...run.hero, id: visualHeroId() },
     e = run.enemy;
-  return `<div id="battle-scene" style="--battle-arena:url(assets/generated/${E.region(run).arena}.webp)"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div><div class="battle-kind">${E.stage(run).kind === "boss" ? "GUARDIAN" : E.stage(run).kind === "elite" ? "ELITE ENCOUNTER" : "AUTOMATIC BATTLE"}<small id="turn-label">Action ${run.battleActions + 1}${run.plan && run.plan !== "manual" ? ` · ${PLANS.find(p=>p.id===run.plan).name}` : ""}</small></div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${esc(narration || run.log.at(-1))}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTORY</div>' : ""}</div>`;
+  return `<div id="battle-scene" style="--battle-arena:url(assets/generated/${E.region(run).arena}.webp)"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${esc(narration || run.log.at(-1))}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTORY</div>' : ""}</div>`;
 }
 function worldProp(p) {
   return `<img class="map-prop" src="assets/generated/${p.asset}.webp" alt="" style="left:${p.x * 100}%;top:${p.y * 100}%;width:${p.w * 100}%;height:${p.h * 100}%;z-index:${p.layer === "ground" ? 30 : Math.round(p.y * 1000)}" draggable="false">`;
@@ -1207,6 +1211,7 @@ async function boot() {
       "offering-bowl",
       "wayside-shrine",
       "parchment-panel",
+      "trail-banner",
       "gold-coins",
       "healing-berry",
       "attack-fang",

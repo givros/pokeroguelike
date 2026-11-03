@@ -6,7 +6,7 @@ import { GUARDIANS, guardianAbility, guardianState } from "./guardians.js";
 import { advanceIdle } from "./idle.js";
 import { PLANS, planDecision, applyPlanDecision } from "./plans.js";
 import { readState, writeState } from "./storage.js";
-import { BattleEffects, IMPACT_ASSETS } from "./presentation.js";
+import { BattleEffects, IMPACT_ASSETS, PROJECTILE_ASSETS } from "./presentation.js";
 import { discoveryRecords } from "./field-guide.js";
 import { GameAudio } from "./audio.js";
 import { SYNERGIES, activeSynergies } from "./builds.js";
@@ -79,7 +79,7 @@ const esc = (s) =>
 const art = (asset, cls = "", alt = "") =>
   `<img class="item-art ${cls}" src="assets/generated/${asset}.webp" alt="${esc(alt)}" draggable="false">`;
 const mon = (id, cls = "") =>
-  `<img class="pokemon-art ${cls}" src="${catalogue.pokemon[id].artwork}" alt="${esc(catalogue.pokemon[id].name)}" draggable="false">`;
+  `<img class="pokemon-art ${cls}" data-species="${id}" src="${catalogue.pokemon[id].artwork}" alt="${esc(catalogue.pokemon[id].name)}" draggable="false">`;
 const visualHeroId = () => run.pendingGrowth?.fromId || run.hero.id;
 const button = (label, action, value = "", cls = "", disabled = false) =>
   `<button class="${cls}" data-action="${action}" data-value="${value}" ${disabled ? "disabled" : ""}>${label}</button>`;
@@ -1218,9 +1218,7 @@ async function boot() {
       "woodland-tree",
       "mossy-rocks",
       "trail-sign",
-      "fire-wisp",
-      "water-wisp",
-      "leaf-wisp",
+      ...PROJECTILE_ASSETS,
       "impact-burst",
       "merchant-cart",
       "rest-spring",

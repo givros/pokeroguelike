@@ -1,0 +1,168 @@
+{
+  "target": "asset",
+  "mode": "impact",
+  "prompt": "Use the spectral-pulse image just shown only as a reference for its clean HD hand-painted anime finish, rich shaded volume and four-frame chronological layout. Create a NEW Dragon Breath impact with a distinct silhouette: powerful elongated cobalt-blue and turquoise plasma plumes, curling sharply tapered tongues of draconic breath, ivory hot ridges, deep indigo shaded undersides and tiny blue ember flecks. Energetic flowing pressure, solid illustrated volume, separated long hooked plumes around an open center. No literal dragon, creature head, scales, face, skull, teeth, rune, emblem or symbol. Do not copy the purple circular spectral cloud or make a simple recolor. Exactly four equal square cells in a 2 by 2 grid, read top-left, top-right, bottom-left, bottom-right. Fixed center and common source scale. Frame 1: several compressed curved blue plasma tongues with a small turquoise center. Frame 2: an asymmetric expanded blast of elongated curling plumes spreading outward, with clear large gaps and a small ivory-turquoise core so the target beneath remains recognizable. Frame 3: the plumes break into shorter curling blue tongues and separate embers, most of the middle empty. Frame 4: only a few tiny tapered blue embers and short curved traces. One continuous evolving impact, not four equally sized icons. No perfect circles or rings, no lightning forks, water waves, droplets, ice crystals, leaves, rocks or orange fire. Keep every plume and ember within the central 65 percent of its cell, generous margins on all sides, nothing crossing cell edges. All effects are fully opaque shaded painted shapes with crisp contours, no translucency, blur, soft halo, opacity fade or magenta reflections. The game handles fading. Pure flat solid magenta #FF00FF background throughout, no gradients. No text, labels, numbers, borders, grid lines, scenery, ground or characters. Do not make pixel art. Polished readable creature battle effect for native Dragon Breath.\n",
+  "role": "",
+  "input": "assets\\effects\\dragon-impact-raw.png",
+  "threshold": 90,
+  "edge_threshold": 120,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 512,
+  "fit_scale": 0.86,
+  "trim_border": 4,
+  "edge_clean_depth": 2,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 12,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "impact-1",
+    "impact-2",
+    "impact-3",
+    "impact-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 8,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        203,
+        196,
+        401,
+        411
+      ],
+      "edge_touch": false,
+      "output_size": [
+        168,
+        183
+      ],
+      "paste_position": [
+        172,
+        164
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 19,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        40,
+        64,
+        556,
+        530
+      ],
+      "edge_touch": false,
+      "output_size": [
+        440,
+        397
+      ],
+      "paste_position": [
+        36,
+        57
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 19,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        57,
+        112,
+        500,
+        487
+      ],
+      "edge_touch": false,
+      "output_size": [
+        378,
+        320
+      ],
+      "paste_position": [
+        67,
+        96
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 10,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        120,
+        139,
+        456,
+        436
+      ],
+      "edge_touch": false,
+      "output_size": [
+        286,
+        253
+      ],
+      "paste_position": [
+        113,
+        129
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "promptFile": "assets/effects/dragon-impact.prompt.txt",
+  "reference": "assets/effects/spectral-pulse-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "promptHashNormalization": "LF",
+  "residualChromaCleanup": {
+    "predicate": "r>150 and b>100 and g<100",
+    "removedPixels": 61
+  },
+  "sourceSha256": "baae6fbae2829564327f1457640430c0fefb40a58e2d01afb387d70ca05b8f64",
+  "rawSha256": "c1d75b29033d665dc323d1eaf1dc9d9d26cd19e032056400813dd6326bc06f7e",
+  "promptSha256": "61c42b1fb7c28a846c67a36aae34fedcba0c6382a56a234ba9d76d41e08f0368"
+}

@@ -1,0 +1,25 @@
+{
+  "target": "asset",
+  "mode": "single",
+  "prompt": "Use the Dragon Breath impact image just shown as the exact art and material reference. Create ONE matching horizontal Dragon Breath projectile, travelling from left to right: a compact rounded leading concentration of ivory and turquoise energy on the RIGHT, with several long tapering cobalt-blue plasma tongues streaming behind it toward the LEFT. Distinct hooked flowing plumes, deep indigo undersides, luminous cyan ridges and a few tiny blue embers, matching the reference's rich clean HD hand-painted anime finish. Not a recolored orange fireball, not water or ice. The foreground is fully opaque shaded illustration with crisp contours; no translucent glow, blur, soft background halo, opacity fade or magenta reflection. No creature, dragon head, face, wings, scale pattern, rune, ring, symbol or arrow. One continuous organic projectile, not a sprite sheet and no grid. Side view, centered horizontally and vertically in a wide canvas; entire projectile and all embers fully contained within the central 65 percent of the image with generous margins on all four sides. Keep the silhouette elongated, roughly three times wider than tall, readable at 180 pixels wide. Pure solid flat magenta #FF00FF background throughout, no gradient. No text, labels, border, ground, scenery, objects or characters. Do not make pixel art. This projectile will be shown before the matching four-frame impact in a creature autobattler.\n",
+  "role": "",
+  "input": "assets\\generated\\dragon-wisp-raw.png",
+  "threshold": 90,
+  "edge_threshold": 120,
+  "duration": 200,
+  "single_size": 768,
+  "promptFile": "assets/generated/dragon-wisp.prompt.txt",
+  "reference": "assets/effects/dragon-impact-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "promptHashNormalization": "LF",
+  "direction": "right",
+  "residualChromaCleanup": {
+    "predicate": "r>150 and b>100 and g<100",
+    "removedPixels": 697
+  },
+  "sourceSha256": "ae1b0a3a24c93546ca91dde31fff7094d2eab7ecbe56b7ea97670eaaa81bc61e",
+  "rawSha256": "f7cd13946d1a0150836c74c951551ca613e0b0b4ebcd1f6f44a532916e82abb2",
+  "promptSha256": "fe115eb6e0843cb1bbe0b004f8289deffd79522b46043a771d39b6ddfc692a49"
+}

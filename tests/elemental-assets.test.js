@@ -2,11 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync,existsSync} from "node:fs";
 import {createHash} from "node:crypto";
-import {IMPACT_ASSETS,IMPACT_SEQUENCES,MOVE_IMPACTS,impactSequence,projectileAsset} from "../presentation.js";
+import {IMPACT_ASSETS,IMPACT_SEQUENCES,MOVE_IMPACTS,PROJECTILE_ASSETS,impactSequence,projectileAsset} from "../presentation.js";
 const digest=value=>createHash("sha256").update(value).digest("hex");
 const manifest=JSON.parse(readFileSync("data/asset-manifest.json"));
 test("new elemental impacts retain their generated sources, prompts and matching extraction QC",()=>{
- for(const name of ["fire-impact","water-impact","leaf-impact","ice-impact","poison-impact","bite-impact","wind-impact"]){
+ for(const name of ["fire-impact","water-impact","leaf-impact","ice-impact","poison-impact","bite-impact","wind-impact","dragon-impact"]){
   const entry=manifest.find(a=>a.id===name);assert.ok(entry);assert.equal(entry.generator,"built-in imagegen");assert.equal(entry.frames,4);assert.ok(existsSync(entry.rawSource));
   const qc=JSON.parse(readFileSync(entry.qc));assert.equal(qc.shared_scale,true);assert.equal(qc.frames.length,4);assert.deepEqual(qc.edge_touch_frames,[]);assert.equal(qc.opaqueMagentaPixels,0);
   assert.equal(qc.sourceSha256,digest(readFileSync(entry.source)));assert.equal(qc.rawSha256,digest(readFileSync(entry.rawSource)));
@@ -26,4 +26,12 @@ test("native bite moves use jaws without changing other elemental feedback",()=>
  assert.equal(impactSequence("dark",999),"spectral-pulse");assert.equal(impactSequence("bug",999),null);
  assert.equal(projectileAsset(moves[52]),"fire-wisp");assert.equal(projectileAsset(moves[55]),"water-wisp");assert.equal(projectileAsset(moves[75]),"leaf-wisp");
  assert.equal(impactSequence("normal","__proto__"),null);assert.equal(impactSequence("normal","toString"),null);
+});
+test("Dragon Breath preloads matching generated projectile art with retained source provenance",()=>{
+ const entry=manifest.find(a=>a.id==="dragon-wisp"),qc=JSON.parse(readFileSync(entry.qc));
+ assert.equal(entry.generator,"built-in imagegen");assert.equal(qc.direction,"right");assert.equal(qc.opaqueMagentaPixels,0);
+ assert.equal(qc.sourceSha256,digest(readFileSync(entry.source)));assert.equal(qc.rawSha256,digest(readFileSync(entry.rawSource)));
+ assert.equal(qc.promptSha256,digest(readFileSync(entry.prompt,"utf8").replace(/\r\n/g,"\n")));
+ assert.equal(projectileAsset(JSON.parse(readFileSync("data/moves.json"))[225]),"dragon-wisp");
+ assert.equal(new Set(PROJECTILE_ASSETS).size,PROJECTILE_ASSETS.length);for(const asset of PROJECTILE_ASSETS)assert.ok(existsSync(`assets/generated/${asset}.webp`));
 });

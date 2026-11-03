@@ -1,17 +1,20 @@
+import {BREATH_ORIGINS,artworkAnchor} from "./attack-origins.js";
 export const IMPACT_SEQUENCES = Object.freeze({
   fire:"fire-impact", water:"water-impact", grass:"leaf-impact", ice:"ice-impact", poison:"poison-impact",
   electric:"electric-burst", psychic:"spectral-pulse", ghost:"spectral-pulse", dark:"spectral-pulse",
   ground:"stone-impact", rock:"stone-impact", steel:"stone-impact",
-  flying:"wind-impact",
+  flying:"wind-impact",dragon:"dragon-impact",
 });
 export const MOVE_IMPACTS = Object.freeze({44:"bite-impact",450:"bite-impact"});
 export const IMPACT_ASSETS = Object.freeze([...new Set([...Object.values(IMPACT_SEQUENCES),...Object.values(MOVE_IMPACTS)])]);
 export const impactSequence = (type,moveId) => Object.hasOwn(MOVE_IMPACTS,moveId) ? MOVE_IMPACTS[moveId] : Object.hasOwn(IMPACT_SEQUENCES,type) ? IMPACT_SEQUENCES[type] : null;
+export const PROJECTILE_ASSETS = Object.freeze(["fire-wisp","water-wisp","leaf-wisp","dragon-wisp"]);
 export function projectileAsset(move) {
   if(move.id===450)return null;
   if(move.type==="fire")return "fire-wisp";
   if(move.type==="water"||move.type==="ice")return "water-wisp";
   if(move.type==="grass"||move.type==="bug")return "leaf-wisp";
+  if(move.type==="dragon")return "dragon-wisp";
   return null;
 }
 export class BattleEffects {
@@ -52,6 +55,18 @@ export class BattleEffects {
       x: a.left + a.width * 0.5 - b.left,
       y: a.top + a.height * 0.48 - b.top,
     };
+  }
+  emissionPoint(side,move) {
+    if(move.id!==225)return this.point(side);
+    const node=document.querySelector(".actor-"+side+" .body-art"),scene=document.querySelector("#battle-scene");
+    const anchor=BREATH_ORIGINS[node?.dataset.species];
+    if(!node?.naturalWidth||!scene||!anchor)return this.point(side);
+    const css=getComputedStyle(node),scale=css.scale==="none"?[1,1]:css.scale.split(" ").map(Number);
+    const matrix=new DOMMatrix().rotate(parseFloat(css.rotate)||0).scale(scale[0],scale[1]??scale[0])
+      .multiply(new DOMMatrix(css.transform==="none"?undefined:css.transform));
+    const point=artworkAnchor({box:node.getBoundingClientRect(),width:parseFloat(css.width),height:parseFloat(css.height),
+      naturalWidth:node.naturalWidth,naturalHeight:node.naturalHeight,anchor,matrix:[matrix.a,matrix.b,matrix.c,matrix.d]});
+    const bounds=scene.getBoundingClientRect();return {x:point.x-bounds.left,y:point.y-bounds.top};
   }
   image(asset, point, width, cls = "") {
     const scene = document.querySelector("#battle-scene");
@@ -130,7 +145,7 @@ export class BattleEffects {
       { duration: duration * 0.7, easing: "ease-in-out" },
     );
     await wait(duration * 0.25);
-    const from = this.point(side),
+    const from = this.emissionPoint(side,move),
       to = this.point(side === "ally" ? "enemy" : "ally");
     if (!from || !to) return;
     const asset = projectileAsset(move);
@@ -142,7 +157,8 @@ export class BattleEffects {
         "projectile",
       );
       if (projectile) {
-        if (direction < 0) projectile.style.scale = "-1 1";
+        const angle=Math.atan2(to.y-from.y,Math.abs(to.x-from.x))*direction*180/Math.PI;
+        const transform=scale=>`translate(-50%,-50%) rotate(${angle}deg) scale(${direction*scale},${scale})`;
         const a = this.animate(
           projectile,
           [
@@ -150,14 +166,14 @@ export class BattleEffects {
               left: from.x + "px",
               top: from.y + "px",
               opacity: 0,
-              transform: "translate(-50%,-50%) scale(.4)",
+              transform: transform(.4),
             },
             { opacity: 1, offset: 0.15 },
             {
               left: to.x + "px",
               top: to.y + "px",
               opacity: 1,
-              transform: "translate(-50%,-50%) scale(1)",
+              transform: transform(1),
             },
           ],
           { duration: duration * 0.48, easing: "ease-in" },

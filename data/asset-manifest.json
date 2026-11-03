@@ -97,6 +97,20 @@
     "transparent": true
   },
   {
+    "id": "dragon-wisp",
+    "image": "assets/generated/dragon-wisp.webp",
+    "source": "assets/generated/dragon-wisp.png",
+    "prompt": "assets/generated/dragon-wisp.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      124
+    ],
+    "transparent": true,
+    "qc": "assets/generated/dragon-wisp.qc.json",
+    "rawSource": "assets/generated/dragon-wisp-raw.png"
+  },
+  {
     "id": "field-notes",
     "image": "assets/generated/field-notes.webp",
     "source": "assets/generated/field-notes.png",
@@ -549,6 +563,23 @@
     "columns": 2,
     "frames": 4,
     "qc": "assets/effects/bite-impact.qc.json"
+  },
+  {
+    "id": "dragon-impact",
+    "image": "assets/effects/dragon-impact-sheet.webp",
+    "source": "assets/effects/dragon-impact-sheet.png",
+    "rawSource": "assets/effects/dragon-impact-raw.png",
+    "prompt": "assets/effects/dragon-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/dragon-impact.qc.json"
   },
   {
     "id": "electric-burst",

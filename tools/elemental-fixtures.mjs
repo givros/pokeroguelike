@@ -4,10 +4,15 @@ export const ELEMENTAL_CASES = [
   ["fire",4,"fire-impact"],["water",7,"water-impact"],["grass",1,"leaf-impact"],["ice",7,"ice-impact"],["poison",1,"poison-impact"],
   ["dark",7,"bite-impact",44],["bug",1,"bite-impact",450,["enemy"]],
   ["flying",1,"wind-impact",16,["enemy"]],
+  ["dragon",4,"dragon-impact",225],
 ];
 export function elementalBattle(type, side, starter, catalogue) {
   let run;
-  if (side === "ally" && type === "dark") {
+  if(type === "dragon") {
+    run = E.createRun(4,E.baseMeta(),catalogue,2026);E.selectBonus(run,run.offers[0]);
+    Object.assign(run,{phase:"arrival",stageIndex:12,regionEntry:null,scouting:{stageIndex:12,speciesId:149}});
+    run.hero=E.fighter(6,11,catalogue);run.partnerForms=[4,5,6];E.activateStage(run,catalogue);
+  } else if (side === "ally" && type === "dark") {
     run = E.createRun(7,E.baseMeta(),catalogue,2026);E.selectBonus(run,run.offers[0]);
     Object.assign(run,{phase:"arrival",stageIndex:10,regionEntry:null,scouting:{stageIndex:10,speciesId:63}});
     run.hero=E.fighter(9,11,catalogue);run.partnerForms=[7,8,9];E.activateStage(run,catalogue);

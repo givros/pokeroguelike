@@ -3,6 +3,7 @@ import {readFile,writeFile} from "node:fs/promises";
 import {chromium} from "playwright";
 import * as E from "../engine.js";
 import {ELEMENTAL_CASES,elementalBattle} from "./elemental-fixtures.mjs";
+import {projectileAsset} from "../presentation.js";
 const c={pokemon:JSON.parse(await readFile("data/pokemon.json")),moves:JSON.parse(await readFile("data/moves.json"))};
 const browser=await chromium.launch({headless:true}),checks=[],errors=[];
 const filter=process.argv.slice(2),types=ELEMENTAL_CASES.filter(([type])=>!filter.length||filter.includes(type));
@@ -34,7 +35,7 @@ try{
   },effect);
   assert.equal(measured.covered,0);assert.equal(measured.frame,"100% 0%");assert.ok(measured.labels.length);assert.deepEqual(measured.labelsOverHud,[]);
   if(side==="enemy")assert.ok(measured.labels.some(label=>label.startsWith("BARRIER")));
-  if(moveId)assert.deepEqual(await page.evaluate(()=>window.__projectiles),[],"This move must not send an unrelated elemental projectile during windup");
+  if(moveId){const asset=projectileAsset(E.bestMove(r,c));assert.deepEqual(await page.evaluate(()=>window.__projectiles),asset?[`assets/generated/${asset}.webp`]:[],"The native attack must use its matching windup artwork");}
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run);await page.waitForTimeout(250);assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run),saved);
   await page.screenshot({path:`output/playwright/${name}.png`});
   const frames=await sprite.evaluate(node=>{const animation=node.getAnimations().find(a=>a.effect.getKeyframes().some(k=>k.backgroundPosition));return [0,170,330,490].map(time=>{animation.currentTime=time;return getComputedStyle(node).backgroundPosition;});});assert.deepEqual(frames,["0% 0%","100% 0%","0% 100%","100% 100%"]);

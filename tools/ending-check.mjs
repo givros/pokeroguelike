@@ -3,6 +3,7 @@ import {readFile,writeFile,mkdir} from "node:fs/promises";
 import {chromium} from "playwright";
 import * as E from "../engine.js";
 import {simulate} from "./simulate.mjs";
+import {readingContrast} from "./reading-contrast.mjs";
 const catalogue={pokemon:JSON.parse(await readFile("data/pokemon.json")),moves:JSON.parse(await readFile("data/moves.json"))};
 const complete=simulate(2026,4).run,completeMeta=E.baseMeta();E.settle(complete,completeMeta);
 const defeat=E.createRun(4,E.baseMeta(),catalogue,2026);E.selectBonus(defeat,defeat.offers[0]);defeat.travelProgress=1;E.arrive(defeat,catalogue);E.activateStage(defeat,catalogue);defeat.hero.hp=1;defeat.nextSide="enemy";E.battleStep(defeat,catalogue);assert.equal(defeat.phase,"defeat");
@@ -28,13 +29,8 @@ try{
    return {texts,failures};
   });assert.deepEqual(layout.failures,[]);
   await page.screenshot({path:`${out}/${fixture.name}-${width}.png`});
-  const hide=await page.addStyleTag({content:".ending-content,.ending-content *{color:transparent!important;text-shadow:none!important;-webkit-text-stroke:0 transparent!important}"});const background=await page.screenshot();await hide.evaluate(n=>n.remove());
-  const contrast=await page.evaluate(async({background,texts})=>{
-   const image=new Image();image.src=background;await image.decode();const canvas=document.createElement("canvas");canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext("2d",{willReadFrequently:true});ctx.drawImage(image,0,0);const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
-   const luminance=rgb=>rgb.map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((a,v,i)=>a+v*[.2126,.7152,.0722][i],0);
-   return texts.map(t=>{const foreground=luminance(t.color.match(/[\d.]+/g).slice(0,3).map(Number));let minimum=Infinity;for(let y=Math.floor(t.rect.top);y<Math.ceil(t.rect.bottom);y++)for(let x=Math.floor(t.rect.left);x<Math.ceil(t.rect.right);x++){const i=(y*canvas.width+x)*4,bg=luminance([pixels[i],pixels[i+1],pixels[i+2]]);minimum=Math.min(minimum,(Math.max(foreground,bg)+.05)/(Math.min(foreground,bg)+.05));}return {text:t.text,minimum};});
-  },{background:`data:image/png;base64,${background.toString("base64")}`,texts:layout.texts});
-  const minimumContrast=Math.min(...contrast.map(t=>t.minimum));if(!baseline)assert.ok(minimumContrast>=4.5,JSON.stringify({name:fixture.name,width,contrast}));
+  const measuredContrast=await readingContrast(page,".ending-content"),contrast=measuredContrast.samples,minimumContrast=measuredContrast.minimum;
+  if(!baseline)assert.ok(minimumContrast>=4.5,JSON.stringify({name:fixture.name,width,contrast}));
   if(!baseline){
    const heroCoverage=await page.evaluate(async()=>{
     const n=document.querySelector(".ending-partner"),src=n.src,species=n.dataset.species,forms=[1,2,3,4,5,6,7,8,9,25,26,133,134,135,136,152,153,154],results=[];

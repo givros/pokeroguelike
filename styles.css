@@ -901,14 +901,17 @@ button:not(:disabled):hover {
 }
 .travel-caption {
   position: absolute;
-  bottom: 4%;
-  left: 0;
-  right: 0;
+  bottom: 3.5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(90%, 540px);
+  border-width: 14px;
+  border-image-width: 14px;
+  padding: 4px 18px;
   text-align: center;
-  color: #fff6d2;
-  text-shadow:
-    0 2px 4px #254c37,
-    0 0 12px #1f4636;
+  color: var(--ink);
+  text-shadow: none;
   z-index: 1500;
   pointer-events: none;
 }
@@ -919,8 +922,8 @@ button:not(:disabled):hover {
 .travel-caption span {
   font-size: 14px;
   display: block;
-  margin-top: 9px;
-  color: #fff3c7;
+  margin-top: 4px;
+  color: var(--muted);
 }
 .encounter-dock {
   position: absolute;

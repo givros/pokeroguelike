@@ -1,4 +1,5 @@
 import { activeSynergies, awakenedBy } from "./builds.js";
+import { guardianAbility } from "./guardians.js";
 
 export const STAGES = [
   { kind: "wild", name: "Woodland Edge", pool: [10, 16, 19] },
@@ -420,6 +421,7 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
     phase: "starter",
     stageIndex: 0,
     routeMode: "regional",
+    guardianAbilities: true,
     travelProgress: 0,
     hero: fighter(id, 5, catalogue, meta.permanentUpgrades),
     enemy: null,
@@ -619,6 +621,8 @@ export function activateStage(run, catalogue) {
     run.nextSide = "ally";
     run.phase = "battle";
     addLog(run, `${catalogue.pokemon[id].name} challenges you!`);
+    const ability = guardianAbility(run);
+    if (ability) addLog(run, `${catalogue.pokemon[id].name}: ${ability.name}. ${ability.text}`);
   } else {
     run.phase = node.kind;
     if (node.kind === "shrine") run.offers = offerBonuses(run);
@@ -668,7 +672,9 @@ export function expectedDamage(
     ) +
       2) *
     stab *
-    eff * (player ? 1 : threatModifiers(run).enemyDamage)
+    eff * (player ? 1 : threatModifiers(run).enemyDamage) *
+    (player && guardianAbility(run)?.key === "multiscale" && defender.hp === defender.maxHp ? 0.5 : 1) *
+    (!player && guardianAbility(run)?.key === "swarm" && attacker.hp * 3 <= attacker.maxHp && move.type === "bug" ? 1.5 : 1)
   );
 }
 export function bestMove(run, catalogue, side = run.nextSide) {
@@ -704,8 +710,11 @@ export function battleStep(run, catalogue) {
     move = bestMove(run, catalogue);
   const synergies = new Set(activeSynergies(run).map((recipe) => recipe.id));
   const slot = a.moves.find((s) => s.id === move.id);
-  if (slot && slot.pp > 0) slot.pp--;
-  const crit =
+  const ability = guardianAbility(run);
+  const ppSpent = slot && slot.pp > 0 && !(move.id === 0 && ability?.key === "pressure")
+    ? Math.min(slot.pp, player && ability?.key === "pressure" ? 2 : 1) : 0;
+  if (slot) slot.pp -= ppSpent;
+  const rolledCrit =
     random(run) <
     clamp(
       0.0625 +
@@ -716,6 +725,12 @@ export function battleStep(run, catalogue) {
       0,
       0.75,
     );
+  const criticalBlocked = player && ability?.key === "shell-armor" && rolledCrit;
+  const crit = rolledCrit && !criticalBlocked;
+  const guardianEffect = player && (ability?.key === "pressure" && ppSpent > 1 ||
+    ability?.key === "multiscale" && d.hp === d.maxHp || criticalBlocked) ||
+    !player && ability?.key === "swarm" && a.hp * 3 <= a.maxHp && move.type === "bug"
+    ? ability.name : null;
   let damage =
     expectedDamage(run, a, d, move, catalogue, player) *
     (crit ? 1.5 + (player ? 0.25 * count(run, "focus_crit") : 0) : 1) *
@@ -778,7 +793,7 @@ export function battleStep(run, catalogue) {
   const eff = effectiveness(move.type, catalogue.pokemon[d.id].types);
   addLog(
     run,
-    `${catalogue.pokemon[a.id].name}: ${move.name}, ${actual} damage${crit ? " — critical hit!" : eff > 1 ? " — super effective!" : eff < 1 ? " — resisted." : "."}${prepared ? " Prepared strike!" : ""}${echoDamage ? ` Echo: ${echoDamage}.` : ""}${absorbed ? ` Barrier absorbed ${absorbed}.` : ""}${reflectDamage ? ` Riposte: ${reflectDamage}.` : ""}`,
+    `${catalogue.pokemon[a.id].name}: ${move.name}, ${actual} damage${crit ? " — critical hit!" : eff > 1 ? " — super effective!" : eff < 1 ? " — resisted." : "."}${prepared ? " Prepared strike!" : ""}${echoDamage ? ` Echo: ${echoDamage}.` : ""}${absorbed ? ` Barrier absorbed ${absorbed}.` : ""}${reflectDamage ? ` Riposte: ${reflectDamage}.` : ""}${guardianEffect ? ` ${guardianEffect}${criticalBlocked ? " blocked a critical" : ability.key === "pressure" ? `: ${ppSpent} PP spent` : " active"}.` : ""}`,
   );
   const result = {
     kind: "hit",
@@ -793,6 +808,9 @@ export function battleStep(run, catalogue) {
     reflectDamage,
     shielding,
     absorbed,
+    ppSpent,
+    guardianEffect,
+    criticalBlocked: !!criticalBlocked,
   };
   if (run.hero.hp <= 0) {
     run.phase = "defeat";

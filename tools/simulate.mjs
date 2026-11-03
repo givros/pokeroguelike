@@ -10,6 +10,7 @@ export function simulate(seed, starter = 7, options = {}) {
   if (options.threat) { meta.unlockedThreat = E.MAX_THREAT; meta.selectedThreat = options.threat; }
   if (options.upgrades) Object.assign(meta.permanentUpgrades, options.upgrades);
   const r = E.createRun(starter, meta, catalogue, seed);
+  if (options.guardianAbilities === false) delete r.guardianAbilities;
   if (options.plan) r.plan = options.plan;
   let transitions = 0;
   const visited = [];

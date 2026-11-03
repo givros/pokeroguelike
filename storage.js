@@ -158,6 +158,7 @@ export function validRun(r, c) {
   )
     return false;
   if (r.idleEnabled !== undefined && typeof r.idleEnabled !== "boolean") return false;
+  if (r.guardianAbilities !== undefined && typeof r.guardianAbilities !== "boolean") return false;
   if (r.idleAt != null && (!Number.isSafeInteger(r.idleAt) || r.idleAt < 0)) return false;
   if (r.idleCredit != null && (!Number.isInteger(r.idleCredit) || r.idleCredit < 0 || r.idleCredit > 28800000)) return false;
   if (r.threat !== undefined && (!Number.isInteger(r.threat) || r.threat < 0 || r.threat > MAX_THREAT)) return false;

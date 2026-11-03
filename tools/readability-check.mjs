@@ -35,7 +35,22 @@ const empoweredShrine = checkpoint(9,"shrine");
 Object.assign(empoweredShrine,{bonuses:[],offers:["attack_boost","regeneration","first_guard"],shrineEmpowered:true});
 empoweredShrine.hero.hp=empoweredShrine.hero.maxHp;
 const legacyShrine = structuredClone(empoweredShrine); legacyShrine.routeMode="legacy"; legacyShrine.shrineEmpowered=false;
+function guardian(species) {
+  const index = species === 123 ? 5 : 14;
+  const run = simulate(2026,4,{stopAt:r=>r.stageIndex===index && r.phase==="arrival"}).run;
+  run.pendingGrowth=null; run.pendingAwakenings=[]; run.regionEntry=null;
+  run.scouting={stageIndex:index,speciesId:species}; E.activateStage(run,catalogue);
+  return run;
+}
+const scoutedGuardian = checkpoint(13,"camp");
+E.resolveEncounter(scoutedGuardian,"scout",catalogue);
 const scenarios = [
+  {name:"scouted-guardian",run:scoutedGuardian},
+  ...[123,150,149,131].flatMap(id=>[
+    {name:`guardian-${id}`,run:guardian(id)},
+    {name:`inspect-${id}`,run:guardian(id),menu:"opponent"},
+  ]),
+  {name:"guardian-guide",run:guardian(123),menu:"guardians"},
   ...[2,4,7,9,11,13].map(stage=>({name:`halt-${stage+1}`,run:halt(stage)})),
   { name:"legacy-shrine", run:legacyShrine },
   { name:"shrine-offering", run:empoweredShrine },
@@ -130,7 +145,7 @@ try {
           if (prop) for (const selector of [".hud-controls", ".hud-left", ".stage-heading", ".map-hero-card", ".encounter-dock"])
             if (intersect(prop, rect(selector))) collisions.push([asset, selector]);
         }
-        const actions = new Set(["choose-threat","idle-toggle","plans","set-plan","sound","close","reload","pause","help","upgrades","journal","retire","guide","partner","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
+        const actions = new Set(["choose-threat","idle-toggle","plans","set-plan","sound","close","reload","pause","help","upgrades","journal","retire","guide","partner","opponent","guardians","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
         const unknownActions = [...root.querySelectorAll("[data-action]")].filter(node=>!actions.has(node.dataset.action)).map(node=>({action:node.dataset.action,label:node.textContent.trim()}));
         return { small, overflow, collisions, brokenText, unknownActions, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
       });

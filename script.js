@@ -1,5 +1,6 @@
 import * as E from "./engine.js";
 import * as L from "./landmarks.js";
+import { GUARDIANS, guardianAbility, guardianState } from "./guardians.js";
 import { advanceIdle } from "./idle.js";
 import { PLANS, planDecision, applyPlanDecision } from "./plans.js";
 import { readState, writeState } from "./storage.js";
@@ -140,7 +141,8 @@ function titleView() {
 function battleCard(m, side) {
   const s = catalogue.pokemon[m.id];
   const barrier = side === "ally" && activeSynergies(run).some((recipe) => recipe.id === "lifebloom");
-  return `<section class="battle-card ${side}-card ${barrier ? "has-barrier" : ""} paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><div class="fighter-meta"><small data-fighter-types>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small>${barrier ? `<span class="barrier-label">Barrier <b data-barrier-value>${m.shield || 0}</b></span>` : ""}</div><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div>${barrier ? `<div class="barrier-track"><div class="barrier-fill" style="width:${((m.shield || 0) / Math.ceil(m.maxHp * 0.2)) * 100}%"></div></div>` : ""}</section>`;
+  const ability = side === "enemy" ? guardianAbility(run) : null;
+  return `<section class="battle-card ${side}-card ${barrier ? "has-barrier" : ""} paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><div class="fighter-meta"><small data-fighter-types>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small>${ability ? button(ability.name, "opponent", "", "guardian-ability") : ""}${barrier ? `<span class="barrier-label">Barrier <b data-barrier-value>${m.shield || 0}</b></span>` : ""}</div><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div>${barrier ? `<div class="barrier-track"><div class="barrier-fill" style="width:${((m.shield || 0) / Math.ceil(m.maxHp * 0.2)) * 100}%"></div></div>` : ""}</section>`;
 }
 function battleView() {
   const h = { ...run.hero, id: visualHeroId() },
@@ -249,7 +251,7 @@ function encounterDock() {
       choice(
         "critical-lens",
         "Scout ahead",
-        "Reveal the next foe. Opening hit +25%. Skip rest and training.",
+        "Reveal the next foe and its ability. Opening hit +25%. Skip rest and training.",
         "encounter",
         "scout",
       );
@@ -329,7 +331,8 @@ function render() {
       if (caption) {
         const report = document.createElement("span");
         report.className = "scouting-report";
-        report.textContent = `Scouted: ${catalogue.pokemon[run.scouting.speciesId].name} · Opening strike +25%`;
+        const ability = guardianAbility(run, run.scouting.speciesId, run.scouting.stageIndex);
+        report.textContent = `Scouted: ${catalogue.pokemon[run.scouting.speciesId].name}${ability ? ` · ${ability.name}` : ""} · Opening strike +25%`;
         caption.append(report);
       }
     }
@@ -409,6 +412,14 @@ function fieldGuideView() {
     `<section>${catalogue.pokemon[r.partnerId] ? mon(r.partnerId) : ""}<div><strong>${r.outcome === "complete" ? "Guardian defeated" : r.outcome === "defeat" ? "Partner exhausted" : "Returned to camp"}</strong><small>${r.threat ? `Threat ${r.threat} · ` : ""}Stage ${r.stage} / ${E.STAGES.length} · ${r.wins} victories · ${r.actions} actions</small></div></section>`
   ).join("") || '<p>Your completed expeditions will appear here.</p>'}</div>`;
 }
+function opponentView() {
+  if (!run?.enemy || !["battle","victoryBeat"].includes(run.phase)) return "<h2>No opponent</h2>";
+  const enemy = run.enemy, species = catalogue.pokemon[enemy.id], ability = guardianAbility(run);
+  return `<h2>${esc(species.name)}</h2><div class="partner-profile">${mon(enemy.id)}<div><strong>Guardian · Level ${enemy.level}</strong><p>${enemy.hp} / ${enemy.maxHp} HP</p>${health(enemy)}<p>${species.types.map(t => NAME_TYPES[t] || t).join(" / ")}</p></div></div>${ability ? `<h3>${ability.name}${ability.hidden ? " · Hidden ability" : ""}</h3><p>${ability.text}</p><p class="guardian-state"><strong>${guardianState(run)}</strong></p><h3>Prepare your build</h3><p>${ability.tactic}</p>` : ""}<h3>Automatic moves</h3><div class="partner-moves">${enemy.moves.map(slot => { const move = catalogue.moves[slot.id] || E.STRUGGLE; return `<section class="partner-move"><div><strong>${esc(move.name)}</strong><small>${NAME_TYPES[move.type] || move.type} · ${move.damageClass} · Power ${move.power}</small></div><span>${slot.pp} / ${slot.maxPp} PP</span></section>`; }).join("")}</div><p>Battle is paused while you inspect this guardian.</p>`;
+}
+function guardiansView() {
+  return `<h2>Know the guardians</h2><p>These native abilities are active only on guardians in new expeditions. Wild Pokémon and elites keep their usual battle rules.</p>${GUARDIANS.map(ability => `<section class="guardian-guide-entry"><div class="partner-profile">${mon(ability.species)}<div><h3>${catalogue.pokemon[ability.species].name}</h3><strong>${ability.name}${ability.hidden ? " · Hidden ability" : ""}</strong><p>${ability.text}</p></div></div><p>${ability.tactic}</p></section>`).join("")}<p>Inspect a guardian during battle by selecting its underlined ability. Scouting at a spring reveals which guardian awaits and strengthens your opening strike.</p>`;
+}
 function partnerView() {
   const h = run.hero, p = catalogue.pokemon[h.id];
   const next = run.enemy && run.phase === "battle" ? E.bestMove(run, catalogue, "ally").id : null;
@@ -453,8 +464,10 @@ function menuContent() {
   if (modal === "builds") return buildCombinationsView();
   if (modal === "guide") return fieldGuideView();
   if (modal === "partner" && run) return partnerView();
+  if (modal === "opponent" && run?.enemy) return opponentView();
+  if (modal === "guardians") return guardiansView();
   if (modal === "pause")
-    return `<h2>Pause</h2><p>Battle and travel are paused.</p>${audioControl()}<div class="pause-actions">${button("Resume", "close", "", "paper-panel main-button")}${button("Expedition plan", "plans", "", "paper-panel")}${button("Partner & moves", "partner", "", "paper-panel")}${button("Expedition boons", "journal", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}${button("Return to camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
+    return `<h2>Pause</h2><p>Battle and travel are paused.</p>${audioControl()}<div class="pause-actions">${button("Resume", "close", "", "paper-panel main-button")}${button("Expedition plan", "plans", "", "paper-panel")}${button("Partner & moves", "partner", "", "paper-panel")}${button("Expedition boons", "journal", "", "paper-panel")}${button("Know the guardians", "guardians", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}${button("Return to camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
   if (modal === "retire" || modal === "replace")
     return `<h2>Return to camp?</h2><p>This expedition will end. Your gold and victories will be retained.</p><div class="pause-actions">${button("Continue the journey", "close", "", "paper-panel main-button")}${button("End expedition", "confirm-retire", pendingStarter || "", "", "")}</div>`;
   if (modal === "upgrades")
@@ -864,7 +877,7 @@ async function dispatch(action, value) {
     openMenu("pause");
     return;
   }
-  if (["help", "upgrades", "journal", "retire", "guide", "partner", "builds", "threats"].includes(action)) {
+  if (["help", "upgrades", "journal", "retire", "guide", "partner", "opponent", "guardians", "builds", "threats"].includes(action)) {
     openMenu(action);
     return;
   }

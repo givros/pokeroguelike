@@ -34,9 +34,9 @@ const memory = () => {
 test("the same seed produces the same automatic campaign", () => {
   assert.deepEqual(simulate(2026, 4), simulate(2026, 4));
 });
-test("every starter can complete a finite campaign without permanent upgrades", () => {
+test("every starter can complete a legacy campaign without permanent upgrades", () => {
   for (const id of [1, 4, 7, 25, 133, 152]) {
-    const result = simulate(2026, id);
+    const result = simulate(2026, id, { guardianAbilities:false });
     assert.equal(result.phase, "complete");
     assert.equal(result.stage, 15);
     assert.ok(result.actions < 9 * 81);

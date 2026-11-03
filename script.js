@@ -1,5 +1,6 @@
 import * as E from "./engine.js";
 import * as L from "./landmarks.js";
+import { mapArtworkStyle, applyMapArtwork } from "./artwork-layout.js";
 import { GUARDIANS, guardianAbility, guardianState } from "./guardians.js";
 import { advanceIdle } from "./idle.js";
 import { PLANS, planDecision, applyPlanDecision } from "./plans.js";
@@ -165,7 +166,7 @@ function mapView() {
   const biome = world.regions?.[E.region(run).id] || world;
   const walking = (run.phase === "travel" || L.landmarkMoving(run)) && !run.pendingGrowth && !run.regionEntry;
   const activity = run.landmark?.state === "approaching" ? "approaches the next halt" : run.landmark?.state === "returning" ? "returns to the trail" : "travels to the next destination";
-  return `<div id="map-scene"><div class="map-canvas"><img class="map-foundation" src="${biome.base}" alt="${esc(E.region(run).name)}">${biome.props.map(worldProp).join("")}${destinationProp()}<div id="map-actor" class="map-actor ${walking ? "walking" : ""}" style="left:${x * 100}%;top:${y * 100}%;z-index:${Math.round(y * 1000)};--map-facing:${L.mapFacing(run, world)}" data-x="${x}" data-y="${y}">${mon(visualHeroId(), "body-art")}</div></div>${heroCard()}${walking ? `<div class="travel-caption"><strong>${catalogue.pokemon[run.hero.id].name} ${activity}</strong><span>On the way to ${esc(E.stage(run).name)}</span></div>` : ""}${encounterDock()}</div>`;
+  return `<div id="map-scene"><div class="map-canvas"><img class="map-foundation" src="${biome.base}" alt="${esc(E.region(run).name)}">${biome.props.map(worldProp).join("")}${destinationProp()}<div id="map-actor" class="map-actor ${walking ? "walking" : ""}" style="left:${x * 100}%;top:${y * 100}%;z-index:${Math.round(y * 1000)};--map-facing:${L.mapFacing(run, world)};${mapArtworkStyle(catalogue.artworkLayout[visualHeroId()])}" data-x="${x}" data-y="${y}">${mon(visualHeroId(), "body-art")}</div></div>${heroCard()}${walking ? `<div class="travel-caption"><strong>${catalogue.pokemon[run.hero.id].name} ${activity}</strong><span>On the way to ${esc(E.stage(run).name)}</span></div>` : ""}${encounterDock()}</div>`;
 }
 function choice(asset, title, text, action, value, disabled = false) {
   return button(
@@ -651,7 +652,7 @@ async function playGrowth(token) {
     node.closest("#battle-scene,#map-scene").append(label);
     q(".victory-banner")?.remove();
     const completed = await effects.evolve(node, catalogue.pokemon[growth.toId].artwork,
-      name, (ms) => wait(ms, token));
+      name, (ms) => wait(ms, token), () => applyMapArtwork(node.closest("#map-actor"), catalogue.artworkLayout[growth.toId]));
     if (!completed || !live(token)) return false;
     label.textContent = `${name} joins your journey!`;
     if (!await wait(650, token)) return false;
@@ -1067,7 +1068,7 @@ window.addEventListener("pagehide", () => {
 async function boot() {
   try {
     const response = await Promise.all(
-      ["data/pokemon.json", "data/moves.json", "data/world-map.json"].map(
+      ["data/pokemon.json", "data/moves.json", "data/world-map.json", "data/artwork-layout.json"].map(
         async (path) => {
           const r = await fetch(path, { signal: AbortSignal.timeout(8000) });
           if (!r.ok) throw new Error("Missing resource: " + path);
@@ -1075,7 +1076,7 @@ async function boot() {
         },
       ),
     );
-    catalogue = { pokemon: response[0], moves: response[1] };
+    catalogue = { pokemon: response[0], moves: response[1], artworkLayout: response[3] };
     world = response[2];
     const state = readState(saveStorage, catalogue);
     meta = state.meta;

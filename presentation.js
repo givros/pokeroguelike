@@ -71,7 +71,7 @@ export class BattleEffects {
     animation?.finished.catch(() => {}).finally(() => node.remove());
     return node;
   }
-  async evolve(node, artwork, name, wait) {
+  async evolve(node, artwork, name, wait, onArtworkChange = () => {}) {
     const scene = node.closest("#battle-scene,#map-scene");
     if (!scene) return true;
     const body = node.getBoundingClientRect(), bounds = scene.getBoundingClientRect();
@@ -88,6 +88,7 @@ export class BattleEffects {
     if (!await wait(650)) return false;
     node.src = artwork;
     node.alt = name;
+    onArtworkChange();
     this.animate(node, [
       { filter: "brightness(8)", scale: 1.2 },
       { filter: "brightness(1)", scale: 1 },

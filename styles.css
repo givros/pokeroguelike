@@ -801,10 +801,14 @@ button:not(:disabled):hover {
   position: absolute;
   width: 8.5%;
   height: 15%;
-  transform: translate(-50%, -96%);
+  transform: translate(-50%, -100%);
   pointer-events: none;
 }
 .map-actor .body-art {
+  display: block;
+  position: relative;
+  top: var(--map-art-offset, 0%);
+  transform-origin: 50% var(--map-art-pivot, 100%);
   transform: scaleX(var(--map-facing, -1));
   object-position: 50% 100%;
 }

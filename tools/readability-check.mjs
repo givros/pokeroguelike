@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import * as E from "../engine.js";
+import * as L from "../landmarks.js";
 import { simulate } from "./simulate.mjs";
 
 const out = "output/playwright/readability";
@@ -13,6 +14,13 @@ const catalogue = {
 const checkpoint = (stage, phase, starter = 4) => simulate(2026, starter, {
   stopAt: (r) => r.stageIndex === stage && r.phase === phase,
 }).run;
+const world = JSON.parse(await readFile("data/world-map.json", "utf8"));
+function halt(stage) {
+  const run = simulate(2026,4,{stopAt:r=>r.stageIndex===stage&&r.phase==="arrival"}).run;
+  run.pendingGrowth=null; run.pendingAwakenings=[]; run.regionEntry=null;
+  L.beginApproach(run,world); L.finishMotion(run); E.activateStage(run,catalogue);
+  return run;
+}
 const ending = simulate(2026, 4).run, endingMeta = E.baseMeta();
 E.settle(ending, endingMeta);
 const battle = checkpoint(14, "battle");
@@ -28,6 +36,7 @@ Object.assign(empoweredShrine,{bonuses:[],offers:["attack_boost","regeneration",
 empoweredShrine.hero.hp=empoweredShrine.hero.maxHp;
 const legacyShrine = structuredClone(empoweredShrine); legacyShrine.routeMode="legacy"; legacyShrine.shrineEmpowered=false;
 const scenarios = [
+  ...[2,4,7,9,11,13].map(stage=>({name:`halt-${stage+1}`,run:halt(stage)})),
   { name:"legacy-shrine", run:legacyShrine },
   { name:"shrine-offering", run:empoweredShrine },
   { name: "threats", run:null, menu:"threats", meta:{...E.baseMeta(),unlockedThreat:6,selectedThreat:6} },
@@ -109,10 +118,14 @@ try {
         for (const [a, b] of [[".hud-left", ".stage-heading"], [".stage-heading", ".hud-controls"],
           [".encounter-dock", "#map-actor .body-art"], [".relic-rail", ".battle-narration"], [".initial-bonus-dock", ".bonus-partner"]])
           if (!dialog && intersect(rect(a), rect(b))) collisions.push([a, b]);
-        const shrine = rect('.map-prop[src$="wayside-shrine.webp"]');
-        if (shrine && !dialog) for (const selector of [".hud-controls", ".hud-left", ".stage-heading", ".map-hero-card", ".encounter-dock"])
-          if (intersect(shrine, rect(selector))) collisions.push(["wayside shrine", selector]);
-        return { small, overflow, collisions, brokenText, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
+        if (!dialog) for (const asset of ["wayside-shrine", "merchant-cart", "rest-spring", "supply-chest"]) {
+          const prop = rect(`.map-prop[src$="${asset}.webp"]`);
+          if (prop) for (const selector of [".hud-controls", ".hud-left", ".stage-heading", ".map-hero-card", ".encounter-dock"])
+            if (intersect(prop, rect(selector))) collisions.push([asset, selector]);
+        }
+        const actions = new Set(["choose-threat","idle-toggle","plans","set-plan","sound","close","reload","pause","help","upgrades","journal","retire","guide","partner","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
+        const unknownActions = [...root.querySelectorAll("[data-action]")].filter(node=>!actions.has(node.dataset.action)).map(node=>({action:node.dataset.action,label:node.textContent.trim()}));
+        return { small, overflow, collisions, brokenText, unknownActions, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
       });
       await page.screenshot({ path: `${out}/${width}-${scenario.name}.png` });
       results.push({ width, height, scenario: scenario.name, ...measured });
@@ -120,7 +133,7 @@ try {
     }
   }
   await writeFile(`${out}/${scenarioFilter.length ? "focused-" + scenarioFilter.join("-") : "results"}.json`, JSON.stringify({ results, errors }, null, 2));
-  const failures = results.filter((r) => r.small.length || r.overflow.length || r.collisions.length || r.brokenText.length);
+  const failures = results.filter((r) => r.small.length || r.overflow.length || r.collisions.length || r.brokenText.length || r.unknownActions.length);
   console.log(JSON.stringify({ scenes: results.length, failures, errors }, null, 2));
   assert.ok(results.length, "No matching readability scenarios");
   assert.deepEqual(errors, []);

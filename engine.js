@@ -851,6 +851,7 @@ export function depart(run) {
   run.stageIndex++;
   if (run.routeMode === "regional" && region(run).id !== previousRegion)
     run.regionEntry = region(run).id;
+  if (region(run).id !== previousRegion) run.landmark = null;
   run.phase = "travel";
   run.travelProgress = 0;
   run.enemy = null;
@@ -975,6 +976,7 @@ export function settle(run, meta) {
   if (!["defeat", "complete", "retired"].includes(run.phase) || run.settled)
     return false;
   run.settled = true;
+  run.landmark = null;
   run.endBonus =
     run.phase === "defeat"
       ? 0

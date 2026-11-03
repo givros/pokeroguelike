@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { REGIONS } from "../engine.js";
 import { buildEncounters } from "./world-layout.mjs";
+import { attachApproaches } from "./approach-paths.mjs";
 const world = JSON.parse(await readFile("data/world-map.json", "utf8"));
 world.regions = {
   woodland: { base: world.base, props: world.props, preview: "assets/generated/woodland-layered-preview.webp" },
@@ -24,7 +25,7 @@ world.regions = {
       ...world.props.filter((p) => ["mossy-rocks"].includes(p.asset) || p.id === "tree-southwest"),
       { id: "sanctuary-arch-east", asset: "sanctuary-arch", x: 0.875, y: 0.33, w: 0.26, h: 0.32, collider: [0.77, 0.29, 0.21, 0.04] },
       { id: "sanctuary-column-west", asset: "broken-sanctuary-column", x: 0.17, y: 0.32, w: 0.085, h: 0.17, collider: [0.14, 0.29, 0.06, 0.03] },
-      { id: "sanctuary-column-north", asset: "broken-sanctuary-column", x: 0.58, y: 0.23, w: 0.07, h: 0.15, collider: [0.555, 0.205, 0.05, 0.025] },
+      { id: "sanctuary-column-north", asset: "broken-sanctuary-column", x: 0.52, y: 0.23, w: 0.07, h: 0.15, collider: [0.495, 0.205, 0.05, 0.025] },
     ],
   },
 };
@@ -33,4 +34,5 @@ for (const region of REGIONS) {
   area.encounters = buildEncounters(world, area.props,
     Array.from({ length: region.to - region.from + 1 }, (_, i) => region.from + i), "regional");
 }
+attachApproaches(world);
 await writeFile("data/world-map.json", JSON.stringify(world, null, 2) + "\n");

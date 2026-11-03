@@ -1,4 +1,5 @@
 import * as E from "./engine.js";
+import * as L from "./landmarks.js";
 import { advanceIdle } from "./idle.js";
 import { PLANS, planDecision, applyPlanDecision } from "./plans.js";
 import { readState, writeState } from "./storage.js";
@@ -38,7 +39,7 @@ let catalogue,
   narration = "",
   saveAt = 0;
 const AUTO = new Set(["travel", "arrival", "battle", "victoryBeat"]);
-const hasAutomaticWork = () => run && (AUTO.has(run.phase) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || planDecision(run));
+const hasAutomaticWork = () => run && (AUTO.has(run.phase) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || L.landmarkMoving(run) || planDecision(run));
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
 const STARTERS = [1, 4, 7, 25, 133, 152];
 const NAME_TYPES = {
@@ -150,13 +151,19 @@ function worldProp(p) {
   return `<img class="map-prop" src="assets/generated/${p.asset}.webp" alt="" style="left:${p.x * 100}%;top:${p.y * 100}%;width:${p.w * 100}%;height:${p.h * 100}%;z-index:${p.layer === "ground" ? 30 : Math.round(p.y * 1000)}" draggable="false">`;
 }
 function destinationProp() {
+  if (run.routeMode === "regional") {
+    const biome = world.regions?.[E.region(run).id];
+    if (biome) return biome.encounters.filter(zone=>zone.prop).map(zone=>worldProp(zone.prop)).join("");
+  }
   const prop = E.encounterZone(run, world)?.prop;
   return prop ? worldProp(prop) : "";
 }
 function mapView() {
-  const [x, y] = E.travelPosition(run, world.route);
+  const [x, y] = L.mapPosition(run, world.route);
   const biome = world.regions?.[E.region(run).id] || world;
-  return `<div id="map-scene"><div class="map-canvas"><img class="map-foundation" src="${biome.base}" alt="${esc(E.region(run).name)}">${biome.props.map(worldProp).join("")}${destinationProp()}<div id="map-actor" class="map-actor ${run.phase === "travel" && !run.pendingGrowth ? "walking" : ""}" style="left:${x * 100}%;top:${y * 100}%;z-index:${Math.round(y * 1000)}" data-x="${x}" data-y="${y}">${mon(visualHeroId(), "body-art")}</div></div>${heroCard()}${run.phase === "travel" && !run.pendingGrowth ? `<div class="travel-caption"><strong>${catalogue.pokemon[run.hero.id].name} travels to the next destination</strong><span>On the way to ${esc(E.stage(run).name)}</span></div>` : ""}${encounterDock()}</div>`;
+  const walking = (run.phase === "travel" || L.landmarkMoving(run)) && !run.pendingGrowth && !run.regionEntry;
+  const activity = run.landmark?.state === "approaching" ? "approaches the next halt" : run.landmark?.state === "returning" ? "returns to the trail" : "travels to the next destination";
+  return `<div id="map-scene"><div class="map-canvas"><img class="map-foundation" src="${biome.base}" alt="${esc(E.region(run).name)}">${biome.props.map(worldProp).join("")}${destinationProp()}<div id="map-actor" class="map-actor ${walking ? "walking" : ""}" style="left:${x * 100}%;top:${y * 100}%;z-index:${Math.round(y * 1000)};--map-facing:${L.mapFacing(run, world)}" data-x="${x}" data-y="${y}">${mon(visualHeroId(), "body-art")}</div></div>${heroCard()}${walking ? `<div class="travel-caption"><strong>${catalogue.pokemon[run.hero.id].name} ${activity}</strong><span>On the way to ${esc(E.stage(run).name)}</span></div>` : ""}${encounterDock()}</div>`;
 }
 function choice(asset, title, text, action, value, disabled = false) {
   return button(
@@ -233,9 +240,6 @@ function encounterDock() {
       ) +
       choice(
         "field-notes",
-      "guardian-crest",
-      "offering-bowl",
-      "wayside-shrine",
         "Train",
         trainingDescription(),
         "encounter",
@@ -388,10 +392,11 @@ function updateBattle() {
 function updateTravel() {
   const actor = q("#map-actor");
   if (!actor) return;
-  const [x, y] = E.travelPosition(run, world.route);
+  const [x, y] = L.mapPosition(run, world.route);
   actor.style.left = x * 100 + "%";
   actor.style.top = y * 100 + "%";
   actor.style.zIndex = Math.round(y * 1000);
+  actor.style.setProperty("--map-facing", L.mapFacing(run, world));
   actor.dataset.x = x;
   actor.dataset.y = y;
 }
@@ -480,7 +485,7 @@ function menuContent() {
         })
         .join("") || "<p>No boons acquired yet.</p>"
     }</div><h3>Battle journal</h3><div class="log-list">${run.log.map((s) => `<p>${esc(s)}</p>`).join("")}</div>`;
-  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Offer vitality at the shrine</h3><p>Take one free boon, or offer 25% maximum HP to gain two ranks of a compatible boon. The offering cannot faint your partner. Unique boons and instant recovery cannot be empowered. Activate or cancel freely; HP is paid only when you choose the boon.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
+  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians. Your partner walks up to each halt, then returns to the trail after your choice.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Offer vitality at the shrine</h3><p>Take one free boon, or offer 25% maximum HP to gain two ranks of a compatible boon. The offering cannot faint your partner. Unique boons and instant recovery cannot be empowered. Activate or cancel freely; HP is paid only when you choose the boon.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
 }
 function renderMenu() {
   const host = q("#menu-host");
@@ -591,6 +596,25 @@ async function travel(token) {
     render();
   }
 }
+async function playLandmarkMotion(token) {
+  const marker = run.landmark;
+  let previous = performance.now();
+  while (live(token) && run.landmark === marker && L.landmarkMoving(run) && marker.progress < 1) {
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    const now = performance.now();
+    if (!paused && !document.hidden) {
+      marker.progress = Math.min(1, marker.progress + Math.min(100, now-previous)/(marker.duration*speed/1500));
+      updateTravel();
+      if (now-saveAt > 500) { persist(); saveAt=now; }
+    }
+    previous=now;
+  }
+  if (!live(token)) return false;
+  L.finishMotion(run);
+  persist();
+  render();
+  return true;
+}
 async function playGrowth(token) {
   const growth = run.pendingGrowth;
   if (!growth) return true;
@@ -687,6 +711,11 @@ async function pump() {
         render();
         continue;
       }
+      if (L.prepareDeparture(run)) { persist(); render(); }
+      if (L.landmarkMoving(run)) {
+        if (!await playLandmarkMotion(token)) break;
+        continue;
+      }
       if (run.regionEntry) {
         if (!await playRegionEntry(token)) break;
         render();
@@ -707,6 +736,7 @@ async function pump() {
         continue;
       }
       if (run.phase === "arrival") {
+        if (L.beginApproach(run, world)) { persist(); render(); continue; }
         E.activateStage(run, catalogue);
         narration = "";
         persist();
@@ -985,7 +1015,7 @@ function catchUpAbsence() {
   if (!run?.idleEnabled || !Number.isFinite(run.idleAt)) return;
   const elapsed = Date.now() - run.idleAt;
   run.idleAt = null;
-  const report = advanceIdle(run, meta, catalogue, elapsed);
+  const report = advanceIdle(run, meta, catalogue, elapsed, world);
   if (report) {
     idleReport = report;
     titleMode = false;

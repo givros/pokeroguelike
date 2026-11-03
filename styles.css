@@ -805,7 +805,7 @@ button:not(:disabled):hover {
   pointer-events: none;
 }
 .map-actor .body-art {
-  transform: scaleX(-1);
+  transform: scaleX(var(--map-facing, -1));
   object-position: 50% 100%;
 }
 .map-actor.walking .body-art {

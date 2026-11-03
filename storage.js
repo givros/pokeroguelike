@@ -163,6 +163,23 @@ export function validRun(r, c) {
   if (r.threat !== undefined && (!Number.isInteger(r.threat) || r.threat < 0 || r.threat > MAX_THREAT)) return false;
   if (r.shrineEmpowered !== undefined && (typeof r.shrineEmpowered !== "boolean" ||
     (r.shrineEmpowered && r.phase !== "shrine"))) return false;
+  if (r.landmark != null) {
+    const marker = r.landmark;
+    if (r.routeMode !== "regional" || !Number.isInteger(marker.stageIndex) || !STAGES[marker.stageIndex] ||
+      !["cache", "camp", "shop", "shrine"].includes(STAGES[marker.stageIndex].kind) ||
+      !["approaching", "at", "returning"].includes(marker.state) ||
+      !Number.isFinite(marker.progress) || marker.progress < 0 || marker.progress > 1 ||
+      !Number.isInteger(marker.duration) || marker.duration < 800 || marker.duration > 3000 ||
+      !Array.isArray(marker.path) || marker.path.length < 2 || marker.path.length > 12 ||
+      !marker.path.every(p => Array.isArray(p) && p.length === 2 && p.every(n=>Number.isFinite(n)&&n>=0&&n<=1)) ||
+      !marker.path.some(p=>p[0]!==marker.path[0][0]||p[1]!==marker.path[0][1]) ||
+      (marker.state === "at" && marker.progress !== 1)) return false;
+    const here = marker.stageIndex === r.stageIndex;
+    if (marker.state === "approaching" && (!here || r.phase !== "arrival")) return false;
+    if (marker.state === "returning" && (marker.stageIndex !== r.stageIndex - 1 || r.phase !== "travel")) return false;
+    if (marker.state === "at" && !((here && ["arrival", "cache", "camp", "shop", "shrine"].includes(r.phase)) ||
+      (marker.stageIndex === r.stageIndex - 1 && r.phase === "travel"))) return false;
+  }
   if (r.plan !== undefined && !["manual", "predator", "warden", "siphon"].includes(r.plan)) return false;
   if (r.rerolls !== undefined && (!Number.isInteger(r.rerolls) || r.rerolls < 0 || r.rerolls > 3)) return false;
   if (["starter", "reward"].includes(r.phase) && r.offers.length === 0)

@@ -103,9 +103,11 @@ try {
       page.on("pageerror", (e) => errors.push(e.message));
       page.on("response", (r) => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
       await page.goto("http://127.0.0.1:5173");
-      await page.locator(".game-screen").waitFor();
+      await page.locator(".game-screen[data-phase]").waitFor();
       const resume = page.locator('[data-action="resume"]');
       if (await resume.count()) await resume.click();
+      if (scenario.run && !["complete","defeat","retired"].includes(scenario.run.phase) && scenario.name !== "idle-summary")
+        assert.equal(await page.locator(".game-screen.mode-title").count(),0,`${scenario.name}: expedition must be resumed before layout checks`);
       if (scenario.menu) {
         if (scenario.run && ["complete", "defeat", "retired"].includes(scenario.run.phase)) await page.locator('[data-action="finish"]').click();
         const control = page.locator(`[data-action="${scenario.menu}"]`).first();
@@ -153,7 +155,7 @@ try {
           if (prop) for (const selector of [".hud-controls", ".hud-left", ".stage-heading", ".map-hero-card", ".encounter-dock"])
             if (intersect(prop, rect(selector))) collisions.push([asset, selector]);
         }
-        const actions = new Set(["choose-threat","idle-toggle","plans","set-plan","sound","close","reload","pause","help","upgrades","journal","retire","guide","partner","opponent","guardians","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
+        const actions = new Set(["choose-threat","idle-toggle","plans","set-plan","sound","close","reload","recover","save-notice","pause","help","upgrades","journal","retire","guide","partner","opponent","guardians","builds","threats","speed","upgrade","starter","resume","confirm-retire","finish","retry","evolve","reroll","offering","bonus","encounter","buy","leave"]);
         const unknownActions = [...root.querySelectorAll("[data-action]")].filter(node=>!actions.has(node.dataset.action)).map(node=>({action:node.dataset.action,label:node.textContent.trim()}));
         return { small, overflow, collisions, brokenText, unknownActions, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
       });

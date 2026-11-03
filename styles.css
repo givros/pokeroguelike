@@ -60,7 +60,8 @@ button:not(:disabled):hover {
   display: grid;
   place-items: center;
 }
-.game-screen {
+.game-screen,
+.loading-viewport {
   width: min(100vw, 177.77778vh);
   height: min(100vh, 56.25vw);
   position: relative;
@@ -85,24 +86,40 @@ button:not(:disabled):hover {
   box-shadow: 0 8px 20px #17372c22;
 }
 .loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 35px;
+  background: #173b38 url("assets/generated/forest-arena.webp") center/cover;
   text-align: center;
   color: #fff4c9;
 }
-.loading-screen h1 {
-  font-size: 48px;
-  letter-spacing: 2px;
-  margin-bottom: 20px;
+.loading-brand { position:relative; text-shadow:0 3px 7px #173a30; }
+.loading-brand h1 {
+  font-size: clamp(48px,5.3vw,82px);
+  letter-spacing: -2px;
+  margin: 0;
 }
-.loading-screen p {
-  font-size: 15px;
+.loading-brand > p { font-size:14px; letter-spacing:4px; margin-top:8px; }
+.loading-paper { position:relative; width:min(660px,82%); max-height:64%; overflow:auto; padding:16px; display:flex; align-items:center; gap:22px; background-color:#f1e4bd; background-clip:padding-box; color:var(--ink); text-align:left; }
+.loading-emblem { width:80px; height:80px; object-fit:contain; flex-shrink:0; }
+.loading-copy { min-width:0; flex:1; }
+.loading-copy h2 { font-size:24px; line-height:1.2; margin-bottom:12px; }
+.loading-copy p {
+  font-size: 14px;
   line-height: 1.8;
 }
-.loading-screen button {
-  background: #f6eac5;
-  color: #284438;
-  border: 1px solid #c6d5a7;
-  padding: 12px 24px;
-  margin-top: 18px;
+.loading-meter { margin-block:14px 8px; }
+.loading-copy .loading-retry {
+  color: var(--ink);
+  font-size:14px;
+  font-weight:700;
+  border-width:14px;
+  border-image-width:14px;
+  padding: 4px 12px;
+  margin-top:14px;
 }
 .title-scene,
 .starter-bonus-scene,
@@ -741,24 +758,35 @@ button:not(:disabled):hover {
 }
 .save-warning {
   position: absolute;
-  left: 25%;
-  right: 25%;
-  bottom: 1px;
-  text-align: center;
+  right: 2.3%;
+  top: 13%;
+  width: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: left;
   font-size: 14px;
-  background: #8d554b;
-  color: #fff0d0;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #813e2f;
   z-index: 4000;
-  padding: 5px;
+  padding: 2px;
+  border-width: 12px;
+  border-image-width: 12px;
 }
+.save-warning .item-art { width:24px; height:24px; }
+.mode-battle .save-warning { top:auto; bottom:2%; }
+.mode-title .save-warning,.mode-ending .save-warning { top:2%; }
 .fatal-panel {
-  position: absolute;
-  left: 20%;
-  right: 20%;
-  top: 30%;
-  z-index: 5000;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  width: min(650px, 85vw);
   text-align: center;
-  padding: 25px;
+  padding: 16px;
+  overflow: auto;
 }
 .fatal-panel h2 {
   font-size: 25px;
@@ -769,12 +797,22 @@ button:not(:disabled):hover {
   line-height: 1.7;
 }
 .fatal-panel button {
-  margin-top: 20px;
-  color: #2e4a3b;
-  background: #dfdfb7;
-  border: 1px solid #9aab80;
-  padding: 10px 20px;
+  color: var(--ink);
+  border-width: 14px;
+  border-image-width: 14px;
+  padding: 4px 10px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
 }
+.recovery-screen { background:url("assets/generated/forest-arena.webp") center/cover; }
+.recovery-emblem { width:80px; height:80px; object-fit:contain; align-self:center; margin-bottom:12px; }
+.recovery-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:18px; }
+.recovery-details { font-size:14px; margin-top:18px; text-align:left; }
+.recovery-details summary { cursor:pointer; text-decoration:underline; text-underline-offset:3px; list-style:none; }
+.recovery-details summary::-webkit-details-marker { display:none; }
+.recovery-details p { overflow-wrap:anywhere; margin-top:8px; }
+.fatal-panel button:focus-visible,.loading-paper button:focus-visible { outline-color:#315b43; outline-offset:2px; }
 .map-canvas {
   position: absolute;
   inset: 0;

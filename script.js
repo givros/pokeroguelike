@@ -1,6 +1,7 @@
 import * as E from "./engine.js";
 import * as L from "./landmarks.js";
 import { mapArtworkStyle, applyMapArtwork } from "./artwork-layout.js";
+import { JourneyCheckpoint } from "./checkpoint.js";
 import { GUARDIANS, guardianAbility, guardianState } from "./guardians.js";
 import { advanceIdle } from "./idle.js";
 import { PLANS, planDecision, applyPlanDecision } from "./plans.js";
@@ -12,6 +13,7 @@ import { SYNERGIES, activeSynergies } from "./builds.js";
 const app = document.getElementById("app");
 const effects = new BattleEffects();
 const audio = new GameAudio();
+const checkpoint = new JourneyCheckpoint();
 let saveStorage;
 try {
   saveStorage = window.localStorage;
@@ -37,6 +39,7 @@ let catalogue,
   epoch = 0,
   speed = 1500,
   warning = "",
+  saveAvailable = true,
   fatal = "",
   narration = "",
   saveAt = 0;
@@ -81,9 +84,48 @@ const visualHeroId = () => run.pendingGrowth?.fromId || run.hero.id;
 const button = (label, action, value = "", cls = "", disabled = false) =>
   `<button class="${cls}" data-action="${action}" data-value="${value}" ${disabled ? "disabled" : ""}>${label}</button>`;
 function persist() {
+  if (fatal || !meta) return false;
   if (run?.idleEnabled) run.idleAt = !paused && !titleMode && !TERMINAL.has(run.phase) ? Date.now() : null;
-  if (!writeState(saveStorage, meta, run))
+  checkpoint.capture(meta,run);
+  saveAvailable = writeState(saveStorage, meta, run);
+  if (!saveAvailable)
     warning = "Saving is unavailable. Keep this window open to retain your expedition.";
+}
+function interruptJourney(error) {
+  epoch++;
+  fatal = error?.message || "An unexpected error interrupted the journey.";
+  modal = null;
+  paused = true;
+  effects.clear();
+  audio.setPaused(true);
+  const safe = checkpoint.restore();
+  if (safe?.run?.idleEnabled) {
+    safe.run.idleAt = null;
+    checkpoint.capture(safe.meta,safe.run);
+    saveAvailable = writeState(saveStorage,safe.meta,safe.run);
+  }
+  render();
+}
+function recoverJourney() {
+  const state = checkpoint.restore();
+  if (!state) return;
+  epoch++;
+  effects.clear();
+  meta = state.meta;
+  run = state.run;
+  fatal = "";
+  narration = "";
+  speed = meta.battleSpeed || 1500;
+  titleMode = !run;
+  paused = !!run && !TERMINAL.has(run.phase);
+  modal = paused ? "pause" : null;
+  if (run && TERMINAL.has(run.phase)) E.settle(run,meta);
+  audio.setPaused(paused);
+  persist();
+  render();
+}
+function recoveryView() {
+  return `<dialog class="fatal-panel paper-panel" role="alertdialog" aria-labelledby="recovery-heading"><img class="recovery-emblem" src="assets/generated/guardian-crest.webp" alt=""><h2 id="recovery-heading">The journey was interrupted</h2><p>The current step could not finish. Restore your last checkpoint to continue.</p>${!saveAvailable ? '<p>Your checkpoint is held in this window. Restore it without reloading.</p>' : ""}<div class="recovery-actions">${checkpoint.available ? button("Restore checkpoint","recover","","paper-panel main-button") : ""}${saveAvailable ? button("Reload game","reload","","paper-panel") : ""}</div><details class="recovery-details"><summary>Technical details</summary><p>${esc(fatal)}</p></details></dialog>`;
 }
 function health(m) {
   return `<div class="health-frame"><div class="health-fill ${m.hp / m.maxHp < 0.25 ? "danger" : m.hp / m.maxHp < 0.5 ? "low" : ""}" style="width:${(m.hp / m.maxHp) * 100}%"></div></div>`;
@@ -333,6 +375,14 @@ function endingView() {
 }
 function render() {
   effects.clear();
+  if (fatal) {
+    app.innerHTML = `<div class="game-screen recovery-screen">${recoveryView()}</div>`;
+    const dialog = q(".fatal-panel");
+    dialog.showModal();
+    dialog.addEventListener("cancel",event=>event.preventDefault());
+    dialog.querySelector("button")?.focus();
+    return;
+  }
   const mode = titleMode
     ? "title"
     : run.phase === "starter"
@@ -342,7 +392,7 @@ function render() {
         : run.enemy && ["battle", "victoryBeat"].includes(run.phase)
           ? "battle"
           : "map";
-  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${warning ? `<div class="save-warning">${esc(warning)}</div>` : ""}${fatal ? `<div class="fatal-panel paper-panel"><h2>The journey was interrupted</h2><p>${esc(fatal)}</p>${button("Resume from the last save", "reload", "", "main-button")}</div>` : ""}<div id="menu-host"></div></div>`;
+  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${warning ? `<button class="save-warning paper-panel" data-action="save-notice" aria-label="Save notice: ${esc(warning)}">${art("field-notes")}<span>Save notice</span></button>` : ""}<div id="menu-host"></div></div>`;
   if (!titleMode && run) {
     const heading = q(".stage-heading small");
     if (heading) heading.textContent = `${run.threat ? `THREAT ${run.threat}` : E.region(run).name.toUpperCase()} · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}`;
@@ -486,6 +536,7 @@ function menuContent() {
   if (modal === "partner" && run) return partnerView();
   if (modal === "opponent" && run?.enemy) return opponentView();
   if (modal === "guardians") return guardiansView();
+  if (modal === "save-notice") return `<h2>Save notice</h2><p>${esc(warning)}</p><p>${warning.includes("cannot be resumed") ? "You can start a new expedition from camp." : "You can keep playing in this window. Keep it open to retain this journey."}</p>`;
   if (modal === "pause")
     return `<h2>Pause</h2><p>Battle and travel are paused.</p>${audioControl()}<div class="pause-actions">${button("Resume", "close", "", "paper-panel main-button")}${button("Expedition plan", "plans", "", "paper-panel")}${button("Partner & moves", "partner", "", "paper-panel")}${button("Expedition boons", "journal", "", "paper-panel")}${button("Know the guardians", "guardians", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}${button("Return to camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
   if (modal === "retire" || modal === "replace")
@@ -831,11 +882,7 @@ async function pump() {
     }
   } catch (error) {
     if (token === epoch) {
-      fatal = error.message || "An unexpected error interrupted the journey.";
-      paused = true;
-      effects.clear();
-      persist();
-      render();
+      interruptJourney(error);
     }
   } finally {
     running = false;
@@ -851,6 +898,9 @@ async function pump() {
   }
 }
 async function dispatch(action, value) {
+  if (fatal && !["recover","reload"].includes(action)) return;
+  if (action === "recover") { recoverJourney(); return; }
+  if (action === "save-notice") { openMenu("save-notice"); return; }
   if (action === "choose-threat" && modal === "threats" && (!run || TERMINAL.has(run.phase))) {
     if (E.chooseThreat(meta, Number(value))) { persist(); render(); }
     return;
@@ -1040,11 +1090,12 @@ app.addEventListener("click", (e) => {
   const node = e.target.closest("[data-action]");
   if (node && !node.disabled) {
     e.preventDefault();
-    dispatch(node.dataset.action, node.dataset.value);
+    dispatch(node.dataset.action, node.dataset.value).catch(interruptJourney);
   }
 });
 document.addEventListener("keydown", (e) => {
   if (e.repeat) return;
+  if (fatal) { if (e.key === "Escape") e.preventDefault(); return; }
   if (e.key === "Escape") {
     e.preventDefault();
     modal
@@ -1067,6 +1118,7 @@ function catchUpAbsence() {
   }
 }
 document.addEventListener("visibilitychange", () => {
+  if (fatal) return;
   if (document.hidden && run?.idleEnabled && !paused && !titleMode) {
     epoch++;
     effects.clear();
@@ -1155,6 +1207,16 @@ async function boot() {
         "assets/effects/" + name + "-sheet.webp"),
       ...Object.values(catalogue.pokemon).map((p) => p.artwork),
     ];
+    let prepared = 0;
+    function updateLoading() {
+      const meter = q("[data-loading-progress]");
+      if (!meter) return;
+      meter.setAttribute("aria-valuemax",String(sources.length));
+      meter.setAttribute("aria-valuenow",String(prepared));
+      meter.querySelector(".health-fill").style.width = `${prepared/sources.length*100}%`;
+      q(".loading-count").textContent = `${prepared} / ${sources.length} illustrations ready`;
+    }
+    updateLoading();
     await Promise.all(
       sources.map((src) => {
         const i = new Image();
@@ -1168,14 +1230,14 @@ async function boot() {
               8000,
             );
           }),
-        ]).finally(() => clearTimeout(timer));
+        ]).then(()=>{prepared++;updateLoading();}).finally(() => clearTimeout(timer));
       }),
     );
     catchUpAbsence();
     persist();
     render();
   } catch (error) {
-    app.innerHTML = `<div class="loading-screen"><h1>POKÉROGUE</h1><p>The game could not load its resources.</p><p>${esc(error.message)}</p><button data-action="reload">Retry</button></div>`;
+    app.innerHTML = `<div class="loading-viewport loading-screen"><div class="title-shade"></div><div class="loading-brand"><h1>POKÉROGUE</h1><p>THE GUARDIAN TRAIL</p></div><section class="loading-paper paper-panel"><img class="loading-emblem" src="assets/generated/guardian-crest.webp" alt=""><div class="loading-copy"><h2>The trail could not open</h2><p>The game could not load its resources. Retry to prepare your journey again.</p>${button("Retry","reload","","paper-panel loading-retry")}<details class="recovery-details"><summary>Technical details</summary><p>${esc(error?.message || "A required resource could not be prepared.")}</p></details></div></section></div>`;
   }
 }
 boot();

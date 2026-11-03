@@ -10,9 +10,16 @@
   </head>
   <body>
     <main id="app" aria-label="PokéRogue">
-      <div class="loading-screen">
-        <h1>POKÉROGUE</h1>
-        <p>Preparing the Guardian Trail…</p>
+      <div class="loading-viewport loading-screen">
+        <div class="title-shade"></div>
+        <div class="loading-brand"><h1>POKÉROGUE</h1><p>THE GUARDIAN TRAIL</p></div>
+        <section class="loading-paper paper-panel">
+          <img class="loading-emblem" src="assets/generated/guardian-crest.webp" alt="">
+          <div class="loading-copy"><h2>Preparing the trail</h2><p>Preparing your journey.</p>
+            <div class="health-frame loading-meter" data-loading-progress role="progressbar" aria-label="Preparing artwork" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><div class="health-fill" style="width:0%"></div></div>
+            <p class="loading-count">Preparing your camp…</p>
+          </div>
+        </section>
       </div>
     </main>
     <noscript>Enable JavaScript to play.</noscript>

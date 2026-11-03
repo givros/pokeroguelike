@@ -515,6 +515,23 @@ export function selectBonus(run, id) {
   else depart(run);
   return true;
 }
+function choiceResult(before, after, id) {
+  const existing = new Set(activeSynergies(before).map(recipe => recipe.id));
+  return {
+    hp:after.hero.hp, maxHp:after.hero.maxHp,
+    hpChange:after.hero.hp-before.hero.hp,
+    maxHpChange:after.hero.maxHp-before.hero.maxHp,
+    ppRestored:after.hero.moves.reduce((sum,slot)=>sum+slot.pp,0)-before.hero.moves.reduce((sum,slot)=>sum+slot.pp,0),
+    gold:after.coins, rank:id ? count(after,id) : null,
+    awakens:activeSynergies(after).filter(recipe=>!existing.has(recipe.id)).map(recipe=>recipe.id),
+  };
+}
+export function previewBonus(run, id) {
+  if (!canSelectBonus(run,id)) return null;
+  const next = structuredClone(run);
+  selectBonus(next,id);
+  return choiceResult(run,next,id);
+}
 export function arrive(run, catalogue) {
   if (run.phase !== "travel" || run.travelProgress < 1) return false;
   run.regionEntry = null;
@@ -985,6 +1002,13 @@ export function buy(run, key) {
   if (item.bonus) grantBonus(run, item.bonus);
   addLog(run, item.name + " purchased.");
   return true;
+}
+export function previewPurchase(run, key) {
+  const item = SHOP_ITEMS[key];
+  if (!item || run.phase !== "shop") return null;
+  const next = structuredClone(run);
+  if (!buy(next,key)) return null;
+  return choiceResult(run,next,item.bonus);
 }
 export function needsRecovery(run) {
   return run.hero.hp < run.hero.maxHp ||

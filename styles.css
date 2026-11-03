@@ -967,9 +967,17 @@ button:not(:disabled):hover {
   gap: 10px;
 }
 .game-screen[data-phase="shop"] .dock-choice {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
   padding: 4px 8px;
   gap: 7px;
+  align-items: start;
 }
+.game-screen[data-phase="shop"] .dock-choice > span { display:contents; }
+.game-screen[data-phase="shop"] .dock-choice > .item-art { grid-column:1; grid-row:1; }
+.game-screen[data-phase="shop"] .dock-choice strong { grid-column:2; grid-row:1; align-self:center; }
+.game-screen[data-phase="shop"] .dock-choice small { grid-column:1/-1; grid-row:2; margin-top:0; }
 .game-screen[data-phase="shop"] .dock-choice > .item-art {
   width: 56px;
   height: 56px;

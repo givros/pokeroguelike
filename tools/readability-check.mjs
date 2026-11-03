@@ -44,7 +44,15 @@ function guardian(species) {
 }
 const scoutedGuardian = checkpoint(13,"camp");
 E.resolveEncounter(scoutedGuardian,"scout",catalogue);
+const healthOffering = halt(9);
+Object.assign(healthOffering,{bonuses:[],offers:["hp_boost","attack_boost","regeneration"],shrineEmpowered:true});
+healthOffering.hero.maxHp=healthOffering.hero.hp=90;
+const merchantAwakening = halt(7);
+Object.assign(merchantAwakening,{bonuses:["attack_boost","crit_chance","defense_boost","first_guard"],coins:100000000});
+merchantAwakening.hero.maxHp=999999;merchantAwakening.hero.hp=888888;merchantAwakening.hero.moves.forEach(s=>s.pp=0);
 const scenarios = [
+  {name:"health-offering-preview",run:healthOffering},
+  {name:"merchant-awakening-preview",run:merchantAwakening},
   {name:"scouted-guardian",run:scoutedGuardian},
   ...[123,150,149,131].flatMap(id=>[
     {name:`guardian-${id}`,run:guardian(id)},

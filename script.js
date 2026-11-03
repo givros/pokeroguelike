@@ -8,7 +8,7 @@ import { readState, writeState } from "./storage.js";
 import { BattleEffects } from "./presentation.js";
 import { discoveryRecords } from "./field-guide.js";
 import { GameAudio } from "./audio.js";
-import { SYNERGIES, activeSynergies, awakenedBy } from "./builds.js";
+import { SYNERGIES, activeSynergies } from "./builds.js";
 const app = document.getElementById("app");
 const effects = new BattleEffects();
 const audio = new GameAudio();
@@ -184,11 +184,14 @@ function bonusChoices(action = "bonus") {
       const empowered = run.phase === "shrine" && run.shrineEmpowered;
       const eligible = !empowered || E.canEmpowerBonus(run, id);
       const rank = Math.min(b.max, E.count(run, id) + (empowered ? 2 : 1));
-      const current = new Set(activeSynergies(run).map((recipe) => recipe.id));
-      const next = empowered ? activeSynergies({ ...run, bonuses:[...run.bonuses,id,id] }).filter((recipe)=>!current.has(recipe.id)) : awakenedBy(run, id);
-      const description = empowered ? eligible ? `Gain two ranks. Each rank: ${b.text}` : "This boon cannot gain two ranks. Cancel the offering to take one rank." : b.text;
+      const preview = E.previewBonus(run,id);
+      let description = empowered ? eligible ? `Gain two ranks. Each rank: ${b.text}` : "This boon cannot gain two ranks. Cancel the offering to take one rank." : b.text;
+      if (preview && id === "hp_boost") description = `${empowered ? "Gain two ranks. " : ""}Maximum HP +${preview.maxHpChange} to ${preview.maxHp}. HP after choice: ${preview.hp}/${preview.maxHp}.`;
+      else if (preview && id === "pp_boost") description = `Restore ${preview.hpChange} HP and ${preview.ppRestored} PP.`;
+      else if (preview && empowered) description += ` HP after choice: ${preview.hp}/${preview.maxHp}.`;
+      if (preview?.awakens.length) description += ` Awakens ${preview.awakens.map(key=>SYNERGIES.find(recipe=>recipe.id===key).name).join(", ")}!`;
       return choice(b.asset, b.name + (b.max > 1 ? ` · ${b.id === "pp_boost" ? "use " : ""}${rank}/${b.max}` : ""),
-        description + (eligible && next.length ? ` Awakens ${next.map((recipe) => recipe.name).join(", ")}!` : ""), action, id, !eligible);
+        description, action, id, !preview);
     })
     .join("");
 }
@@ -209,6 +212,26 @@ function rerollControl() {
   const cost = E.rerollCost(run);
   const label = cost === null ? "Reforges exhausted · 3/3" : `Reforge boons · ${cost} gold · ${3 - (run.rerolls || 0)} left`;
   return `<button class="dock-builds reforge-control" data-action="reroll" ${E.canReroll(run) ? "" : "disabled"}>${label}</button>`;
+}
+function purchaseDescription(key, preview) {
+  const item = E.SHOP_ITEMS[key];
+  if (!preview) {
+    if (item.bonus) {
+      const boon = E.BONUSES.find(boon=>boon.id===item.bonus);
+      if (E.count(run,item.bonus) >= boon.max) return `Maximum ${boon.name} rank reached.`;
+    }
+    if (key === "potion" && run.hero.hp === run.hero.maxHp) return "HP are already full.";
+    if (key === "full_heal" && !E.needsRecovery(run)) return "HP and PP are already full.";
+    if (run.coins < item.cost) return `Need ${item.cost-run.coins} more gold.`;
+    return "Unavailable here.";
+  }
+  let text;
+  if (item.bonus) {
+    const boon = E.BONUSES.find(boon=>boon.id===item.bonus);
+    text = `${boon.name} ${preview.rank}/${boon.max}. ${boon.text}`;
+  } else text = `Restore ${preview.hpChange} HP${key === "full_heal" ? ` and ${preview.ppRestored} PP` : ""}.`;
+  if (preview.awakens.length) text += ` Awakens ${preview.awakens.map(id=>SYNERGIES.find(recipe=>recipe.id===id).name).join(", ")}!`;
+  return `${text} ${preview.gold} gold left.`;
 }
 function encounterDock() {
   if (run.pendingGrowth || run.pendingAwakenings?.length) return "";
@@ -283,21 +306,17 @@ function encounterDock() {
     title = "The wayfarer trading post";
     content =
       Object.entries(E.SHOP_ITEMS)
-        .map(([key, s]) =>
-          choice(
+        .map(([key, s]) => {
+          const preview = E.previewPurchase(run,key);
+          return choice(
             s.asset,
             s.name + " · " + s.cost + " gold",
-            s.text,
+            purchaseDescription(key,preview),
             "buy",
             key,
-            run.coins < s.cost ||
-              (s.bonus &&
-                E.count(run, s.bonus) >=
-                  E.BONUSES.find((b) => b.id === s.bonus).max) ||
-              (key === "potion" && run.hero.hp === run.hero.maxHp) ||
-              (key === "full_heal" && !E.needsRecovery(run)),
-          ),
-        )
+            !preview,
+          );
+        })
         .join("") + button("Continue the journey", "leave", "", "dock-leave");
   }
   const note = run.log.at(-1) !== E.stage(run).name + "." ? run.log.at(-1) : "";

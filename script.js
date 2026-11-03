@@ -43,6 +43,7 @@ let catalogue,
   fatal = "",
   narration = "",
   saveAt = 0;
+const workWaiters = new Set();
 const AUTO = new Set(["travel", "arrival", "battle", "victoryBeat"]);
 const hasAutomaticWork = () => run && (AUTO.has(run.phase) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || L.landmarkMoving(run) || planDecision(run));
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
@@ -115,7 +116,7 @@ function syncSaveNotice() {
   if (modal === "save-notice") updateMenuScroll();
 }
 function interruptJourney(error) {
-  epoch++;
+  invalidateWork();
   fatal = error?.message || "An unexpected error interrupted the journey.";
   modal = null;
   paused = true;
@@ -132,7 +133,7 @@ function interruptJourney(error) {
 function recoverJourney() {
   const state = checkpoint.restore();
   if (!state) return;
-  epoch++;
+  invalidateWork();
   effects.clear();
   meta = state.meta;
   run = state.run;
@@ -402,6 +403,7 @@ function endingView() {
 }
 function render() {
   effects.clear();
+  menuReturnFocus = null;
   if (fatal) {
     app.innerHTML = `<div class="game-screen recovery-screen">${recoveryView()}</div>`;
     const dialog = q(".fatal-panel");
@@ -646,12 +648,13 @@ function closeMenu() {
   renderMenu();
   if (menuReturnFocus?.isConnected) menuReturnFocus.focus({ preventScroll: true });
   menuReturnFocus = null;
+  wakeWork();
   pump();
 }
 let pendingStarter = null;
 let idleReport = null;
 function begin(id) {
-  epoch++;
+  invalidateWork();
   effects.clear();
   audio.stop();
   audio.setPaused(false);
@@ -668,10 +671,29 @@ function begin(id) {
 function live(token) {
   return token === epoch && run && !titleMode && !fatal;
 }
+function wakeWork() {
+  const waiters = [...workWaiters];
+  workWaiters.clear();
+  for (const resolve of waiters) resolve();
+}
+function invalidateWork() {
+  // Replacing an expedition also releases work suspended by pause or visibility.
+  epoch++;
+  wakeWork();
+}
+async function waitForActivity(token) {
+  while (live(token) && (paused || document.hidden))
+    await new Promise(resolve => workWaiters.add(resolve));
+  return live(token);
+}
 async function wait(ms, token) {
   let previous = performance.now(),
     elapsed = 0;
   while (elapsed < ms && live(token)) {
+    if (paused || document.hidden) {
+      if (!await waitForActivity(token)) break;
+      previous = performance.now();
+    }
     await new Promise((resolve) =>
       setTimeout(resolve, Math.min(40, ms - elapsed)),
     );
@@ -684,6 +706,10 @@ async function wait(ms, token) {
 async function travel(token) {
   let previous = performance.now();
   while (live(token) && run.phase === "travel" && run.travelProgress < 1) {
+    if (paused || document.hidden) {
+      if (!await waitForActivity(token)) break;
+      previous = performance.now();
+    }
     await new Promise((resolve) => requestAnimationFrame(resolve));
     const now = performance.now();
     if (!paused && !document.hidden) {
@@ -721,6 +747,10 @@ async function playLandmarkMotion(token) {
   const marker = run.landmark;
   let previous = performance.now();
   while (live(token) && run.landmark === marker && L.landmarkMoving(run) && marker.progress < 1) {
+    if (paused || document.hidden) {
+      if (!await waitForActivity(token)) break;
+      previous = performance.now();
+    }
     await new Promise(resolve=>requestAnimationFrame(resolve));
     const now = performance.now();
     if (!paused && !document.hidden) {
@@ -1020,6 +1050,7 @@ async function dispatch(action, value) {
     if (run?.idleEnabled) run.idleCredit = 0;
     titleMode = false;
     paused = false;
+    wakeWork();
     render();
     pump();
     return;
@@ -1029,7 +1060,7 @@ async function dispatch(action, value) {
       closeMenu();
       return;
     }
-    epoch++;
+    invalidateWork();
     audio.stop();
     run.phase = "retired";
     E.settle(run, meta);
@@ -1045,7 +1076,7 @@ async function dispatch(action, value) {
     return;
   }
   if (action === "finish") {
-    epoch++;
+    invalidateWork();
     audio.stop();
     run = null;
     titleMode = true;
@@ -1152,7 +1183,7 @@ function catchUpAbsence() {
 document.addEventListener("visibilitychange", () => {
   if (fatal) return;
   if (document.hidden && run?.idleEnabled && !paused && !titleMode) {
-    epoch++;
+    invalidateWork();
     effects.clear();
     persist();
   } else if (!document.hidden && run?.idleEnabled) {
@@ -1163,7 +1194,7 @@ document.addEventListener("visibilitychange", () => {
   }
   effects.setPaused(paused || document.hidden);
   audio.setPaused(paused || document.hidden);
-  if (!document.hidden) pump();
+  if (!document.hidden) { wakeWork(); pump(); }
 });
 window.addEventListener("pagehide", () => {
   if (meta) persist();

@@ -456,6 +456,18 @@ button:not(:disabled):hover {
 .awakening-toast strong {
   font-size: 25px;
 }
+.awakening-reading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: solid transparent;
+  border-width: 12px 20px;
+  border-image: url("assets/generated/trail-banner.webp") 28 44 fill / 12px 20px stretch;
+  text-shadow: none;
+  white-space: nowrap;
+}
 .awakened-relic {
   filter: drop-shadow(0 0 5px #ffe5a0);
 }
@@ -719,14 +731,17 @@ button:not(:disabled):hover {
 }
 .victory-banner {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
   top: 42%;
   text-align: center;
   color: #ffe4a0;
-  text-shadow:
-    0 4px #53643b,
-    0 9px 20px #173b3577;
+  text-shadow: none;
+  padding: 0 18px;
+  border: solid transparent;
+  border-width: 14px 24px;
+  border-image: url("assets/generated/trail-banner.webp") 28 44 fill / 14px 24px stretch;
   font-size: 64px;
   font-weight: 900;
   letter-spacing: 6px;
@@ -1769,14 +1784,29 @@ summary {
   left: 50%;
   top: auto;
   bottom: 16%;
-  width: 80%;
+  width: max-content;
+  max-width: 80%;
+  padding: 4px 14px;
+  border: solid transparent;
+  border-width: 12px 20px;
+  border-image: url("assets/generated/trail-banner.webp") 28 44 fill / 12px 20px stretch;
   transform: translateX(-50%);
   text-align: center;
   font-size: 27px;
   font-weight: 800;
   color: #fff7c8;
-  text-shadow: 0 2px 3px #234b3b, 0 0 16px #234b3b;
+  text-shadow: none;
   z-index: 1900;
+}
+.battle-narration .evolution-caption {
+  position: static;
+  transform: none;
+  width: auto;
+  max-width: 100%;
+  border: 0;
+  padding: 0;
+  line-height: 1.1;
+  color: var(--ink);
 }
 .sound-control {
   display: block;
@@ -1796,7 +1826,7 @@ summary {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  background: #102d3b80;
+  background: radial-gradient(ellipse at center, #102d3be8 0%, #102d3bd9 35%, #102d3b80 85%);
   color: #fff7d3;
   text-align: center;
   text-shadow: 0 3px 12px #082521;

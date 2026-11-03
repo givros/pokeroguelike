@@ -3,9 +3,12 @@ import {chromium} from 'playwright';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {simulate} from './simulate.mjs';
 import * as E from '../engine.js';
+import {EVOLUTION_BATTLE_SCALE} from '../presentation.js';
 const pokemon=JSON.parse(await readFile('data/pokemon.json'));
+const growthReading=process.argv.includes('--growth-reading'),forms=[1,2,3,4,5,6,7,8,9,25,26,133,134,135,136,152,153,154];
+const out=`output/playwright/${growthReading?'growth-silhouettes':'silhouettes'}`;
 const browser=await chromium.launch({headless:true}),results=[];
-await mkdir('output/playwright/silhouettes',{recursive:true});
+await mkdir(out,{recursive:true});
 try{
  for(const [width,height] of [[1440,900],[1280,720],[1024,768]])for(const barrier of [false,true]){
   const run=simulate(2026,4,{stopAt:r=>r.phase==='battle'}).run;
@@ -13,7 +16,9 @@ try{
   const context=await browser.newContext({viewport:{width,height}});
   await context.addInitScript(data=>{localStorage.setItem('pokeRogueAdventureV3',JSON.stringify(data));Object.defineProperty(document,'hidden',{get:()=>true});},{version:3,meta:E.baseMeta(),run});
   const page=await context.newPage();await page.goto('http://127.0.0.1:5173');await page.locator('[data-action="resume"]').click();
-  for(const id of Object.keys(pokemon)){
+  // A paused geometry audit: actual evolution playback and state are checked separately.
+  if(growthReading)await page.evaluate(scale=>{document.querySelector('.battle-narration').innerHTML='<span class="vfx evolution-caption">Charmeleon joins your journey!</span>';document.querySelector('.actor-ally .body-art').style.scale=String(scale);},EVOLUTION_BATTLE_SCALE);
+  for(const id of growthReading?forms:Object.keys(pokemon)){
    const measured=await page.evaluate(async id=>{
     const sides=['ally','enemy'],values=[];
     for(const side of sides){
@@ -35,12 +40,12 @@ try{
     }return values;
    },id);
    results.push({width,height,barrier,id:Number(id),measured});
-   if(measured.some(v=>v.collisions.length))await page.screenshot({path:`output/playwright/silhouettes/${width}-${barrier}-${id}.png`});
+   if(measured.some(v=>v.collisions.length))await page.screenshot({path:`${out}/${width}-${barrier}-${id}.png`});
   }
   await context.close();
  }
  const failures=results.filter(r=>r.measured.some(m=>m.collisions.length));
- await writeFile('output/playwright/silhouettes/results.json',JSON.stringify({results,failures},null,2));
+ await writeFile(`${out}/results.json`,JSON.stringify({results,failures},null,2));
  console.log(JSON.stringify({scenes:results.length,failures:failures.map(f=>({width:f.width,barrier:f.barrier,id:f.id,collisions:f.measured.filter(m=>m.collisions.length).map(m=>({side:m.side,with:m.collisions}))}))},null,2));
  assert.equal(failures.length,0);
  assert.ok(results.every(r=>r.measured.every(m=>m.facingCorrect)),"Official artwork must face its opponent on both battle sides");

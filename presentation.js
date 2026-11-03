@@ -1,4 +1,5 @@
 import {BREATH_ORIGINS,artworkAnchor} from "./attack-origins.js";
+export const EVOLUTION_BATTLE_SCALE = 1.08;
 export const IMPACT_SEQUENCES = Object.freeze({
   fire:"fire-impact", water:"water-impact", grass:"leaf-impact", ice:"ice-impact", poison:"poison-impact",
   electric:"electric-burst", psychic:"spectral-pulse", ghost:"spectral-pulse", dark:"spectral-pulse",
@@ -107,16 +108,17 @@ export class BattleEffects {
       { scene, duration: 800, iterations: 2 });
     if (aura) aura.style.zIndex = "1800";
     node.classList.add("evolving");
+    const peakScale = scene.id === "battle-scene" ? EVOLUTION_BATTLE_SCALE : 1.2;
     this.animate(node, [
       { filter: "brightness(1)", scale: 1 },
-      { filter: "brightness(8)", scale: 1.2 },
+      { filter: "brightness(8)", scale: peakScale },
     ], { duration: 650, fill: "forwards", easing: "ease-in" });
     if (!await wait(650)) return false;
     node.src = artwork;
     node.alt = name;
     onArtworkChange();
     this.animate(node, [
-      { filter: "brightness(8)", scale: 1.2 },
+      { filter: "brightness(8)", scale: peakScale },
       { filter: "brightness(1)", scale: 1 },
     ], { duration: 900, fill: "forwards", easing: "ease-out" });
     if (!await wait(900)) return false;

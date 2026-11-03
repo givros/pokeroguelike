@@ -746,7 +746,9 @@ async function playGrowth(token) {
     const label = document.createElement("span");
     label.className = "vfx evolution-caption";
     label.textContent = `${catalogue.pokemon[growth.fromId].name} is evolving…`;
-    node.closest("#battle-scene,#map-scene").append(label);
+    const reading = q(".battle-narration"), previousReading = reading?.textContent;
+    if (reading) reading.replaceChildren(label);
+    else node.closest("#battle-scene,#map-scene").append(label);
     q(".victory-banner")?.remove();
     const completed = await effects.evolve(node, catalogue.pokemon[growth.toId].artwork,
       name, (ms) => wait(ms, token), () => {node.dataset.species=String(growth.toId);applyMapArtwork(node.closest("#map-actor"), catalogue.artworkLayout[growth.toId]);});
@@ -754,6 +756,7 @@ async function playGrowth(token) {
     label.textContent = `${name} joins your journey!`;
     if (!await wait(650, token)) return false;
     label.remove();
+    if (reading?.isConnected) reading.textContent = previousReading;
   }
   if (!live(token)) return false;
   run.pendingGrowth = null;
@@ -792,7 +795,7 @@ async function playAwakening(token) {
   if (scene && recipe) {
     const toast = document.createElement("section");
     toast.className = "vfx awakening-toast";
-    toast.innerHTML = `${art(recipe.asset)}<small>BUILD AWAKENED</small><strong>${recipe.name}</strong>`;
+    toast.innerHTML = `${art(recipe.asset)}<div class="awakening-reading"><small>BUILD AWAKENED</small><strong>${recipe.name}</strong></div>`;
     scene.append(toast);
     audio.play("evolve");
     effects.animate(toast, [

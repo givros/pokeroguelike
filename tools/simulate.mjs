@@ -31,7 +31,8 @@ export function simulate(seed, starter = 7, options = {}) {
     }
     switch (r.phase) {
       case "evolution":
-        E.chooseEvolution(r,134,catalogue);
+        if (!E.chooseEvolution(r,options.evolution ?? 134,catalogue))
+          throw new Error("Invalid evolution choice");
         break;
       case "starter":
       case "reward":

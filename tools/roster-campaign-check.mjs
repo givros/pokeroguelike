@@ -3,15 +3,16 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import * as E from '../engine.js';
 import {simulate} from './simulate.mjs';
-const ids=process.argv.slice(2).map(Number);if(!ids.length)ids.push(1,4,7,25,133,152);for(const id of ids)assert.ok([1,4,7,25,133,152].includes(id));
-const browser=await chromium.launch({headless:true}),out='output/playwright/roster',reports=[],errors=[];await mkdir(out,{recursive:true});
+const args=process.argv.slice(2),evolution=Number(args.find(arg=>arg.startsWith('--evolution='))?.split('=')[1]??134);assert.ok([134,135,136].includes(evolution));
+const ids=args.filter(arg=>!arg.startsWith('--')).map(Number);if(!ids.length)ids.push(1,4,7,25,133,152);for(const id of ids)assert.ok([1,4,7,25,133,152].includes(id));
+const browser=await chromium.launch({headless:true}),out=`output/playwright/roster${evolution===134?'':`-evolution-${evolution}`}`,reports=[],errors=[];await mkdir(out,{recursive:true});
 const preference=['regeneration','lifesteal','attack_boost','defense_boost','hp_boost','first_guard','crit_chance','type_boost','momentum','focus_crit','pp_boost','gold_boost'];
 const gameplay=r=>Object.fromEntries(['phase','stageIndex','starterId','initialSeed','seed','threat','wins','actions','battleActions','coins','hero','enemy','bonuses','partnerForms','stats','encounters','upgrades','endBonus'].map(key=>[key,r[key]]));
 const progression=m=>Object.fromEntries(['gold','totalRuns','totalVictories','bestScore','unlockedThreat','unlockedStarters','permanentUpgrades','discoveries','expeditionHistory'].map(key=>[key,m[key]]));
 try{
  for(const id of ids){
   const meta=E.baseMeta();meta.totalVictories=50;meta.battleSpeed=750;for(const key of Object.keys(meta.unlockedStarters))meta.unlockedStarters[key]=true;
-  const expected=structuredClone(simulate(2026,id,{camp:'train'}).run),expectedMeta=structuredClone(meta);assert.equal(expected.phase,'complete');E.settle(expected,expectedMeta);
+  const expected=structuredClone(simulate(2026,id,{camp:'train',evolution}).run),expectedMeta=structuredClone(meta);assert.equal(expected.phase,'complete');E.settle(expected,expectedMeta);
   const context=await browser.newContext({viewport:{width:1280,height:720},reducedMotion:'no-preference'});await context.addInitScript(meta=>{Date.now=()=>2026;if(!localStorage.getItem('pokeRogueAdventureV3'))localStorage.setItem('pokeRogueAdventureV3',JSON.stringify({version:3,meta,run:null}));},meta);
   const page=await context.newPage();page.on('pageerror',e=>errors.push({id,error:e.message}));page.on('response',r=>{if(r.status()>=400)errors.push({id,error:`${r.status()} ${r.url()}`});});
   const saved=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('pokeRogueAdventureV3'))),click=(action,value)=>page.locator(`[data-action="${action}"]${value===undefined?'':`[data-value="${value}"]`}`).first().click();
@@ -25,7 +26,7 @@ try{
     const boon=preference.find(key=>E.canSelectBonus(r,key));decisions.push({stage:r.stageIndex,phase:r.phase,choice:boon||'leave'});if(boon)await click('bonus',boon);else await click('encounter','leave');
    }else if(r.phase==='camp'){decisions.push({stage:r.stageIndex,phase:r.phase,choice:'train'});await click('encounter','train');}
    else if(r.phase==='cache'){const choice=r.hero.hp<r.hero.maxHp*.7?'heal':'gold';decisions.push({stage:r.stageIndex,phase:r.phase,choice});await click('encounter',choice);}
-   else if(r.phase==='evolution'){assert.equal(id,133);await page.screenshot({path:`${out}/${id}-evolution-choice.png`});decisions.push({stage:r.stageIndex,phase:r.phase,choice:134});await click('evolve',134);}
+   else if(r.phase==='evolution'){assert.equal(id,133);await page.screenshot({path:`${out}/${id}-evolution-choice.png`});decisions.push({stage:r.stageIndex,phase:r.phase,choice:evolution});await click('evolve',evolution);}
    else if(r.phase==='shop'){
     if(r.hero.hp<r.hero.maxHp*.9&&r.coins>=85&&!await page.locator('[data-action="buy"][data-value="full_heal"]').isDisabled()){await click('buy','full_heal');decisions.push({stage:r.stageIndex,phase:'shop',choice:'full_heal'});}
     r=(await saved()).run;if(r.coins>=70&&!await page.locator('[data-action="buy"][data-value="guard"]').isDisabled()){await click('buy','guard');decisions.push({stage:r.stageIndex,phase:'shop',choice:'guard'});}

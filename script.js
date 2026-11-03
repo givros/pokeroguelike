@@ -178,6 +178,13 @@ function bonusChoices(action = "bonus") {
     })
     .join("");
 }
+function trainingDescription() {
+  if (run.hero.level >= 100) return "Maximum level reached.";
+  const preview = E.previewTraining(run, catalogue);
+  const growth = preview.speciesId !== run.hero.id ? ` Evolves into ${catalogue.pokemon[preview.speciesId].name}.` : preview.evolutionChoice ? " Choose an evolution next." : "";
+  const moves = preview.moves.length ? ` Learn ${preview.moves.join(", ")}.` : "";
+  return `Level +1, maximum HP +${preview.maxHpGain}.${growth}${moves}`;
+}
 function rerollControl() {
   const cost = E.rerollCost(run);
   const label = cost === null ? "Reforges exhausted · 3/3" : `Reforge boons · ${cost} gold · ${3 - (run.rerolls || 0)} left`;
@@ -215,11 +222,12 @@ function encounterDock() {
         "rest",
       ) +
       choice(
-        "attack-fang",
+        "field-notes",
         "Train",
-        "Gain a level and 5 maximum HP.",
+        trainingDescription(),
         "encounter",
         "train",
+        run.hero.level >= 100,
       ) +
       choice(
         "critical-lens",
@@ -245,7 +253,7 @@ function encounterDock() {
         "Restore 50% maximum HP.",
         "encounter",
         "heal",
-      );
+      ) + choice("field-notes", "Study the field notes", trainingDescription(), "encounter", "study", run.hero.level >= 100);
   }
   if (run.phase === "shrine") {
     title = "A gift from the ancients";
@@ -1021,6 +1029,7 @@ async function boot() {
       "opening-guard",
       "wayfarer-spur",
       "guardian-eye",
+      "field-notes",
       "parchment-panel",
       "gold-coins",
       "healing-berry",

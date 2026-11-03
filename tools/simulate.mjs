@@ -68,7 +68,7 @@ export function simulate(seed, starter = 7, options = {}) {
         E.resolveEncounter(r, options.camp || "rest", catalogue);
         break;
       case "cache":
-        E.resolveEncounter(r, r.hero.hp < r.hero.maxHp * 0.7 ? "heal" : "gold");
+        E.resolveEncounter(r, options.cache || (r.hero.hp < r.hero.maxHp * 0.7 ? "heal" : "gold"), catalogue);
         break;
       case "shop":
         if (r.hero.hp < r.hero.maxHp * 0.9) E.buy(r, "full_heal");

@@ -811,6 +811,22 @@ export function depart(run) {
   run.enemy = null;
   return true;
 }
+function trainPartner(run, catalogue) {
+  if (run.hero.level >= 100) return false;
+  run.hero.level++;
+  run.hero.maxHp += 5;
+  run.hero.hp = Math.min(run.hero.maxHp, run.hero.hp + 5);
+  refreshGrowth(run, catalogue);
+}
+export function previewTraining(run, catalogue) {
+  const preview = { ...run, hero: structuredClone(run.hero),
+    partnerForms: [...(run.partnerForms || [])], log: [] };
+  trainPartner(preview, catalogue);
+  return { level: preview.hero.level, maxHpGain: preview.hero.maxHp - run.hero.maxHp,
+    speciesId: preview.hero.id, evolutionChoice: !!preview.pendingEvolution,
+    moves: preview.hero.moves.filter((move) => !run.hero.moves.some((old) => old.id === move.id))
+      .map((move) => catalogue.moves[move.id]?.name || STRUGGLE.name) };
+}
 export function resolveEncounter(run, choice, catalogue) {
   if (run.phase === "camp") {
     if (choice === "rest") {
@@ -818,12 +834,9 @@ export function resolveEncounter(run, choice, catalogue) {
       run.hero.moves.forEach((s) => (s.pp = s.maxPp || 35));
       addLog(run, "The spring restores all HP and PP.");
     } else if (choice === "train") {
-      if (!catalogue) return false;
-      run.hero.level++;
-      run.hero.maxHp += 5;
-      run.hero.hp = Math.min(run.hero.maxHp, run.hero.hp + 5);
+      if (!catalogue || run.hero.level >= 100) return false;
       addLog(run, "Training complete: level +1.");
-      refreshGrowth(run, catalogue);
+      trainPartner(run, catalogue);
     } else if (choice === "scout") {
       if (!catalogue) return false;
       const index = STAGES.findIndex((node, i) => i > run.stageIndex &&
@@ -845,6 +858,10 @@ export function resolveEncounter(run, choice, catalogue) {
         run.hero.hp + Math.ceil(run.hero.maxHp * 0.5),
       );
       addLog(run, "The supplies restore 50% maximum HP.");
+    } else if (choice === "study") {
+      if (!catalogue || run.hero.level >= 100) return false;
+      addLog(run, "Studied the field notes: level +1. The remaining supplies and gold stay behind.");
+      trainPartner(run, catalogue);
     } else return false;
   } else if (run.phase === "shrine" && choice === "leave") {
     addLog(run, "You leave the shrine undisturbed.");

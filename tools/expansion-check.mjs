@@ -146,9 +146,9 @@ try {
       const node = document.querySelector(`.effect-sprite[data-effect="${id}"]`);
       return node && getComputedStyle(node).backgroundPosition === "100% 0%";
     }, effect, { timeout: 10000 });
-    await page.screenshot({ path: `${out}/expansion-${effect}.png` });
     await click(page, "pause");
     await sprite.evaluate((node) => Promise.all(node.getAnimations().map((a) => a.ready)));
+    await page.screenshot({ path: `${out}/expansion-${effect}.png` });
     const frame = await sprite.evaluate((n) => getComputedStyle(n).backgroundPosition);
     const state = await saved(page);
     await page.waitForTimeout(350);

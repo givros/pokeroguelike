@@ -14,7 +14,8 @@
     "test:balance": "node tools/simulate.mjs",
     "test:builds": "node tools/build-check.mjs",
     "test:plans": "node tools/plan-check.mjs",
-    "test:idle": "node tools/idle-check.mjs"
+    "test:idle": "node tools/idle-check.mjs",
+    "test:training": "node tools/training-check.mjs"
   },
   "devDependencies": {
     "playwright": "^1.64.1"

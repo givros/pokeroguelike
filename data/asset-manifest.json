@@ -96,6 +96,18 @@
     "transparent": true
   },
   {
+    "id": "field-notes",
+    "image": "assets/generated/field-notes.webp",
+    "source": "assets/generated/field-notes.png",
+    "prompt": "assets/generated/field-notes.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      512,
+      459
+    ],
+    "transparent": true
+  },
+  {
     "id": "fire-wisp",
     "image": "assets/generated/fire-wisp.webp",
     "source": "assets/generated/fire-wisp.png",

@@ -1105,12 +1105,19 @@ button:not(:disabled):hover {
   width: 44%;
   height: 65%;
   filter: drop-shadow(0 12px 8px #183a3044);
+  transform: scaleX(-1);
+}
+.ending-partner[data-species="2"],.ending-partner[data-species="9"] { transform:none; }
+.ending-shade {
+  background: linear-gradient(90deg, #102e2c00 18%, #102e2c70 34%, #102e2ce6 44%, #0b2524f2 100%),
+    linear-gradient(#173d3d80, transparent 46%, #17372f6b);
 }
 .ending-content {
   position: absolute;
   left: 45%;
   right: 6%;
-  top: 25%;
+  top: 50%;
+  transform: translateY(-50%);
   text-shadow: 0 2px 5px #193d30;
 }
 .ending-content > small {

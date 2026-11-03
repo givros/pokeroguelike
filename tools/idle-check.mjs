@@ -15,6 +15,10 @@ try{
  let {page,context}=await fixture(Date.now()-3600000);
  await page.getByRole('heading',{name:'While you were away'}).waitFor();
  const ending=await saved(page);assert.equal(ending.run.phase,"complete");assert.equal(ending.run.settled,true);assert.equal(ending.meta.totalRuns,1);
+ const summary=await page.locator('dialog').elementHandle();
+ await page.evaluate(()=>{window.idleTestHidden=true;Object.defineProperty(document,"hidden",{get:()=>window.idleTestHidden,configurable:true});document.dispatchEvent(new Event("visibilitychange"));window.idleTestHidden=false;document.dispatchEvent(new Event("visibilitychange"));});
+ assert.ok(await summary.evaluate(n=>n.isConnected&&n===document.querySelector('dialog')));assert.deepEqual(await saved(page),ending);await summary.dispose();
+ checks.push('Returning to a paused absence report preserves the same window and does not settle or award its results again');
  await mkdir('output/playwright',{recursive:true});await page.screenshot({path:'output/playwright/idle-summary.png'});
  await page.reload();assert.equal(await page.getByRole('heading',{name:'While you were away'}).count(),0);
  await page.locator('.game-screen').waitFor();assert.deepEqual(await saved(page),ending);

@@ -1187,10 +1187,11 @@ document.addEventListener("visibilitychange", () => {
     effects.clear();
     persist();
   } else if (!document.hidden && run?.idleEnabled) {
+    const hadAbsence = Number.isFinite(run.idleAt);
     catchUpAbsence();
     if (!idleReport) run.idleCredit = 0;
     persist();
-    render();
+    if (hadAbsence) render();
   }
   effects.setPaused(paused || document.hidden);
   audio.setPaused(paused || document.hidden);

@@ -870,8 +870,8 @@ async function pump() {
         audio.play("windup", move.type);
         updateBattle();
         const duration = Math.max(450, speed * 0.65);
-        await effects.windup(side, move, (ms) => wait(ms, token), duration);
-        if (!live(token) || run.phase !== "battle") break;
+        const completed = await effects.windup(side, move, (ms) => wait(ms, token), duration);
+        if (!completed || !live(token) || run.phase !== "battle") break;
         const result = E.battleStep(run, catalogue);
         narration = run.log.at(-1);
         persist();

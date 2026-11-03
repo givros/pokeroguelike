@@ -126,7 +126,7 @@ export class BattleEffects {
   async windup(side, move, wait, duration) {
     const actor = document.querySelector(".actor-" + side + " .body-art");
     const direction = side === "ally" ? 1 : -1;
-    this.animate(
+    const windup = this.animate(
       actor,
       [
         { translate: "0 0", rotate: "0deg", scale: 1 },
@@ -144,13 +144,18 @@ export class BattleEffects {
       ],
       { duration: duration * 0.7, easing: "ease-in-out" },
     );
-    await wait(duration * 0.25);
+    let projectile, projectileAnimation;
+    const cancel = () => {
+      for(const animation of [windup,projectileAnimation])if(animation){animation.cancel();this.animations.delete(animation);}
+      projectile?.remove();
+    };
+    if (!await wait(duration * 0.25)) { cancel(); return false; }
     const from = this.emissionPoint(side,move),
       to = this.point(side === "ally" ? "enemy" : "ally");
-    if (!from || !to) return;
+    if (!from || !to) return true;
     const asset = projectileAsset(move);
     if (asset) {
-      const projectile = this.image(
+      projectile = this.image(
         asset,
         from,
         Math.min(245, innerWidth * 0.18),
@@ -159,7 +164,7 @@ export class BattleEffects {
       if (projectile) {
         const angle=Math.atan2(to.y-from.y,Math.abs(to.x-from.x))*direction*180/Math.PI;
         const transform=scale=>`translate(-50%,-50%) rotate(${angle}deg) scale(${direction*scale},${scale})`;
-        const a = this.animate(
+        const a = projectileAnimation = this.animate(
           projectile,
           [
             {
@@ -181,7 +186,9 @@ export class BattleEffects {
         a?.finished.catch(() => {}).finally(() => projectile.remove());
       }
     }
-    await wait(duration * 0.45);
+    const completed = await wait(duration * 0.45);
+    if (!completed) cancel();
+    return completed;
   }
   floatingText(label, point, cls = "", delay = 0) {
     const scene = document.querySelector("#battle-scene");

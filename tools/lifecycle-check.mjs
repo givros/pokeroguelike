@@ -78,6 +78,15 @@ try {
     "Retiring during an in-flight attack cancels VFX and cannot damage the next expedition",
   );
   await c.close();
+  ({ p, c } = await fixture(currentBattle()));
+  await p.waitForFunction(()=>{const n=document.querySelector(".actor-ally .body-art"),a=n?.getAnimations()[0],progress=a?.effect.getComputedTiming().progress;if(progress>.02&&progress<.25&&!document.querySelector(".projectile")){document.querySelector('[data-action="pause"]').click();return true;}return false;});
+  assert.equal((await state(p)).run.actions,0);
+  await p.locator('[data-action="retire"]').click();await p.locator('[data-action="confirm-retire"]').click();
+  await p.locator('[data-action="retry"]').click();await p.locator('[data-action="bonus"]').first().click();
+  await p.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run;return r.phase==="travel"&&!r.regionEntry&&r.travelProgress>0;});
+  assert.equal((await state(p)).run.actions,0);assert.equal((await state(p)).run.hero.hp,(await state(p)).run.hero.maxHp);
+  assert.equal(await p.locator(".vfx,.damage-number").count(),0);
+  checks.push("Retiring before projectile launch stops the cancelled preparation and preserves the fresh expedition");await c.close();
   const dead = currentBattle();
   dead.hero.hp = 1;
   dead.nextSide = "enemy";

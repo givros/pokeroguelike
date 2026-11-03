@@ -5,8 +5,10 @@ import * as E from "../engine.js";
 import {ELEMENTAL_CASES,elementalBattle} from "./elemental-fixtures.mjs";
 const c={pokemon:JSON.parse(await readFile("data/pokemon.json")),moves:JSON.parse(await readFile("data/moves.json"))};
 const browser=await chromium.launch({headless:true}),checks=[],errors=[];
+const filter=process.argv.slice(2),cases=ELEMENTAL_CASES.filter(([type])=>!filter.length||filter.includes(type));
+assert.ok(cases.length,"No matching reduced-motion fixtures");
 try{
- for(const [type,starter,,moveId,sides] of ELEMENTAL_CASES){
+ for(const [type,starter,,moveId,sides] of cases){
   const side=sides&&!sides.includes("ally")?"enemy":"ally";
   const r=elementalBattle(type,side,starter,c);
   r.bonuses=["attack_boost","attack_boost","crit_chance","regeneration","lifesteal"];
@@ -26,7 +28,7 @@ try{
   await page.screenshot({path:`output/playwright/reduced-feedback-${type}.png`});
   await screenshotStyle.evaluate(n=>n.remove());
   await page.getByRole("button",{name:"Resume",exact:true}).click();await page.waitForFunction(n=>!n.isConnected,node);await page.locator('[data-action="pause"]').click();await page.locator('[data-action="retire"]').click();await page.locator('[data-action="confirm-retire"]').click();assert.equal(await page.locator(".vfx,.damage-number").count(),0);
-  checks.push({type,starter,stationaryReadableForMs:370,pauseAndCleanup:true});await context.close();
+  checks.push({type,starter,side,stationaryReadableForMs:370,pauseAndCleanup:true});await context.close();
  }
- assert.deepEqual(errors,[]);await writeFile("output/playwright/reduced-feedback-results.json",JSON.stringify({checks,errors},null,2));console.log(JSON.stringify({checks,errors},null,2));
+ assert.deepEqual(errors,[]);await writeFile(`output/playwright/reduced-feedback${filter.length?"-"+filter.join("-"):""}-results.json`,JSON.stringify({checks,errors},null,2));console.log(JSON.stringify({checks,errors},null,2));
 }finally{await browser.close();}

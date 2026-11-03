@@ -698,5 +698,22 @@
     "columns": 2,
     "frames": 4,
     "qc": "assets/effects/water-impact.qc.json"
+  },
+  {
+    "id": "wind-impact",
+    "image": "assets/effects/wind-impact-sheet.webp",
+    "source": "assets/effects/wind-impact-sheet.png",
+    "rawSource": "assets/effects/wind-impact-raw.png",
+    "prompt": "assets/effects/wind-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/wind-impact.qc.json"
   }
 ]

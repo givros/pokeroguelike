@@ -3,6 +3,7 @@ import {simulate} from "./simulate.mjs";
 export const ELEMENTAL_CASES = [
   ["fire",4,"fire-impact"],["water",7,"water-impact"],["grass",1,"leaf-impact"],["ice",7,"ice-impact"],["poison",1,"poison-impact"],
   ["dark",7,"bite-impact",44],["bug",1,"bite-impact",450,["enemy"]],
+  ["flying",1,"wind-impact",16,["enemy"]],
 ];
 export function elementalBattle(type, side, starter, catalogue) {
   let run;
@@ -19,6 +20,7 @@ export function elementalBattle(type, side, starter, catalogue) {
       fire:{hero:1,stage:3,id:58},water:{hero:4,stage:10,id:54},grass:{hero:7,stage:1,id:43},
       ice:{hero:1,stage:12,id:131,form:3},poison:{hero:152,stage:8,id:92,form:154},
       dark:{hero:1,stage:1,id:23},bug:{hero:152,stage:5,id:123},
+      flying:{hero:1,stage:0,id:16},
     }[type];
     run = E.createRun(side === "ally" ? starter : opponent.hero,E.baseMeta(),catalogue,2026);
     E.selectBonus(run,run.offers[0]);

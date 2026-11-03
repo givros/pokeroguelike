@@ -6,7 +6,7 @@ import {IMPACT_ASSETS,IMPACT_SEQUENCES,MOVE_IMPACTS,impactSequence,projectileAss
 const digest=value=>createHash("sha256").update(value).digest("hex");
 const manifest=JSON.parse(readFileSync("data/asset-manifest.json"));
 test("new elemental impacts retain their generated sources, prompts and matching extraction QC",()=>{
- for(const name of ["fire-impact","water-impact","leaf-impact","ice-impact","poison-impact","bite-impact"]){
+ for(const name of ["fire-impact","water-impact","leaf-impact","ice-impact","poison-impact","bite-impact","wind-impact"]){
   const entry=manifest.find(a=>a.id===name);assert.ok(entry);assert.equal(entry.generator,"built-in imagegen");assert.equal(entry.frames,4);assert.ok(existsSync(entry.rawSource));
   const qc=JSON.parse(readFileSync(entry.qc));assert.equal(qc.shared_scale,true);assert.equal(qc.frames.length,4);assert.deepEqual(qc.edge_touch_frames,[]);assert.equal(qc.opaqueMagentaPixels,0);
   assert.equal(qc.sourceSha256,digest(readFileSync(entry.source)));assert.equal(qc.rawSha256,digest(readFileSync(entry.rawSource)));

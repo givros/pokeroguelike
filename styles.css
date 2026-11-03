@@ -741,9 +741,9 @@ button:not(:disabled):hover {
   color: #fff0bd;
   font-size: 40px;
   font-weight: 900;
-  -webkit-text-stroke: 2px #8a5d3f;
+  -webkit-text-stroke: 2px #4c3528;
   paint-order: stroke fill;
-  text-shadow: 0 3px #53643d;
+  text-shadow: 0 2px #26382e, 0 0 2px #26382e;
   z-index: 110;
   white-space: nowrap;
   pointer-events: none;
@@ -754,7 +754,7 @@ button:not(:disabled):hover {
 }
 .damage-number.healing {
   color: #d7f2b6;
-  -webkit-text-stroke-color: #4b7a52;
+  -webkit-text-stroke-color: #274d32;
 }
 .save-warning {
   position: absolute;
@@ -1826,7 +1826,7 @@ summary {
   }
 }
 
-.damage-number.secondary { font-size: 24px; -webkit-text-stroke-width: 1.5px; }
+.damage-number.secondary { font-size: 24px; -webkit-text-stroke-width: 2px; }
 .damage-number.barrier-number { color: #c4fff1; -webkit-text-stroke-color: #264e4d; }
 
 @media (min-height: 781px) { .bonus-partner { bottom: 60%; } }

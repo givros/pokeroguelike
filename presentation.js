@@ -2,6 +2,7 @@ export const IMPACT_SEQUENCES = Object.freeze({
   fire:"fire-impact", water:"water-impact", grass:"leaf-impact", ice:"ice-impact", poison:"poison-impact",
   electric:"electric-burst", psychic:"spectral-pulse", ghost:"spectral-pulse", dark:"spectral-pulse",
   ground:"stone-impact", rock:"stone-impact", steel:"stone-impact",
+  flying:"wind-impact",
 });
 export const MOVE_IMPACTS = Object.freeze({44:"bite-impact",450:"bite-impact"});
 export const IMPACT_ASSETS = Object.freeze([...new Set([...Object.values(IMPACT_SEQUENCES),...Object.values(MOVE_IMPACTS)])]);

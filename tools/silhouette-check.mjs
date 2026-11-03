@@ -5,21 +5,21 @@ import {simulate} from './simulate.mjs';
 import * as E from '../engine.js';
 import {EVOLUTION_BATTLE_SCALE} from '../presentation.js';
 const pokemon=JSON.parse(await readFile('data/pokemon.json'));
-const growthReading=process.argv.includes('--growth-reading'),forms=[1,2,3,4,5,6,7,8,9,25,26,133,134,135,136,152,153,154];
-const out=`output/playwright/${growthReading?'growth-silhouettes':'silhouettes'}`;
+const growthReading=process.argv.includes('--growth-reading'),victoryReading=process.argv.includes('--victory-reading'),forms=[1,2,3,4,5,6,7,8,9,25,26,133,134,135,136,152,153,154];
+const out=`output/playwright/${growthReading?'growth-silhouettes':victoryReading?'victory-layout':'silhouettes'}`;
 const browser=await chromium.launch({headless:true}),results=[];
 await mkdir(out,{recursive:true});
 try{
  for(const [width,height] of [[1440,900],[1280,720],[1024,768]])for(const barrier of [false,true]){
-  const run=simulate(2026,4,{stopAt:r=>r.phase==='battle'}).run;
+  const run=simulate(2026,4,{stopAt:r=>r.phase===(victoryReading?'victoryBeat':'battle')}).run;
   if(barrier)run.bonuses=['regeneration','lifesteal'];
   const context=await browser.newContext({viewport:{width,height}});
   await context.addInitScript(data=>{localStorage.setItem('pokeRogueAdventureV3',JSON.stringify(data));Object.defineProperty(document,'hidden',{get:()=>true});},{version:3,meta:E.baseMeta(),run});
   const page=await context.newPage();await page.goto('http://127.0.0.1:5173');await page.locator('[data-action="resume"]').click();
   // A paused geometry audit: actual evolution playback and state are checked separately.
   if(growthReading)await page.evaluate(scale=>{document.querySelector('.battle-narration').innerHTML='<span class="vfx evolution-caption">Charmeleon joins your journey!</span>';document.querySelector('.actor-ally .body-art').style.scale=String(scale);},EVOLUTION_BATTLE_SCALE);
-  for(const id of growthReading?forms:Object.keys(pokemon)){
-   const measured=await page.evaluate(async id=>{
+  for(const id of growthReading||victoryReading?forms:Object.keys(pokemon)){
+   const measured=await page.evaluate(async ({id,victoryReading})=>{
     const sides=['ally','enemy'],values=[];
     for(const side of sides){
      const img=document.querySelector(`.actor-${side} .body-art`);img.src=`assets/artwork/${id}.png`;img.dataset.species=id;await img.decode();
@@ -35,12 +35,14 @@ try{
       const b=document.querySelector(selector).getBoundingClientRect();
       if(box.left<b.right&&box.right>b.left&&box.top<b.bottom&&box.bottom>b.top)collisions.push(selector);
      }
+     let coveredPixels=0;
+     if(victoryReading){const b=document.querySelector('.victory-banner').getBoundingClientRect();for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++)if(data[(y*canvas.width+x)*4+3]>32){const px=left+(flip?canvas.width-x-.5:x+.5)*scale,py=top+(y+.5)*scale;if(px>b.left&&px<b.right&&py>b.top&&py<b.bottom)coveredPixels++;}if(coveredPixels)collisions.push('.victory-banner');}
      const nativeRight=[2,9,147,150].includes(Number(id)),expected=side==='ally'?(nativeRight?1:-1):(nativeRight?-1:1);
-     values.push({side,box,collisions,facingCorrect:(flip?-1:1)===expected});
+     values.push({side,box,collisions,coveredPixels,facingCorrect:(flip?-1:1)===expected});
     }return values;
-   },id);
+   },{id,victoryReading});
    results.push({width,height,barrier,id:Number(id),measured});
-   if(measured.some(v=>v.collisions.length))await page.screenshot({path:`${out}/${width}-${barrier}-${id}.png`});
+   if(measured.some(v=>v.collisions.length)||(victoryReading&&[3,6,9,134].includes(Number(id))))await page.screenshot({path:`${out}/${width}-${barrier}-${id}.png`});
   }
   await context.close();
  }

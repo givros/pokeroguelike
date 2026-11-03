@@ -156,6 +156,18 @@
     "transparent": true
   },
   {
+    "id": "guardian-crest",
+    "image": "assets/generated/guardian-crest.webp",
+    "source": "assets/generated/guardian-crest.png",
+    "prompt": "assets/generated/guardian-crest.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      504,
+      512
+    ],
+    "transparent": true
+  },
+  {
     "id": "guardian-eye",
     "image": "assets/generated/guardian-eye.webp",
     "source": "assets/generated/guardian-eye.png",

@@ -134,7 +134,7 @@ function titleView() {
      );
    },
  ).join("")}</div>
- <div class="title-actions">${button(`${art("affinity-crystal")}Permanent upgrades`, "upgrades", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}</div></div>`;
+ <div class="title-actions">${button(`${art("affinity-crystal")}Permanent upgrades`, "upgrades", "", "paper-panel")}${button(`${art("guardian-crest")}${meta.selectedThreat ? `Threat ${meta.selectedThreat}` : "Normal trail"}`, "threats", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}</div></div>`;
 }
 function battleCard(m, side) {
   const s = catalogue.pokemon[m.id];
@@ -223,6 +223,7 @@ function encounterDock() {
       ) +
       choice(
         "field-notes",
+      "guardian-crest",
         "Train",
         trainingDescription(),
         "encounter",
@@ -298,7 +299,7 @@ function starterBonusView() {
 }
 function endingView() {
   const won = run.phase === "complete";
-  return `<div class="ending-scene"><div class="ending-shade"></div>${mon(run.hero.id, "ending-partner")}<section class="ending-content"><small>${won ? "THE GUARDIANS YIELD" : "EVERY JOURNEY LEAVES A MARK"}</small><h1>${won ? "Expedition complete" : "The journey ends"}</h1><p>${won ? "Your partner crossed the trail and defeated its final guardian." : run.phase === "retired" ? "Your partner returns to camp with everything discovered along the way." : "Your partner gave everything. A new journey awaits."}</p><div class="ending-stats"><span><b>${run.wins}</b>victories</span><span><b>${run.stageIndex + 1} / ${E.STAGES.length}</b>stages</span><span><b>${run.coins}</b>gold retained</span></div><div class="ending-actions">${button("Return to camp", "finish", "", "paper-panel main-button")}${button("New expedition", "retry", "", "paper-panel")}</div></section></div>`;
+  return `<div class="ending-scene"><div class="ending-shade"></div>${mon(run.hero.id, "ending-partner")}<section class="ending-content"><small>${won ? "THE GUARDIANS YIELD" : "EVERY JOURNEY LEAVES A MARK"}</small><h1>${won ? "Expedition complete" : "The journey ends"}</h1><p>${won ? "Your partner crossed the trail and defeated its final guardian." : run.phase === "retired" ? "Your partner returns to camp with everything discovered along the way." : "Your partner gave everything. A new journey awaits."}</p><div class="ending-stats"><span><b>${run.wins}</b>victories</span><span><b>${run.stageIndex + 1} / ${E.STAGES.length}</b>stages</span><span><b>${run.coins}</b>gold retained</span></div>${won ? `<p>${run.threat ? `Threat ${run.threat} cleared. ` : ""}${(run.threat || 0) < E.MAX_THREAT ? `Threat ${Math.min(E.MAX_THREAT, (run.threat || 0)+1)} is available.` : "The highest threat has been conquered."}</p>${button("Choose your next challenge", "threats", "", "paper-panel challenge-next")}` : ""}<div class="ending-actions">${button("Return to camp", "finish", "", "paper-panel main-button")}${button("New expedition", "retry", "", "paper-panel")}</div></section></div>`;
 }
 function render() {
   effects.clear();
@@ -314,7 +315,7 @@ function render() {
   app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${warning ? `<div class="save-warning">${esc(warning)}</div>` : ""}${fatal ? `<div class="fatal-panel paper-panel"><h2>The journey was interrupted</h2><p>${esc(fatal)}</p>${button("Resume from the last save", "reload", "", "main-button")}</div>` : ""}<div id="menu-host"></div></div>`;
   if (!titleMode && run) {
     const heading = q(".stage-heading small");
-    if (heading) heading.textContent = `${E.region(run).name.toUpperCase()} · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}`;
+    if (heading) heading.textContent = `${run.threat ? `THREAT ${run.threat}` : E.region(run).name.toUpperCase()} · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}`;
     if (run.scouting) {
       const caption = q(".travel-caption");
       if (caption) {
@@ -396,7 +397,7 @@ function fieldGuideView() {
   return `<h2>Field guide</h2><p class="guide-intro">${known.length} / ${Object.keys(catalogue.pokemon).length} species discovered. Meet wild Pokémon and explore each partner's evolution line.</p><div class="guide-species">${known.map((p) =>
     `<section class="guide-entry">${mon(p.id)}<div><strong>${esc(p.name)}</strong><small>${p.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small><small>Seen ${records[p.id].seen} · Defeated ${records[p.id].defeated}</small></div></section>`
   ).join("") || '<p>No discoveries yet. Choose a partner to begin your journey.</p>'}</div><h3>Recent expeditions</h3><div class="expedition-history">${meta.expeditionHistory.map((r) =>
-    `<section>${catalogue.pokemon[r.partnerId] ? mon(r.partnerId) : ""}<div><strong>${r.outcome === "complete" ? "Guardian defeated" : r.outcome === "defeat" ? "Partner exhausted" : "Returned to camp"}</strong><small>Stage ${r.stage} / ${E.STAGES.length} · ${r.wins} victories · ${r.actions} actions</small></div></section>`
+    `<section>${catalogue.pokemon[r.partnerId] ? mon(r.partnerId) : ""}<div><strong>${r.outcome === "complete" ? "Guardian defeated" : r.outcome === "defeat" ? "Partner exhausted" : "Returned to camp"}</strong><small>${r.threat ? `Threat ${r.threat} · ` : ""}Stage ${r.stage} / ${E.STAGES.length} · ${r.wins} victories · ${r.actions} actions</small></div></section>`
   ).join("") || '<p>Your completed expeditions will appear here.</p>'}</div>`;
 }
 function partnerView() {
@@ -425,9 +426,19 @@ function plansView() {
 }
 function idleSummaryView() {
   const report = idleReport;
-  return `<h2>While you were away</h2><p>Your ${PLANS.find(p=>p.id===run.plan).name} plan guided this expedition.</p><div class="idle-results"><p><strong>Stages</strong> ${report.fromStage} to ${report.toStage}</p><p><strong>Victories</strong> ${report.wins}</p><p><strong>Gold change</strong> ${report.goldChange >= 0 ? "+" : ""}${report.goldChange}</p><p><strong>Levels gained</strong> ${report.levels}</p><p><strong>Battle actions</strong> ${report.actions}</p></div><p>${report.waitingForEvolution ? "Eevee is waiting for your evolution choice." : TERMINAL.has(run.phase) ? "This expedition has ended. Its rewards have been retained once." : "Your partner is ready to continue."}</p><p>Gold change includes merchant purchases and any ending reward.</p>${button("Continue", "close", "", "paper-panel main-button")}`;
+  return `<h2>While you were away</h2><p>Your ${PLANS.find(p=>p.id===run.plan).name} plan guided this expedition${run.threat ? ` at Threat ${run.threat}` : ""}.</p><div class="idle-results"><p><strong>Stages</strong> ${report.fromStage} to ${report.toStage}</p><p><strong>Victories</strong> ${report.wins}</p><p><strong>Gold change</strong> ${report.goldChange >= 0 ? "+" : ""}${report.goldChange}</p><p><strong>Levels gained</strong> ${report.levels}</p><p><strong>Battle actions</strong> ${report.actions}</p></div><p>${report.waitingForEvolution ? "Eevee is waiting for your evolution choice." : TERMINAL.has(run.phase) ? "This expedition has ended. Its rewards have been retained once." : "Your partner is ready to continue."}</p><p>Gold change includes merchant purchases and any ending reward.</p>${button("Continue", "close", "", "paper-panel main-button")}`;
+}
+function threatView() {
+  const active = run && !TERMINAL.has(run.phase);
+  return `<h2>Trail challenge</h2><p>Clear the normal trail to unlock Threat 1. Each cleared threat unlocks the next, up to Threat ${E.MAX_THREAT}. Choose between a safer expedition and stronger foes with richer rewards.</p>${active ? "<p>Finish or end your current expedition before changing its challenge.</p>" : ""}<div class="threat-options">${Array.from({length:E.MAX_THREAT+1},(_,tier)=>{
+    const locked = tier > meta.unlockedThreat;
+    const title = (tier ? `Threat ${tier}` : "Normal trail") + (meta.selectedThreat === tier ? " - Selected" : "");
+    const description = locked ? `Locked. Clear ${tier === 1 ? "the normal trail" : `Threat ${tier-1}`} first.` : tier ? `Enemy HP +${tier*20}%. Enemy damage +${tier*12}%. Battle and ending gold +${tier*20}%.` : "The original trail. Standard enemy strength and gold rewards.";
+    return choice(tier ? "guardian-crest" : "trail-sign", title, description, "choose-threat", tier, locked || active);
+  }).join("")}</div><p>Your selected challenge is saved for new expeditions. An expedition keeps its starting threat, including away progression.</p>`;
 }
 function menuContent() {
+  if (modal === "threats") return threatView();
   if (modal === "idle-summary" && idleReport) return idleSummaryView();
   if (modal === "plans" && run) return plansView();
   if (modal === "builds") return buildCombinationsView();
@@ -465,7 +476,7 @@ function menuContent() {
         })
         .join("") || "<p>No boons acquired yet.</p>"
     }</div><h3>Battle journal</h3><div class="log-list">${run.log.map((s) => `<p>${esc(s)}</p>`).join("")}</div>`;
-  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
+  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
 }
 function renderMenu() {
   const host = q("#menu-host");
@@ -763,6 +774,10 @@ async function pump() {
   }
 }
 async function dispatch(action, value) {
+  if (action === "choose-threat" && modal === "threats" && (!run || TERMINAL.has(run.phase))) {
+    if (E.chooseThreat(meta, Number(value))) { persist(); render(); }
+    return;
+  }
   if (action === "idle-toggle" && run && modal === "plans" && run.plan !== "manual") {
     run.idleEnabled = !run.idleEnabled;
     run.idleCredit = 0;
@@ -805,7 +820,7 @@ async function dispatch(action, value) {
     openMenu("pause");
     return;
   }
-  if (["help", "upgrades", "journal", "retire", "guide", "partner", "builds"].includes(action)) {
+  if (["help", "upgrades", "journal", "retire", "guide", "partner", "builds", "threats"].includes(action)) {
     openMenu(action);
     return;
   }
@@ -1030,6 +1045,7 @@ async function boot() {
       "wayfarer-spur",
       "guardian-eye",
       "field-notes",
+      "guardian-crest",
       "parchment-panel",
       "gold-coins",
       "healing-berry",

@@ -1,4 +1,4 @@
-import { baseMeta, BONUSES, STAGES, clamp, region } from "./engine.js";
+import { baseMeta, BONUSES, STAGES, clamp, region, MAX_THREAT } from "./engine.js";
 import { SYNERGIES } from "./builds.js";
 export const SAVE_KEY = "pokeRogueAdventureV3";
 const integer = (n, limit = 1e8) => clamp(Math.floor(Number(n) || 0), 0, limit);
@@ -7,6 +7,8 @@ export function normalizeMeta(source) {
   if (!source || typeof source !== "object") return m;
   for (const key of ["totalRuns", "bestScore", "totalVictories", "gold"])
     m[key] = integer(source[key]);
+  m.unlockedThreat = source.unlockedThreat == null ? (m.bestScore >= 9 ? 1 : 0) : integer(source.unlockedThreat, MAX_THREAT);
+  m.selectedThreat = integer(source.selectedThreat, m.unlockedThreat);
   for (const key of Object.keys(m.permanentUpgrades))
     m.permanentUpgrades[key] = integer(source.permanentUpgrades?.[key], 10);
   m.sound = !!source.sound;
@@ -27,6 +29,7 @@ export function normalizeMeta(source) {
       outcome: r.outcome, stage: Math.max(1, integer(r.stage, STAGES.length)),
       wins: integer(r.wins, STAGES.length), actions: integer(r.actions),
       damage: integer(r.damage), seed: r.seed == null ? null : integer(r.seed, 4294967295),
+      threat: integer(r.threat, MAX_THREAT),
     }));
   m.battleSpeed = [750, 1500, 2000].includes(source.battleSpeed)
     ? source.battleSpeed
@@ -157,6 +160,7 @@ export function validRun(r, c) {
   if (r.idleEnabled !== undefined && typeof r.idleEnabled !== "boolean") return false;
   if (r.idleAt != null && (!Number.isSafeInteger(r.idleAt) || r.idleAt < 0)) return false;
   if (r.idleCredit != null && (!Number.isInteger(r.idleCredit) || r.idleCredit < 0 || r.idleCredit > 28800000)) return false;
+  if (r.threat !== undefined && (!Number.isInteger(r.threat) || r.threat < 0 || r.threat > MAX_THREAT)) return false;
   if (r.plan !== undefined && !["manual", "predator", "warden", "siphon"].includes(r.plan)) return false;
   if (r.rerolls !== undefined && (!Number.isInteger(r.rerolls) || r.rerolls < 0 || r.rerolls > 3)) return false;
   if (["starter", "reward"].includes(r.phase) && r.offers.length === 0)

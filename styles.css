@@ -569,7 +569,7 @@ button:not(:disabled):hover {
 }
 .ally-card {
   left: 5%;
-  top: 17%;
+  top: 12.5%;
 }
 .enemy-card {
   right: 5%;
@@ -1773,3 +1773,16 @@ summary {
 .idle-results { display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; margin:24px 0; }
 .idle-results p { margin:0; font-size:18px; }
 .idle-results strong { display:block; font-size:14px; margin-bottom:5px; }
+
+.threat-options { display:grid; gap:6px; }
+.threat-options .dock-choice { display:flex; align-items:center; text-align:left; gap:16px; padding:10px; }
+.threat-options .item-art { width:64px; height:64px; flex:0 0 64px; }
+.threat-options strong { font-size:18px; }
+.threat-options small { display:block; font-size:14px; line-height:1.5; margin-top:5px; }
+.ending-content > .dock-builds { margin:10px 0; }
+
+.challenge-next { font-size:14px; font-weight:700; color:var(--ink); padding:8px 10px; margin:10px 0; border-width:14px; border-image-width:14px; }
+@media (max-width: 1100px) {
+  .actor-ally { height: 52%; }
+  .actor-enemy { bottom: 19%; }
+}

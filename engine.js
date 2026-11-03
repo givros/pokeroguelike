@@ -283,12 +283,24 @@ export function random(run) {
   run.seed = x >>> 0;
   return run.seed / 4294967296;
 }
+export const MAX_THREAT = 6;
+export function threatModifiers(run) {
+  const tier = Number.isInteger(run.threat) ? clamp(run.threat, 0, MAX_THREAT) : 0;
+  return { tier, enemyHp: 1 + tier * 0.2, enemyDamage: 1 + tier * 0.12, gold: 1 + tier * 0.2 };
+}
+export function chooseThreat(meta, tier) {
+  if (!Number.isInteger(tier) || tier < 0 || tier > Math.min(MAX_THREAT, meta.unlockedThreat || 0)) return false;
+  meta.selectedThreat = tier;
+  return true;
+}
 export function baseMeta() {
   return {
     totalRuns: 0,
     bestScore: 0,
     totalVictories: 0,
     gold: 0,
+    unlockedThreat: 0,
+    selectedThreat: 0,
     permanentUpgrades: {
       maxHpBonus: 0,
       attackBonus: 0,
@@ -402,6 +414,7 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
     seed: seed >>> 0 || 1,
     initialSeed: seed >>> 0 || 1,
     starterId: id,
+    threat: clamp(Math.floor(meta.selectedThreat || 0), 0, Math.min(MAX_THREAT, meta.unlockedThreat || 0)),
     partnerForms: [id],
     phase: "starter",
     stageIndex: 0,
@@ -561,7 +574,7 @@ export function activateStage(run, catalogue) {
         (node.kind === "elite" ? 1 : node.kind === "boss" ? 2 : 0);
     run.enemy = fighter(id, level, catalogue);
     (run.encounters ||= []).push({ id, stage: run.stageIndex, level, won: false });
-    run.enemy.maxHp -= 20;
+    run.enemy.maxHp = Math.max(1, Math.ceil((run.enemy.maxHp - 20) * threatModifiers(run).enemyHp));
     run.enemy.hp = run.enemy.maxHp;
     if (node.kind === "boss") {
       run.enemy.maxHp = Math.ceil(run.enemy.maxHp * 1.15);
@@ -624,7 +637,7 @@ export function expectedDamage(
     ) +
       2) *
     stab *
-    eff
+    eff * (player ? 1 : threatModifiers(run).enemyDamage)
   );
 }
 export function bestMove(run, catalogue, side = run.nextSide) {
@@ -766,7 +779,7 @@ function winBattle(run, catalogue) {
     gold = Math.floor(
       (node.kind === "boss" ? 80 : node.kind === "elite" ? 45 : 25) *
         (1 + run.hero.level * 0.1) *
-        (1 + 0.3 * count(run, "gold_boost")),
+        (1 + 0.3 * count(run, "gold_boost")) * threatModifiers(run).gold,
     );
   run.coins += gold;
   const xp = node.kind === "boss" ? 3 : node.kind === "elite" ? 2 : 1;
@@ -933,12 +946,14 @@ export function settle(run, meta) {
   run.endBonus =
     run.phase === "defeat"
       ? 0
-      : Math.floor(run.wins * 35 * (1 + run.hero.level * 0.1));
+      : Math.floor(run.wins * 35 * (1 + run.hero.level * 0.1) * threatModifiers(run).gold);
   run.coins += run.endBonus;
   meta.gold = run.coins;
   meta.totalRuns++;
   meta.totalVictories += run.wins;
   meta.bestScore = Math.max(meta.bestScore, run.wins);
+  if (run.phase === "complete")
+    meta.unlockedThreat = Math.max(meta.unlockedThreat || 0, Math.min(MAX_THREAT, threatModifiers(run).tier + 1));
   meta.discoveries ||= {};
   for (const encounter of run.encounters || []) {
     const record = meta.discoveries[encounter.id] ||= { seen: 0, defeated: 0 };
@@ -959,6 +974,7 @@ export function settle(run, meta) {
     actions: run.actions,
     damage: run.stats.damage,
     seed: run.initialSeed || null,
+    threat: threatModifiers(run).tier,
   }, ...(meta.expeditionHistory || [])].slice(0, 12);
   for (const [id, threshold] of [
     [25, 10],

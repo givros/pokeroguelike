@@ -22,7 +22,10 @@ battle.hero.hp = 888888;
 battle.coins = 100000000;
 const idleRun = E.createRun(4, E.baseMeta(), catalogue, 2026);
 Object.assign(idleRun, { plan:"predator", idleEnabled:true, idleAt:Date.now()-3600000 });
+const threatBattle = simulate(2026,4,{threat:6,stopAt:r=>r.phase==="battle"}).run;
 const scenarios = [
+  { name: "threats", run:null, menu:"threats", meta:{...E.baseMeta(),unlockedThreat:6,selectedThreat:6} },
+  { name: "threat-battle", run:threatBattle },
   { name: "idle-summary", run: idleRun },
   { name: "title", run: null },
   { name: "preparation", run: E.createRun(4, E.baseMeta(), catalogue, 2026) },
@@ -40,11 +43,13 @@ const scenarios = [
   { name: "upgrades", run: null, meta: { ...E.baseMeta(), gold: 100000000 }, menu: "upgrades" },
   { name: "help", run: null, menu: "help" },
 ];
+const scenarioFilter = process.argv.slice(2);
 const browser = await chromium.launch({ headless: true });
 const errors = [], results = [];
 try {
   for (const [width, height] of [[1440, 900], [1280, 720], [1024, 768]]) {
     for (const scenario of scenarios) {
+      if (scenarioFilter.length && !scenarioFilter.includes(scenario.name)) continue;
       const context = await browser.newContext({ viewport: { width, height } });
       await context.addInitScript((data) => {
         localStorage.setItem("pokeRogueAdventureV3", JSON.stringify(data));
@@ -105,9 +110,10 @@ try {
       await context.close();
     }
   }
-  await writeFile(`${out}/results.json`, JSON.stringify({ results, errors }, null, 2));
+  await writeFile(`${out}/${scenarioFilter.length ? "focused-" + scenarioFilter.join("-") : "results"}.json`, JSON.stringify({ results, errors }, null, 2));
   const failures = results.filter((r) => r.small.length || r.overflow.length || r.collisions.length || r.brokenText.length);
   console.log(JSON.stringify({ scenes: results.length, failures, errors }, null, 2));
+  assert.ok(results.length, "No matching readability scenarios");
   assert.deepEqual(errors, []);
   assert.equal(failures.length, 0);
 } finally {

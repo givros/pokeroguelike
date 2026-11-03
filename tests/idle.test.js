@@ -52,3 +52,10 @@ test("idle seeds across all partners remain bounded and valid, including partial
   assert.ok(!result||result.transitions<2000);
  }
 });
+
+test('away challenge progression uses the same seeded combat, threat rewards and terminal settlement',()=>{
+ const r=make();r.threat=4;const m=E.baseMeta();
+ const report=advanceIdle(r,m,catalogue,MAX_IDLE_MS);assert.ok(['complete','defeat'].includes(report.outcome));assert.equal(r.settled,true);
+ assert.equal(m.expeditionHistory[0].threat,4);assert.equal(validRun(r,catalogue),true);
+ const before={run:structuredClone(r),meta:structuredClone(m)};advanceIdle(r,m,catalogue,MAX_IDLE_MS);assert.deepEqual({run:r,meta:m},before);
+});

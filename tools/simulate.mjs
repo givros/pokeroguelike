@@ -6,7 +6,10 @@ const catalogue = {
   moves: JSON.parse(readFileSync("data/moves.json")),
 };
 export function simulate(seed, starter = 7, options = {}) {
-  const r = E.createRun(starter, E.baseMeta(), catalogue, seed);
+  const meta = E.baseMeta();
+  if (options.threat) { meta.unlockedThreat = E.MAX_THREAT; meta.selectedThreat = options.threat; }
+  if (options.upgrades) Object.assign(meta.permanentUpgrades, options.upgrades);
+  const r = E.createRun(starter, meta, catalogue, seed);
   if (options.plan) r.plan = options.plan;
   let transitions = 0;
   const visited = [];

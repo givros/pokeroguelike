@@ -17,19 +17,21 @@ try{
    const measured=await page.evaluate(async id=>{
     const sides=['ally','enemy'],values=[];
     for(const side of sides){
-     const img=document.querySelector(`.actor-${side} .body-art`);img.src=`assets/artwork/${id}.png`;await img.decode();
+     const img=document.querySelector(`.actor-${side} .body-art`);img.src=`assets/artwork/${id}.png`;img.dataset.species=id;await img.decode();
      const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
      const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0);
      const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;let x0=canvas.width,y0=canvas.height,x1=0,y1=0;
      for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++)if(data[(y*canvas.width+x)*4+3]>32){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x+1);y1=Math.max(y1,y+1);}
      const r=img.getBoundingClientRect(),scale=Math.min(r.width/canvas.width,r.height/canvas.height),left=r.left+(r.width-canvas.width*scale)/2,top=r.top+(r.height-canvas.height*scale)/2;
-     const box={left:left+(side==='ally'?canvas.width-x1:x0)*scale,right:left+(side==='ally'?canvas.width-x0:x1)*scale,top:top+y0*scale,bottom:top+y1*scale};
+     const flip=new DOMMatrix(getComputedStyle(img).transform).a<0;
+     const box={left:left+(flip?canvas.width-x1:x0)*scale,right:left+(flip?canvas.width-x0:x1)*scale,top:top+y0*scale,bottom:top+y1*scale};
      const collisions=[];
      for(const selector of ['.ally-card','.enemy-card','.battle-narration']){
       const b=document.querySelector(selector).getBoundingClientRect();
       if(box.left<b.right&&box.right>b.left&&box.top<b.bottom&&box.bottom>b.top)collisions.push(selector);
      }
-     values.push({side,box,collisions});
+     const nativeRight=[2,9,147,150].includes(Number(id)),expected=side==='ally'?(nativeRight?1:-1):(nativeRight?-1:1);
+     values.push({side,box,collisions,facingCorrect:(flip?-1:1)===expected});
     }return values;
    },id);
    results.push({width,height,barrier,id:Number(id),measured});
@@ -41,4 +43,5 @@ try{
  await writeFile('output/playwright/silhouettes/results.json',JSON.stringify({results,failures},null,2));
  console.log(JSON.stringify({scenes:results.length,failures:failures.map(f=>({width:f.width,barrier:f.barrier,id:f.id,collisions:f.measured.filter(m=>m.collisions.length).map(m=>({side:m.side,with:m.collisions}))}))},null,2));
  assert.equal(failures.length,0);
+ assert.ok(results.every(r=>r.measured.every(m=>m.facingCorrect)),"Official artwork must face its opponent on both battle sides");
 }finally{await browser.close();}

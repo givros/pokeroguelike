@@ -40,9 +40,9 @@ try{
     const n=document.querySelector(".ending-partner"),src=n.src,species=n.dataset.species,forms=[1,2,3,4,5,6,7,8,9,25,26,133,134,135,136,152,153,154],results=[];
     for(const id of forms){n.src=`assets/artwork/${id}.png`;n.dataset.species=id;await n.decode();const canvas=document.createElement("canvas");canvas.width=n.naturalWidth;canvas.height=n.naturalHeight;const ctx=canvas.getContext("2d",{willReadFrequently:true});ctx.drawImage(n,0,0);const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;let minX=canvas.width,maxX=0;for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++)if(pixels[(y*canvas.width+x)*4+3]>32){minX=Math.min(minX,x);maxX=Math.max(maxX,x);}
      const b=n.getBoundingClientRect(),fit=Math.min(b.width/n.naturalWidth,b.height/n.naturalHeight),flip=new DOMMatrix(getComputedStyle(n).transform).a<0,right=b.left+(b.width-n.naturalWidth*fit)/2+(flip?n.naturalWidth-minX:maxX+1)*fit;
-     results.push({id,gap:document.querySelector(".ending-content").getBoundingClientRect().left-right});
+     results.push({id,facingCorrect:flip!==[2,9].includes(id),gap:document.querySelector(".ending-content").getBoundingClientRect().left-right});
     }n.src=src;n.dataset.species=species;await n.decode();return results;
-   });for(const r of heroCoverage)assert.ok(r.gap>=8,JSON.stringify({width,...r}));
+   });for(const r of heroCoverage)assert.ok(r.gap>=8&&r.facingCorrect,JSON.stringify({width,...r}));
    const gold=fixture.meta.gold;if(fixture.name==="complete"){await page.locator('[data-action="retry"]').click();assert.equal(await page.locator(".game-screen").getAttribute("data-phase"),"starter");}
    else if(fixture.name==="maximum"){await page.locator('[data-action="threats"]').click();assert.equal(await page.locator("dialog[open]").count(),1);}
    else {await page.locator('[data-action="finish"]').click();assert.equal(await page.locator(".game-screen.mode-title").count(),1);}

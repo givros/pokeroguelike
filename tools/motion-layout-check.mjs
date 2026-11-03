@@ -18,7 +18,7 @@ try{
    const measured=await page.evaluate(async ({id,pose})=>{
     const effects=window.motionEffects;effects.clear();
     const sides=['ally','enemy'],values=[];
-    for(const side of sides){const img=document.querySelector(`.actor-${side} .body-art`);img.src=`assets/artwork/${id}.png`;await img.decode();}
+    for(const side of sides){const img=document.querySelector(`.actor-${side} .body-art`);img.src=`assets/artwork/${id}.png`;img.dataset.species=id;await img.decode();}
     await effects.windup('ally',{type:'normal'},async()=>true,1000);
     await effects.windup('enemy',{type:'normal'},async()=>true,1000);
     for(const animation of effects.animations){

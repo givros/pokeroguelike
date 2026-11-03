@@ -35,7 +35,7 @@ try{
    if(!baseline)for(const zone of approaches)for(const reverse of [false,true])for(let step=0;step<=50;step++)sample(zone.approachPath,step/50,`${zone.id}-${reverse?"return":"approach"}`,reverse);
    const records=[];
    for(const id of forms){
-    image.src=`assets/artwork/${id}.png`;await image.decode();
+    image.src=`assets/artwork/${id}.png`;image.dataset.species=id;await image.decode();
     if(layout)applyMapArtwork(actor,layout[id]);
     const source=document.createElement("canvas");source.width=image.naturalWidth;source.height=image.naturalHeight;
     const sourceContext=source.getContext("2d",{willReadFrequently:true});sourceContext.drawImage(image,0,0);
@@ -46,6 +46,8 @@ try{
      actor.style.left=`${point[0]*100}%`;actor.style.top=`${point[1]*100}%`;actor.style.zIndex=Math.round(point[1]*1000);
      actor.style.setProperty("--map-facing",facing);
      const r=image.getBoundingClientRect(),scale=Math.min(r.width/source.width,r.height/source.height);
+     const flip=new DOMMatrix(getComputedStyle(image).transform).a<0;
+     if((flip?-1:1)!==facing*([2,9,147,150].includes(Number(id))?-1:1))throw new Error(`Wrong native map facing for ${id}`);
      const left=r.left+(r.width-source.width*scale)/2,top=r.bottom-source.height*scale;
      maxGroundError=Math.max(maxGroundError,Math.abs(top+bottom*scale-(bounds.top+point[1]*bounds.height)));
      context.clearRect(0,0,canvas.width,canvas.height);const front=[];
@@ -58,7 +60,7 @@ try{
      let opaque=0,hidden=0,coveredByHud=0;
      for(let y=0;y<source.height*scale;y++)for(let x=0;x<source.width*scale;x++){
       const sx=Math.floor(x/scale),sy=Math.floor(y/scale);if(rgba[(sy*source.width+sx)*4+3]<=32)continue;
-      opaque++;const px=left+(facing<0?source.width*scale-1-x:x),py=top+y;
+      opaque++;const px=left+(flip?source.width*scale-1-x:x),py=top+y;
       const cx=Math.floor(px-bounds.left)-ix,cy=Math.floor(py-bounds.top)-iy;
       if(cx>=0&&cx<iw&&cy>=0&&cy<ih&&cover[(cy*iw+cx)*4+3]>160)hidden++;
       if(hud.some(b=>px>b.left&&px<b.right&&py>b.top&&py<b.bottom))coveredByHud++;

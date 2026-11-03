@@ -745,7 +745,7 @@ async function playGrowth(token) {
     node.closest("#battle-scene,#map-scene").append(label);
     q(".victory-banner")?.remove();
     const completed = await effects.evolve(node, catalogue.pokemon[growth.toId].artwork,
-      name, (ms) => wait(ms, token), () => applyMapArtwork(node.closest("#map-actor"), catalogue.artworkLayout[growth.toId]));
+      name, (ms) => wait(ms, token), () => {node.dataset.species=String(growth.toId);applyMapArtwork(node.closest("#map-actor"), catalogue.artworkLayout[growth.toId]);});
     if (!completed || !live(token)) return false;
     label.textContent = `${name} joins your journey!`;
     if (!await wait(650, token)) return false;

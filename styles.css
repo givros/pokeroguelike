@@ -76,7 +76,9 @@ button:not(:disabled):hover {
   image-rendering: auto;
   user-select: none;
   pointer-events: none;
+  --native-art-axis: 1;
 }
+.pokemon-art:is([data-species="2"],[data-species="9"],[data-species="147"],[data-species="150"]) { --native-art-axis:-1; }
 .paper-panel {
   border: 22px solid transparent;
   border-image: url("assets/generated/parchment-panel.webp") 90 fill / 22px
@@ -557,8 +559,9 @@ button:not(:disabled):hover {
   transform-origin: 50% 85%;
 }
 .actor-ally .body-art {
-  transform: scaleX(-1);
+  transform: scaleX(calc(-1 * var(--native-art-axis, 1)));
 }
+.actor-enemy .body-art { transform:scaleX(var(--native-art-axis, 1)); }
 .actor.fainted {
   opacity: 0.25;
   filter: grayscale(0.6);
@@ -847,7 +850,7 @@ button:not(:disabled):hover {
   position: relative;
   top: var(--map-art-offset, 0%);
   transform-origin: 50% var(--map-art-pivot, 100%);
-  transform: scaleX(var(--map-facing, -1));
+  transform: scaleX(calc(var(--map-facing, -1) * var(--native-art-axis, 1)));
   object-position: 50% 100%;
 }
 .map-actor.walking .body-art {
@@ -1105,9 +1108,8 @@ button:not(:disabled):hover {
   width: 44%;
   height: 65%;
   filter: drop-shadow(0 12px 8px #183a3044);
-  transform: scaleX(-1);
+  transform: scaleX(calc(-1 * var(--native-art-axis, 1)));
 }
-.ending-partner[data-species="2"],.ending-partner[data-species="9"] { transform:none; }
 .ending-shade {
   background: linear-gradient(90deg, #102e2c00 18%, #102e2c70 34%, #102e2ce6 44%, #0b2524f2 100%),
     linear-gradient(#173d3d80, transparent 46%, #17372f6b);

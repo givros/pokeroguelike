@@ -67,13 +67,13 @@ try {
   await p.locator('[data-action="bonus"]').first().click();
   await p.waitForFunction(() => {
     const run = JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run;
-    return run.phase === "travel" && !run.regionEntry && run.travelProgress > 0;
+    return run.phase === "travel" && !run.regionEntry && run.travelProgress === 0;
   }, {}, { timeout: 8000 });
   const after = (await state(p)).run;
   assert.equal(after.phase, "travel");
   assert.equal(after.actions, 0);
   assert.equal(after.hero.hp, after.hero.maxHp);
-  assert.ok(after.travelProgress > 0);
+  assert.equal(after.travelProgress,0);
   checks.push(
     "Retiring during an in-flight attack cancels VFX and cannot damage the next expedition",
   );
@@ -83,7 +83,7 @@ try {
   assert.equal((await state(p)).run.actions,0);
   await p.locator('[data-action="retire"]').click();await p.locator('[data-action="confirm-retire"]').click();
   await p.locator('[data-action="retry"]').click();await p.locator('[data-action="bonus"]').first().click();
-  await p.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run;return r.phase==="travel"&&!r.regionEntry&&r.travelProgress>0;});
+  await p.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run;return r.phase==="travel"&&!r.regionEntry&&r.travelProgress===0;});
   assert.equal((await state(p)).run.actions,0);assert.equal((await state(p)).run.hero.hp,(await state(p)).run.hero.maxHp);
   assert.equal(await p.locator(".vfx,.damage-number").count(),0);
   checks.push("Retiring before projectile launch stops the cancelled preparation and preserves the fresh expedition");await c.close();
@@ -167,29 +167,14 @@ try {
   );
   await c.close();
   const moving = E.createRun(4, E.baseMeta(), catalogue, 2026);
-  moving.starterId = 4;
-  E.selectBonus(moving, moving.offers[0]);
-  moving.travelProgress = 0.1;
-  moving.regionEntry = null;
-  ({ p, c } = await fixture(moving));
-  await p.locator('[data-action="pause"]').click();
-  const origin = (await state(p)).run.travelProgress;
-  await p.locator('[data-action="close"]').first().click();
-  await p.waitForTimeout(350);
-  await p.locator('[data-action="pause"]').click();
-  const normal = (await state(p)).run.travelProgress - origin;
-  await p.locator('[data-action="close"]').first().click();
+  E.selectBonus(moving,moving.offers[0]);moving.regionEntry=null;moving.travelProgress=.1;
+  ({p,c}=await fixture(moving));
+  const waiting=(await state(p)).run;
+  assert.equal(waiting.routeMode,'branching');assert.equal(waiting.travelProgress,0);
+  await p.waitForTimeout(500);assert.deepEqual((await state(p)).run,waiting);
   await p.locator('[data-action="speed"][data-value="750"]').click();
-  await p.locator('[data-action="pause"]').click();
-  const fastOrigin = (await state(p)).run.travelProgress;
-  await p.locator('[data-action="close"]').first().click();
-  await p.waitForTimeout(350);
-  await p.locator('[data-action="pause"]').click();
-  const fast = (await state(p)).run.travelProgress - fastOrigin;
-  assert.ok(fast > normal * 1.45, JSON.stringify({ normal, fast }));
-  checks.push(
-    "Changing travel speed accelerates the current route rather than only the next stage",
-  );
+  await p.waitForTimeout(500);assert.deepEqual((await state(p)).run,waiting);
+  checks.push('Old walking saves migrate to route selection; speed changes never choose a path automatically');
   await c.close();
   assert.deepEqual(errors, []);
   await writeFile(

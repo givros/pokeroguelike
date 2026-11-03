@@ -69,27 +69,20 @@ try {
     "bonus",
     preference.find((id) => state.run.offers.includes(id)),
   );
-  await page.waitForFunction(() => {
-    const r = JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run;
-    return r.phase === "travel" && r.travelProgress > 0.2;
-  });
-  const p1 = await page.locator("#map-actor").getAttribute("data-x");
-  await page.waitForTimeout(350);
-  const p2 = await page.locator("#map-actor").getAttribute("data-x");
-  assert.ok(Number(p2) > Number(p1));
-  checks.push("Automatic actor displacement follows map coordinates");
-  await click("pause");
-  const frozen = await saved();
-  const before = await page.locator("#map-actor").getAttribute("data-x");
+  await page.locator('.route-node.available').first().waitFor();
+  const routeWaiting=(await saved()).run;
   await page.waitForTimeout(650);
-  assert.equal(await page.locator("#map-actor").getAttribute("data-x"), before);
-  assert.deepEqual((await saved()).run, frozen.run);
-  checks.push("Pause freezes travel and its save checkpoint");
-  await page.reload();
-  await page.locator('[data-action="resume"]').waitFor();
-  assert.deepEqual((await saved()).run, frozen.run);
-  await click("resume");
-  checks.push("A partially travelled route resumes without resetting progress");
+  assert.deepEqual((await saved()).run,routeWaiting);
+  assert.equal(await page.locator('.walking,.map-canvas').count(),0);
+  checks.push('The branching route waits for a real encounter choice without a walking transition');
+  await click('pause');
+  const frozen=await saved();
+  await page.waitForTimeout(350);
+  assert.deepEqual((await saved()).run,frozen.run);
+  await page.reload();await page.locator('[data-action="resume"]').waitFor();
+  assert.deepEqual((await saved()).run,frozen.run);await click('resume');
+  checks.push('Pause and reload preserve the exact waiting route and resources');
+  await click('select-route','0-0');
   await page.waitForFunction(
     () =>
       JSON.parse(localStorage.getItem("pokeRogueAdventureV3")).run.phase ===
@@ -136,7 +129,9 @@ try {
       }
     }
     if (["complete", "defeat", "retired"].includes(r.phase)) break;
-    if (r.phase === "evolution") {
+    if(r.pendingGrowth||r.pendingAwakenings?.length){await page.waitForTimeout(80);continue;}
+    if(r.phase === "travel"&&r.routeMode === "branching"){await click("select-route",`${r.stageIndex}-0`);}
+    else if (r.phase === "evolution") {
       await page.screenshot({ path: OUT + "/final-eevee-evolution.png" });
       await click("evolve", 134);
     } else if (["reward", "shrine"].includes(r.phase)) {
@@ -213,7 +208,7 @@ try {
       visited.has("shrine"),
   );
   checks.push(
-    "Full 15-stage journey completes via automatic combat, travel, rewards, camp, shop, caches, shrine and bosses",
+    "Full 15-stage journey completes via automatic combat, branching route choices, rewards, camp, shop, caches, shrine and bosses",
   );
   await page.screenshot({ path: OUT + "/final-complete.png" });
   const completed = structuredClone(state);

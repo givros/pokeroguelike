@@ -1,5 +1,6 @@
 import { activeSynergies, awakenedBy } from "./builds.js";
 import { guardianAbility } from "./guardians.js";
+import {selectedRouteNode,routeOptions,enableRouteGraph} from './route-graph.js';
 
 export const STAGES = [
   { kind: "wild", name: "Woodland Edge", pool: [10, 16, 19] },
@@ -274,7 +275,17 @@ const CHART = {
 export const effectiveness = (type, types) =>
   types.reduce((n, t) => n * (CHART[type]?.[t] ?? 1), 1);
 export const count = (run, id) => run.bonuses.filter((x) => x === id).length;
-export const stage = (run) => STAGES[run.stageIndex];
+export const stage = (run) => selectedRouteNode(run,STAGES)?.stage || STAGES[run.stageIndex];
+export const stageAt = (run,index) => selectedRouteNode(run,STAGES,index)?.stage || STAGES[index];
+export const enableBranching = run => enableRouteGraph(run,STAGES);
+export const routeChoices = run => routeOptions(run,STAGES);
+export const needsRouteChoice = run => run.routeMode==='branching'&&run.phase==='travel'&&!selectedRouteNode(run,STAGES);
+export function selectRoute(run,id,catalogue) {
+ if(!needsRouteChoice(run)||run.pendingGrowth||run.pendingAwakenings?.length)return false;
+ const node=routeChoices(run).find(node=>node.id===id);if(!node)return false;
+ run.branchPath.push(id);run.landmark=null;run.travelProgress=1;
+ addLog(run,`${node.stage.name} chosen.`);return arrive(run,catalogue);
+}
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 export function random(run) {
   let x = run.seed;
@@ -534,6 +545,7 @@ export function previewBonus(run, id) {
 }
 export function arrive(run, catalogue) {
   if (run.phase !== "travel" || run.travelProgress < 1) return false;
+  if(run.routeMode==='branching'&&!selectedRouteNode(run,STAGES))return false;
   run.regionEntry = null;
   if (run.pendingEvolution && run.hero.id === 133) {
     run.phase = "evolution";
@@ -632,7 +644,7 @@ export function activateStage(run, catalogue) {
     }
     run.hero.guardUsed = false;
     run.hero.shield = 0;
-    run.preparedStrike = !!prepared;
+    run.preparedStrike = !!prepared || (run.routeMode==='branching'&&run.preparedStrike===true);
     run.scouting = null;
     run.battleActions = 0;
     run.nextSide = "ally";
@@ -920,6 +932,9 @@ export function resolveEncounter(run, choice, catalogue) {
       trainPartner(run, catalogue);
     } else if (choice === "scout") {
       if (!catalogue) return false;
+      if(run.routeMode==='branching'){
+        run.preparedStrike=true;run.scouting=null;addLog(run,'Your next opening strike deals 25% more damage.');depart(run);return true;
+      }
       const index = STAGES.findIndex((node, i) => i > run.stageIndex &&
         ["wild", "elite", "boss"].includes(node.kind));
       if (index < 0) return false;

@@ -1,5 +1,6 @@
 import * as E from "./engine.js";
 import * as L from "./landmarks.js";
+import { routeGraph, ROUTE_KINDS } from "./route-graph.js";
 import { mapArtworkStyle, applyMapArtwork } from "./artwork-layout.js";
 import { JourneyCheckpoint } from "./checkpoint.js";
 import { GUARDIANS, guardianAbility, guardianState } from "./guardians.js";
@@ -15,6 +16,7 @@ const effects = new BattleEffects();
 const audio = new GameAudio();
 const checkpoint = new JourneyCheckpoint();
 let saveStorage;
+let routeZoom = false;
 try {
   saveStorage = window.localStorage;
 } catch {
@@ -45,7 +47,7 @@ let catalogue,
   saveAt = 0;
 const workWaiters = new Set();
 const AUTO = new Set(["travel", "arrival", "battle", "victoryBeat"]);
-const hasAutomaticWork = () => run && (AUTO.has(run.phase) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || L.landmarkMoving(run) || planDecision(run));
+const hasAutomaticWork = () => run && ((AUTO.has(run.phase) && !E.needsRouteChoice(run)) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || L.landmarkMoving(run) || planDecision(run));
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
 const STARTERS = [1, 4, 7, 25, 133, 152];
 const NAME_TYPES = {
@@ -160,7 +162,7 @@ function battleKindView() {
 }
 function hud() {
   const stage = E.stage(run);
-  return `<header class="game-hud"><div class="hud-left paper-panel">${art("gold-coins")}<strong id="hud-coins">${run.coins}</strong><span class="hud-score">${run.wins} ${run.wins === 1 ? "victory" : "victories"}</span></div><div class="stage-heading"><small>THE GUARDIAN TRAIL · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}</small><strong>${stage.name}</strong>${battleKindView()}</div><div class="hud-controls"><div class="speed-select paper-panel">${[
+  return `<header class="game-hud"><div class="hud-left paper-panel">${art("gold-coins")}<strong id="hud-coins">${run.coins}</strong><span class="hud-score">${run.wins} ${run.wins === 1 ? "victory" : "victories"}</span></div><div class="stage-heading"><small>THE GUARDIAN TRAIL · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}</small><strong>${E.needsRouteChoice(run)?"Choose your route":stage.name}</strong>${battleKindView()}</div><div class="hud-controls"><div class="speed-select paper-panel">${[
     ["Slow", 2000],
     ["Normal", 1500],
     ["Fast", 750],
@@ -231,7 +233,24 @@ function destinationProp() {
   const prop = E.encounterZone(run, world)?.prop;
   return prop ? worldProp(prop) : "";
 }
+function routeView() {
+  const graph=routeGraph(run.branchSeed,E.STAGES), choices=E.routeChoices(run), available=new Set(choices.map(n=>n.id)), path=new Set(run.branchPath);
+  const ready=E.needsRouteChoice(run)&&!run.pendingGrowth&&!run.pendingAwakenings?.length;
+  const focus=choices[0]||graph.byId.get(run.branchPath.at(-1))||graph.rows[run.stageIndex][0];
+  const lines=graph.nodes.flatMap(n=>n.next.map(id=>{const target=graph.byId.get(id);return `<line class="${path.has(n.id)&&path.has(id)?'traversed':''}" x1="${n.x*600}" y1="${n.y}" x2="${target.x*600}" y2="${target.y}"/>`;})).join('');
+  const nodes=graph.nodes.map(n=>{
+    const visited=path.has(n.id),info=ROUTE_KINDS[visited?n.stage.kind:n.kind],current=visited&&n.row===run.stageIndex;
+    return `<button class="route-node ${n.kind==='boss'?'route-boss':''} ${visited?'visited':''} ${current?'current':''} ${available.has(n.id)&&ready?'available':''}" data-route-node="${n.id}" data-action="select-route" data-value="${n.id}" style="left:${n.x*100}%;top:${n.y/graph.height*100}%" aria-label="Stage ${n.row+1}: ${info.name}${visited?', visited':available.has(n.id)?', available':', unreachable'}" aria-disabled="${!(ready&&available.has(n.id))}">${art(info.asset)}<span class="route-node-caption">${info.name}</span></button>`;
+  }).join('');
+  const h=run.hero,dock=encounterDock();
+  return `<div id="map-scene" class="route-scene"><div class="route-layout" ${dock?"inert":""}><aside class="route-partner paper-panel"><small>YOUR PARTNER</small><div id="map-actor" class="route-avatar">${mon(visualHeroId(),'body-art')}</div><h2>${catalogue.pokemon[h.id].name}</h2><p>Level ${h.level}</p><strong>${h.hp} / ${h.maxHp} HP</strong>${health(h)}<p>${run.wins} victories<br>${run.bonuses.length} boon ranks</p>${button('Partner & moves','partner','','route-inspect')}${run.preparedStrike?'<p>Opening strike +25%</p>':''}</aside><section class="route-map"><div class="route-map-heading"><strong>${ready?'Choose your next encounter':'Your expedition route'}</strong><span>Paths ascend toward the guardian</span></div><div class="route-viewport ${routeZoom?"detailed":"overview"}" tabindex="0" aria-label="Expedition routes; scroll to explore"><div class="route-board" style="height:${graph.height}px"><svg viewBox="0 0 600 ${graph.height}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}<span class="route-start">EXPEDITION START</span></div></div><div class="route-map-footer">${button(routeZoom?"Entire route":"Zoom in","route-zoom","","route-zoom")}<span>${ready?'Select a glowing connected encounter to continue.':'The selected encounter is in progress.'}</span></div></section><aside class="route-journal paper-panel" aria-live="polite"><small>ENCOUNTER</small><div id="route-preview">${routePreview(focus)}</div><div class="route-key"><p>Golden trail: your chosen path</p><p>Glowing tokens: available choices</p><p>Hover a token to inspect it. Zoom in for a closer view.</p></div></aside></div>${dock}</div>`;
+}
+function routePreview(node) {
+  const info=ROUTE_KINDS[run.branchPath.includes(node.id)?node.stage.kind:node.kind];
+  return `${art(info.asset)}<h2>${info.name}</h2><p>Stage ${node.row+1} / ${E.STAGES.length}</p><p>${info.text}</p>`;
+}
 function mapView() {
+  if (run.routeMode === 'branching') return routeView();
   const [x, y] = L.mapPosition(run, world.route);
   const biome = world.regions?.[E.region(run).id] || world;
   const walking = (run.phase === "travel" || L.landmarkMoving(run)) && !run.pendingGrowth && !run.regionEntry;
@@ -345,7 +364,7 @@ function encounterDock() {
       choice(
         "critical-lens",
         "Scout ahead",
-        "Reveal the next foe and its ability. Opening hit +25%. Skip rest and training.",
+        run.routeMode === "branching" ? "Prepare your next battle: opening hit +25%. Skip rest and training." : "Reveal the next foe and its ability. Opening hit +25%. Skip rest and training.",
         "encounter",
         "scout",
       );
@@ -437,6 +456,8 @@ function render() {
     }
   }
   if (modal) renderMenu();
+  const viewport=q('.route-viewport');
+  if(viewport&&routeZoom){const node=E.routeChoices(run)[0]||routeGraph(run.branchSeed,E.STAGES).byId.get(run.branchPath.at(-1));if(node)viewport.scrollTop=node.y-viewport.clientHeight*.72;}
 }
 function updateBattle() {
   for (const [side, m] of [
@@ -598,7 +619,7 @@ function menuContent() {
         })
         .join("") || "<p>No boons acquired yet.</p>"
     }</div><h3>Battle journal</h3><div class="log-list">${run.log.map((s) => `<p>${esc(s)}</p>`).join("")}</div>`;
-  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians. Your partner walks up to each halt, then returns to the trail after your choice.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Offer vitality at the shrine</h3><p>Take one free boon, or offer 25% maximum HP to gain two ranks of a compatible boon. The offering cannot faint your partner. Unique boons and instant recovery cannot be empowered. Activate or cancel freely; HP is paid only when you choose the boon.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
+  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>Choose connected encounters on an ascending branching map. Each route offers a different balance of battles, elites, springs, supplies, merchants and shrines. Golden lines record your path. Both guardians stand across every route. Selecting an encounter opens it directly; there is no walking wait. Choose a new boon after each victory.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or preparing a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Offer vitality at the shrine</h3><p>Take one free boon, or offer 25% maximum HP to gain two ranks of a compatible boon. The offering cannot faint your partner. Unique boons and instant recovery cannot be empowered. Activate or cancel freely; HP is paid only when you choose the boon.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or route selection. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
 }
 function updateMenuScroll() {
   const content = q("dialog .menu-content"), note = q(".menu-scroll-note");
@@ -659,6 +680,7 @@ function begin(id) {
   audio.stop();
   audio.setPaused(false);
   run = E.createRun(id, meta, catalogue, Date.now());
+  E.enableBranching(run);
   run.starterId = id;
   titleMode = false;
   modal = null;
@@ -965,6 +987,11 @@ async function pump() {
 }
 async function dispatch(action, value) {
   if (fatal && !["recover","reload"].includes(action)) return;
+  if (action === 'route-zoom') {routeZoom=!routeZoom;render();pump();return;}
+  if (action === 'select-route' && run && !paused && !modal) {
+    if (E.selectRoute(run,value,catalogue)) { persist(); render(); pump(); }
+    return;
+  }
   if (action === "recover") { recoverJourney(); return; }
   if (action === "save-notice") { openMenu("save-notice"); return; }
   if (action === "retry-save" && modal === "save-notice") { persist(); return; }
@@ -1155,6 +1182,12 @@ async function dispatch(action, value) {
     pump();
   }
 }
+function previewRouteEvent(e) {
+  const token=e.target.closest('[data-route-node]'), preview=q('#route-preview');
+  if(token&&preview&&run?.routeMode==='branching') {const node=routeGraph(run.branchSeed,E.STAGES).byId.get(token.dataset.routeNode);if(node)preview.innerHTML=routePreview(node);}
+}
+app.addEventListener('pointerover',previewRouteEvent);
+app.addEventListener('focusin',previewRouteEvent);
 app.addEventListener("click", (e) => {
   const node = e.target.closest("[data-action]");
   if (node && !node.disabled) {
@@ -1222,6 +1255,7 @@ async function boot() {
     const state = readState(saveStorage, catalogue);
     meta = state.meta;
     run = state.run;
+    E.enableBranching(run);
     warning = state.warning;
     speed = meta.battleSpeed || 1500;
     if (run && TERMINAL.has(run.phase)) {

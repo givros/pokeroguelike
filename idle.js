@@ -10,6 +10,7 @@ export function idleStepCost(run, world) {
   if (L.departurePending(run)) return run.landmark.duration;
   if (L.approachAvailable(run, world)) return E.encounterZone(run, world).approachMs;
   if (planDecision(run)) return 1100;
+  if (E.needsRouteChoice(run)) return null;
   if (run.phase === "travel") return Math.max(1, Math.ceil(4500 * (1 - run.travelProgress)));
   if (run.phase === "arrival") return 700;
   if (run.phase === "battle") return 1500;

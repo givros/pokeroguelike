@@ -1,4 +1,5 @@
-import { baseMeta, BONUSES, STAGES, clamp, region, MAX_THREAT } from "./engine.js";
+import { baseMeta, BONUSES, STAGES, clamp, region, MAX_THREAT, stageAt } from "./engine.js";
+import {validBranchState} from './route-graph.js';
 import { SYNERGIES } from "./builds.js";
 export const SAVE_KEY = "pokeRogueAdventureV3";
 const integer = (n, limit = 1e8) => clamp(Math.floor(Number(n) || 0), 0, limit);
@@ -89,6 +90,7 @@ export function validRun(r, c) {
     r.stageIndex >= STAGES.length
   )
     return false;
+  if(r.routeMode==='branching'&&!validBranchState(r,STAGES))return false;
   if (typeof r.settled !== "boolean" || typeof r.pendingReward !== "boolean" ||
     (r.pendingEvolution != null && typeof r.pendingEvolution !== "boolean")) return false;
   if (r.settled && !["complete", "defeat", "retired"].includes(r.phase)) return false;
@@ -122,7 +124,7 @@ export function validRun(r, c) {
     (["victoryBeat", "complete"].includes(r.phase) && r.enemy.hp !== 0)) return false;
   if (r.phase === "complete" && r.stageIndex !== STAGES.length - 1) return false;
   if (["camp", "cache", "shop", "shrine"].includes(r.phase) &&
-    STAGES[r.stageIndex].kind !== r.phase) return false;
+    stageAt(r,r.stageIndex).kind !== r.phase) return false;
   if (
     !Number.isInteger(r.seed) ||
     r.seed <= 0 ||
@@ -220,7 +222,7 @@ export function validRun(r, c) {
     !r.encounters.every((entry, i, entries) => entry &&
       Number.isInteger(entry.stage) && entry.stage >= 0 && entry.stage <= r.stageIndex &&
       (i === 0 || entry.stage > entries[i - 1].stage) &&
-      STAGES[entry.stage]?.pool?.includes(entry.id) &&
+      stageAt(r,entry.stage)?.pool?.includes(entry.id) &&
       Number.isInteger(entry.level) && entry.level > 0 && entry.level <= 100 &&
       typeof entry.won === "boolean"))) return false;
   if (r.initialSeed != null && (!Number.isInteger(r.initialSeed) ||
@@ -232,7 +234,7 @@ export function validRun(r, c) {
   if (r.pendingGrowth != null && (!c.pokemon[r.pendingGrowth.fromId] ||
     r.pendingGrowth.toId !== r.hero.id || r.pendingGrowth.fromId === r.pendingGrowth.toId))
     return false;
-  if (r.routeMode != null && !["regional", "legacy"].includes(r.routeMode)) return false;
+  if (r.routeMode != null && !["regional", "legacy", "branching"].includes(r.routeMode)) return false;
   if (r.regionEntry != null && (r.routeMode !== "regional" || r.phase !== "travel" ||
     r.regionEntry !== region(r).id)) return false;
   if (r.pendingAwakenings != null && (!Array.isArray(r.pendingAwakenings) ||

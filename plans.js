@@ -1,7 +1,7 @@
 import * as E from "./engine.js";
 import { SYNERGIES } from "./builds.js";
 export const PLANS = [
-  { id:"manual", name:"Manual decisions", asset:"trail-sign", text:"Choose every boon, spring action and merchant purchase yourself." },
+  { id:"manual", name:"Manual decisions", asset:"trail-sign", text:"Choose every route, boon, spring action and merchant purchase yourself." },
   { id:"predator", name:"Predator", asset:"flurry-talons", recipe:"flurry", priorities:["attack_boost","crit_chance","type_boost","momentum","lifesteal","regeneration","defense_boost"], text:"Pursue Windscar Talons, then damage and sustain. Study early field notes and train at healthy springs; scout once training is no longer needed." },
   { id:"warden", name:"Warden", asset:"briar-bulwark", recipe:"bulwark", priorities:["defense_boost","first_guard","hp_boost","regeneration","attack_boost","lifesteal"], text:"Pursue Briar Bulwark, then resilience and recovery. Scout at healthy springs for a safer opening strike." },
   { id:"siphon", name:"Siphon", asset:"lifebloom-vessel", recipe:"lifebloom", priorities:["lifesteal","regeneration","hp_boost","attack_boost","defense_boost","first_guard"], text:"Pursue Lifebloom Vessel, then healing and maximum HP. Study early field notes and train at healthy springs to grow your recovery capacity." },
@@ -11,6 +11,11 @@ export function planDecision(run) {
   if (!plan || plan.id==="manual") return null;
   const health = run.hero.hp/run.hero.maxHp;
   const depleted = run.hero.moves.some(s=>s.pp<=Math.ceil(s.maxPp*.2));
+  if (E.needsRouteChoice(run)) {
+    const order=health<.65||depleted?['camp','cache','shop','shrine','wild','mystery','elite','boss']:plan.id==='predator'?['elite','wild','shrine','cache','camp','shop','mystery','boss']:['shrine','cache','camp','wild','shop','mystery','elite','boss'];
+    const node=E.routeChoices(run).sort((a,b)=>order.indexOf(a.kind)-order.indexOf(b.kind))[0];
+    return node?{action:'route',value:node.id}:null;
+  }
   if (["starter","reward","shrine"].includes(run.phase)) {
     const recipe = SYNERGIES.find(r=>r.id===plan.recipe);
     const missing = Object.entries(recipe.requires).filter(([id,n])=>E.count(run,id)<n).map(([id])=>id);
@@ -40,6 +45,7 @@ export function planDecision(run) {
 }
 export function applyPlanDecision(run, decision, catalogue) {
   if (!decision) return false;
+  if (decision.action==='route') return E.selectRoute(run,decision.value,catalogue);
   if (decision.action==="bonus") return E.selectBonus(run,decision.value);
   if (decision.action==="encounter") return E.resolveEncounter(run,decision.value,catalogue);
   if (decision.action==="buy") return E.buy(run,decision.value);

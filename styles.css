@@ -1923,3 +1923,60 @@ summary {
 .shrine-offering small { display:block; font-size:14px; line-height:1.45; margin-top:4px; }
 .shrine-offering[aria-pressed="true"] strong { color:#733c28; text-decoration:underline; text-underline-offset:3px; }
 .shrine-footer > .dock-builds { margin:0; max-width:23%; }
+/* Branching expedition chart: encounter choices replace walking transitions. */
+.route-scene{background:#93958a;color:#18282c}
+.route-layout{position:absolute;inset:112px 30px 22px;display:grid;grid-template-columns:205px minmax(0,1fr)205px;gap:24px}
+.route-partner,.route-journal{align-self:start;text-align:center;padding:5px 0 12px;border-width:22px;min-width:0}
+.route-partner small,.route-journal>small{font-weight:bold;font-size:14px;letter-spacing:1px}
+.route-avatar{position:relative;height:145px;margin:10px 0 0}
+.route-avatar .body-art{width:100%;height:100%;object-fit:contain}
+.route-partner h2,.route-journal h2{font-size:21px;margin:8px 0}
+.route-partner p,.route-journal p{font-size:15px;line-height:1.45;margin:9px 0}
+.route-partner .health-frame{margin:9px 0;width:100%}
+.route-inspect{border:0;border-top:1px solid #8c936c;background:transparent;color:#203b37;font-weight:bold;font-size:15px;padding:12px 0 0;width:100%}
+.route-map{display:flex;flex-direction:column;min-height:0;position:relative}
+.route-map-heading{text-align:center;padding:0 0 14px;color:#18282c}
+.route-map-heading strong{display:block;font-size:23px}
+.route-map-heading span{display:block;font-size:15px;margin-top:5px}
+.route-viewport{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;scrollbar-color:#344547 #b7b9aa;scrollbar-width:thin;border-top:1px solid #5f6b60;border-bottom:1px solid #5f6b60}
+.route-board{position:relative;min-width:280px}
+.route-board svg{position:absolute;width:100%;height:100%;inset:0;pointer-events:none}
+.route-board line{stroke:#384744;stroke-width:1.4;vector-effect:non-scaling-stroke;opacity:.75}
+.route-board line.traversed{stroke:#fff0b1;stroke-width:4;opacity:1;filter:drop-shadow(0 1px 1px #5b5130)}
+.route-node{position:absolute;transform:translate(-50%,-50%);width:46px;height:46px;border:2px solid #293d3c;border-radius:50%;background:#25393a;box-shadow:0 2px 3px #20302b55;padding:3px;z-index:2;cursor:help;opacity:.72;color:#fff7d1}
+.route-node .item-art{width:100%;height:100%;filter:drop-shadow(0 1px 1px #0007)}
+.route-node.available{opacity:1;border-color:#fff3be;box-shadow:0 0 0 3px #897443,0 0 15px #f1e4a966;cursor:pointer;background:#3e564b}
+.route-node.available:hover,.route-node.available:focus-visible{transform:translate(-50%,-50%) scale(1.12);outline:3px solid #fff0a7;outline-offset:4px}
+.route-node.visited{background:#557763;opacity:1;border-color:#b7cf9a}
+.route-node.current{border-color:#ffec99;box-shadow:0 0 0 3px #897443}
+.route-node:focus-visible{outline:3px solid #fff0a7;outline-offset:4px}
+.route-node-caption{position:absolute;display:none;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap;background:#203438;color:#fff8d8;padding:3px 7px;font-size:14px;border-radius:2px;pointer-events:none;z-index:5}
+.route-node:hover .route-node-caption,.route-node:focus-visible .route-node-caption{display:block}
+.route-boss{width:72px;height:72px;padding:4px;background:#273c3b;border-color:#899c7a}
+.route-start{position:absolute;bottom:12px;width:100%;text-align:center;font-size:14px;letter-spacing:2px;font-weight:bold;color:#283d38}
+.route-map-footer{text-align:center;font-size:15px;line-height:1.4;padding-top:10px;font-weight:bold}
+.route-journal #route-preview>.item-art{width:90px;height:90px;margin:12px auto 0;display:block}
+.route-key{border-top:1px solid #8c936c;margin-top:16px;padding-top:4px}
+.route-key p{font-size:14px}
+.route-scene:has(.encounter-dock) .route-layout{opacity:.35;pointer-events:none}
+.route-scene:has(.encounter-dock) .route-partner{opacity:0}
+.route-scene .encounter-dock{left:6%;right:6%}
+@media(max-width:1100px){.route-layout{inset:100px 18px 16px;grid-template-columns:170px minmax(0,1fr)170px;gap:14px}.route-partner,.route-journal{border-width:17px;border-image-width:17px}.route-avatar{height:110px}.route-partner h2,.route-journal h2{font-size:18px}.route-partner p,.route-journal p{font-size:14px}.route-map-heading strong{font-size:20px}.route-map-heading span,.route-map-footer{font-size:14px}.route-journal #route-preview>.item-art{width:72px;height:72px}.route-key{margin-top:10px}.route-node{width:42px;height:42px}.route-boss{width:66px;height:66px}}
+#map-scene.route-scene{position:absolute;inset:0;background:#999c8e}
+.route-map{width:100%;max-width:470px;justify-self:center}
+.route-viewport.overview{overflow:hidden}
+.route-viewport.overview .route-board{height:100%!important;min-height:0}
+.route-viewport.overview .route-node{width:30px;height:30px;padding:2px;border-width:1px;opacity:.9}
+.route-viewport.overview .route-boss{width:48px;height:48px}
+.route-viewport.overview .route-start{font-size:14px;letter-spacing:1px;bottom:0}
+.route-viewport.overview .route-node.available{box-shadow:0 0 0 2px #897443,0 0 10px #fff5b8;border-width:2px}
+.route-map-footer{display:flex;align-items:center;gap:12px;text-align:left;font-size:14px}
+.route-map-footer>span{flex:1}
+.route-zoom{padding:7px 10px;background:#2e4540;color:#fff6d6;border:1px solid #bbcba7;font-size:14px;white-space:nowrap}
+@media(max-width:1100px){.route-viewport.overview .route-node{width:25px;height:25px}.route-viewport.overview .route-boss{width:40px;height:40px}.route-map-heading{padding-bottom:8px}.route-map-heading span{margin-top:3px}.route-map-footer{gap:8px;padding-top:6px}.route-viewport.overview .route-start{font-size:14px}}
+.route-viewport.overview .route-node-caption{display:none}
+.route-node[aria-disabled="true"]:hover{opacity:1;outline:2px solid #d9e0bf;outline-offset:2px}
+.route-layout{grid-template-rows:minmax(0,1fr)}
+.route-journal,.route-partner{max-height:100%;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#627a57 #e8d5a2}
+.route-scene:has(.encounter-dock) .route-map-footer{visibility:hidden}
+.route-scene:has(.encounter-dock) .route-journal{visibility:hidden}

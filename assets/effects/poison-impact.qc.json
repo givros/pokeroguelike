@@ -1,0 +1,172 @@
+{
+  "target": "asset",
+  "mode": "impact",
+  "prompt": "Use the water-impact image just shown only as a reference for the clean HD hand-painted anime finish, detailed volume and four-frame chronological layout. Create an entirely NEW poison impact, not a recolored water splash. Thick glossy dark indigo-violet sludge bursts into uneven lobed globules, curled viscous strands, bulbous bubbles and small acid-green foam highlights. Rich deep blue-violet shadows, cool lavender highlights, opaque detailed organic material with clear contours. Use predominantly dark indigo (approximately #49329B) and acid green, never pink, fuchsia or magenta within the effect. Exactly four equal square cells in a 2 by 2 grid, read top-left, top-right, bottom-left, bottom-right. One continuous impact with a fixed center and common source scale: frame 1 a compact knot of swelling sludge bubbles; frame 2 an asymmetric expanding splatter of separated viscous lobes and curled vapor with open gaps around a small luminous green center; frame 3 the strands break into smaller separated globules and thinning curled wisps; frame 4 only a few shrinking droplets and short wisps. Organic varied silhouettes, naturally expanding and dissipating, not four equally sized icons. The creature beneath must remain recognizable through large gaps. Do not create a solid cloud that obscures it. No skull, face, biohazard emblem, symbol, rune, perfect ring, geometric shape, ice shard, lightning fork, flame or water wave. Do not make pixel art. Entire effect and every droplet must fit in the central 65 percent of its cell with generous margins on every side; nothing crosses cell edges. Completely solid flat pure magenta #FF00FF background throughout, including between cells, without gradients or background glow. No scenery, ground, character, container, text, numbers, labels, borders, grid lines or UI. Chroma-keyed battle FX sheet for a polished HD creature game.\n",
+  "role": "",
+  "input": "assets\\effects\\poison-impact-raw.png",
+  "threshold": 110,
+  "edge_threshold": 145,
+  "duration": 200,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 512,
+  "fit_scale": 0.86,
+  "trim_border": 4,
+  "edge_clean_depth": 2,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 12,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "impact-1",
+    "impact-2",
+    "impact-3",
+    "impact-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 9,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        195,
+        168,
+        420,
+        408
+      ],
+      "edge_touch": false,
+      "output_size": [
+        198,
+        211
+      ],
+      "paste_position": [
+        157,
+        150
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "all",
+      "component_count": 26,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        39,
+        82,
+        539,
+        489
+      ],
+      "edge_touch": false,
+      "output_size": [
+        440,
+        358
+      ],
+      "paste_position": [
+        36,
+        77
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 32,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        105,
+        81,
+        531,
+        462
+      ],
+      "edge_touch": false,
+      "output_size": [
+        375,
+        335
+      ],
+      "paste_position": [
+        68,
+        88
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 16,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        131,
+        143,
+        471,
+        436
+      ],
+      "edge_touch": false,
+      "output_size": [
+        299,
+        258
+      ],
+      "paste_position": [
+        106,
+        127
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "promptFile": "assets/effects/poison-impact.prompt.txt",
+  "reference": "assets/effects/water-impact-sheet.png",
+  "generator": "built-in imagegen",
+  "processor": "generate2dsprite process",
+  "opaqueMagentaPixels": 0,
+  "promptHashNormalization": "LF",
+  "refinementPrompt": "assets/effects/poison-impact-refinement.prompt.txt",
+  "refinementReference": "assets/effects/poison-impact-reference.png",
+  "residualChromaCleanup": {
+    "predicate": "r>150 and b>100 and g<100",
+    "removedPixels": 335
+  },
+  "sourceSha256": "d4947ee9b96955b576d9c7999066a9cd144c579a28d382620fbf08ac34b4a828",
+  "rawSha256": "3dbd90ced556912f10c4a3513b070e1720a078107c2a98e80ab23d222cf10e76",
+  "refinementReferenceSha256": "3c7c72cb6fa8c42d900738685edd5dcf48c99e87dcb99d3588ecf1e9038ee2cb",
+  "promptSha256": "cb0955cddc65dd87441770f8fe89c8cbed439f60292a7a18578f47f1cb7a539f",
+  "refinementPromptSha256": "802bd76e15dac22b37ff027be7da46f2d11eca7c79823999e8f92a75e3bdbf8e"
+}

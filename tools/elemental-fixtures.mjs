@@ -1,23 +1,25 @@
 import * as E from "../engine.js";
 import {simulate} from "./simulate.mjs";
 export const ELEMENTAL_CASES = [
-  ["fire",4,"fire-impact"],["water",7,"water-impact"],["grass",1,"leaf-impact"],["ice",7,"ice-impact"],
+  ["fire",4,"fire-impact"],["water",7,"water-impact"],["grass",1,"leaf-impact"],["ice",7,"ice-impact"],["poison",1,"poison-impact"],
 ];
 export function elementalBattle(type, side, starter, catalogue) {
   let run;
   if (side === "ally" && type === "ice") {
     run = simulate(2026,7,{stopAt:r=>r.stageIndex===14&&r.phase==="battle"}).run;
+  } else if (side === "ally" && type === "poison") {
+    run = simulate(2026,1,{cache:"study",stopAt:r=>r.stageIndex===3&&r.phase==="battle"}).run;
   } else {
     const opponent = {
       fire:{hero:1,stage:3,id:58},water:{hero:4,stage:10,id:54},grass:{hero:7,stage:1,id:43},
-      ice:{hero:1,stage:12,id:131,form:3},
+      ice:{hero:1,stage:12,id:131,form:3},poison:{hero:152,stage:8,id:92,form:154},
     }[type];
     run = E.createRun(side === "ally" ? starter : opponent.hero,E.baseMeta(),catalogue,2026);
     E.selectBonus(run,run.offers[0]);
     if (side === "ally") {run.travelProgress=1;E.arrive(run,catalogue);}
     else {
       Object.assign(run,{phase:"arrival",stageIndex:opponent.stage,regionEntry:null,scouting:{stageIndex:opponent.stage,speciesId:opponent.id}});
-      if (opponent.form) {run.hero=E.fighter(opponent.form,11,catalogue);run.partnerForms=[1,2,3];}
+      if (opponent.form) {run.hero=E.fighter(opponent.form,11,catalogue);run.partnerForms=opponent.hero===1?[1,2,3]:[152,153,154];}
     }
     E.activateStage(run,catalogue);
   }

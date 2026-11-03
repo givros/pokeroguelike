@@ -617,6 +617,23 @@
     "qc": "assets/effects/leaf-impact.qc.json"
   },
   {
+    "id": "poison-impact",
+    "image": "assets/effects/poison-impact-sheet.webp",
+    "source": "assets/effects/poison-impact-sheet.png",
+    "rawSource": "assets/effects/poison-impact-raw.png",
+    "prompt": "assets/effects/poison-impact.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1024,
+      1024
+    ],
+    "transparent": true,
+    "rows": 2,
+    "columns": 2,
+    "frames": 4,
+    "qc": "assets/effects/poison-impact.qc.json"
+  },
+  {
     "id": "spectral-pulse",
     "image": "assets/effects/spectral-pulse-sheet.webp",
     "source": "assets/effects/spectral-pulse-sheet.png",

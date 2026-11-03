@@ -1,5 +1,5 @@
 export const IMPACT_SEQUENCES = Object.freeze({
-  fire:"fire-impact", water:"water-impact", grass:"leaf-impact", ice:"ice-impact",
+  fire:"fire-impact", water:"water-impact", grass:"leaf-impact", ice:"ice-impact", poison:"poison-impact",
   electric:"electric-burst", psychic:"spectral-pulse", ghost:"spectral-pulse", dark:"spectral-pulse",
   ground:"stone-impact", rock:"stone-impact", steel:"stone-impact",
 });

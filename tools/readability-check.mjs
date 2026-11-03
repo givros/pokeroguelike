@@ -53,13 +53,18 @@ const scenarios = [
   { name: "shrine", run: checkpoint(9, "shrine") },
   { name: "evolution", run: simulate(2026, 133, { stopAt: (r) => r.phase === "evolution" }).run },
   { name: "combat-values", run: battle },
+  { name: "partner", run: battle, menu: "partner" },
+  { name: "journal", run: battle, menu: "journal" },
+  { name: "pause", run: battle, menu: "pause" },
+  { name: "retire", run: battle, menu: "retire" },
   { name: "ending", run: ending, meta: endingMeta },
   { name: "guide", run: ending, meta: endingMeta, menu: "guide" },
   { name: "upgrades", run: null, meta: { ...E.baseMeta(), gold: 100000000 }, menu: "upgrades" },
   { name: "help", run: null, menu: "help" },
 ];
 const scenarioFilter = process.argv.slice(2);
-const browser = await chromium.launch({ headless: true });
+// Keep native scrollbars visible when inspecting long game windows.
+const browser = await chromium.launch({ headless: true, ignoreDefaultArgs: ["--hide-scrollbars"] });
 const errors = [], results = [];
 try {
   for (const [width, height] of [[1440, 900], [1280, 720], [1024, 768]]) {
@@ -79,7 +84,9 @@ try {
       const resume = page.locator('[data-action="resume"]');
       if (await resume.count()) await resume.click();
       if (scenario.menu) {
-        if (scenario.run && !["builds", "plans"].includes(scenario.menu)) await page.locator('[data-action="finish"]').click();
+        if (scenario.run && ["complete", "defeat", "retired"].includes(scenario.run.phase)) await page.locator('[data-action="finish"]').click();
+        const control = page.locator(`[data-action="${scenario.menu}"]`).first();
+        if (!await control.count()) await page.locator('[data-action="pause"]').click();
         await page.locator(`[data-action="${scenario.menu}"]`).first().click();
       }
       await page.locator("img").evaluateAll((images) => Promise.all(images.map((image) => image.decode())));
@@ -128,6 +135,29 @@ try {
         return { small, overflow, collisions, brokenText, unknownActions, textCount: text.length, minimumFont: Math.min(...text.map((n) => n.size)) };
       });
       await page.screenshot({ path: `${out}/${width}-${scenario.name}.png` });
+      const scrolling = await page.evaluate(() => {
+        const dialog = document.querySelector("dialog");
+        const content = dialog?.querySelector(".menu-content");
+        if (!content || content.scrollHeight <= content.clientHeight) return null;
+        for (const list of dialog.querySelectorAll(".log-list")) list.scrollTop = list.scrollHeight;
+        content.scrollTop = content.scrollHeight;
+        const walker = document.createTreeWalker(dialog.querySelector(".menu-content"), NodeFilter.SHOW_TEXT);
+        let node, last;
+        while ((node = walker.nextNode())) if (node.textContent.trim()) last = node;
+        const range = document.createRange();
+        range.selectNodeContents(last);
+        const text = range.getBoundingClientRect(), frame = dialog.getBoundingClientRect();
+        const close = dialog.querySelector(".menu-close").getBoundingClientRect();
+        return { lastText:last.textContent.trim(), reachable:text.top >= frame.top && text.bottom <= frame.bottom - 20,
+          closeVisible:close.top >= frame.top && close.bottom <= frame.bottom };
+      });
+      if (scrolling) {
+        assert.ok(scrolling.reachable, `${width} ${scenario.name}: final text unreachable: ${scrolling.lastText}`);
+        assert.ok(scrolling.closeVisible, `${width} ${scenario.name}: Close hidden after scrolling`);
+        await page.waitForFunction(() => document.querySelector(".menu-scroll-note")?.textContent === "Scroll up to review");
+        await page.screenshot({ path: `${out}/${width}-${scenario.name}-scrolled.png` });
+      }
+      measured.scrolling = scrolling;
       results.push({ width, height, scenario: scenario.name, ...measured });
       await context.close();
     }

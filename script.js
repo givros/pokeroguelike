@@ -487,16 +487,26 @@ function menuContent() {
     }</div><h3>Battle journal</h3><div class="log-list">${run.log.map((s) => `<p>${esc(s)}</p>`).join("")}</div>`;
   return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>After every victory your partner automatically travels to the next destination. Choose a new boon on arrival. Woodland, lake and sanctuary encounters include caches, springs, a merchant, elites and two guardians. Your partner walks up to each halt, then returns to the trail after your choice.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or scouting the next opponent for a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Offer vitality at the shrine</h3><p>Take one free boon, or offer 25% maximum HP to gain two ranks of a compatible boon. The offering cannot faint your partner. Unique boons and instant recovery cannot be empowered. Activate or cancel freely; HP is paid only when you choose the boon.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or travel. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
 }
+function updateMenuScroll() {
+  const content = q("dialog .menu-content"), note = q(".menu-scroll-note");
+  if (!content || !note) return;
+  note.hidden = content.scrollHeight <= content.clientHeight + 2;
+  note.textContent = content.scrollTop + content.clientHeight >= content.scrollHeight - 2
+    ? "Scroll up to review" : "Scroll to read more";
+}
+window.addEventListener("resize", updateMenuScroll);
 function renderMenu() {
   const host = q("#menu-host");
   if (!host) return;
   host.innerHTML = modal
-    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top">${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}</div></dialog>`
+    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top"><span class="menu-scroll-note" hidden></span>${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}</div></dialog>`
     : "";
   if (modal) {
     const d = host.querySelector("dialog");
     d.querySelector("h2").id = "menu-heading";
     d.showModal();
+    updateMenuScroll();
+    d.querySelector(".menu-content").addEventListener("scroll", updateMenuScroll, { passive:true });
     d.addEventListener("cancel", (e) => {
       e.preventDefault();
       closeMenu();

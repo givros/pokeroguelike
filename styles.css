@@ -1113,11 +1113,16 @@ button:not(:disabled):hover {
 }
 .menu-top {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  position: sticky;
-  top: -10px;
+  flex-shrink: 0;
   z-index: 2;
   pointer-events: none;
+}
+.menu-scroll-note {
+  margin-right: auto;
+  font-size: 14px;
+  color: var(--muted);
 }
 .menu-close {
   border-width: 12px;
@@ -1131,7 +1136,7 @@ button:not(:disabled):hover {
 dialog {
   width: min(700px, 85vw);
   max-height: 85vh;
-  overflow: auto;
+  overflow: hidden;
   background: none;
   border: 30px solid transparent;
   border-image: url("assets/generated/parchment-panel.webp") 90 fill / 30px
@@ -1139,6 +1144,37 @@ dialog {
   color: var(--ink);
   padding: 10px 16px 18px;
   box-shadow: 0 30px 100px #0c263477;
+}
+dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.menu-content {
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  scroll-padding-block: 12px;
+  padding-inline: 2px 10px;
+}
+.menu-content,
+.log-list {
+  scrollbar-color: #66784d #e4d4a9;
+  scrollbar-width: auto;
+}
+.menu-content::-webkit-scrollbar,
+.log-list::-webkit-scrollbar {
+  width: 12px;
+}
+.menu-content::-webkit-scrollbar-track,
+.log-list::-webkit-scrollbar-track {
+  background: #e4d4a9;
+  border-radius: 6px;
+}
+.menu-content::-webkit-scrollbar-thumb,
+.log-list::-webkit-scrollbar-thumb {
+  background: #66784d;
+  border: 2px solid #e4d4a9;
+  border-radius: 6px;
 }
 dialog::backdrop {
   background: #132e3bc2;

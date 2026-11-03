@@ -169,7 +169,7 @@ export class BattleEffects {
     node.className = "damage-number " + cls;
     node.textContent = label;
     scene.append(node);
-    const width = node.getBoundingClientRect().width;
+    const width = node.getBoundingClientRect().width * 1.1 + 8;
     node.style.left = Math.max(width / 2 + 12, Math.min(scene.clientWidth - width / 2 - 12, point.x)) + "px";
     node.style.top = Math.max(100, Math.min(scene.clientHeight - 60, point.y)) + "px";
     const animation = this.animate(node, [
@@ -181,6 +181,10 @@ export class BattleEffects {
   }
   impact(result) {
     if (result.kind !== "hit") return;
+    for (const node of document.querySelectorAll(".damage-number")) {
+      for (const animation of node.getAnimations()) animation.cancel();
+      node.remove();
+    }
     const target = result.side === "ally" ? "enemy" : "ally",
       point = this.point(target);
     if (!point) return;
@@ -246,7 +250,7 @@ export class BattleEffects {
     this.floatingText(primary ? (result.crit ? "CRITICAL " : "") + "-" + primary : "BLOCKED",
       { x: point.x, y: point.y - 35 }, result.crit ? "critical" : "");
     if (result.echoDamage) this.floatingText("ECHO -" + result.echoDamage,
-      { x: point.x, y: point.y + 15 }, "secondary", 120);
+      { x: point.x, y: point.y + 30 }, "secondary", 120);
     const source = this.point(result.side);
     if (result.reflectDamage) this.floatingText("RIPOSTE -" + result.reflectDamage,
       { x: source.x, y: source.y - 35 }, "secondary", 120);
@@ -254,7 +258,7 @@ export class BattleEffects {
     if (result.shielding) this.floatingText("+" + result.shielding + " BARRIER",
       { x: source.x, y: source.y + 40 }, "barrier-number secondary", 120);
     if (result.absorbed && primary) this.floatingText("BARRIER " + result.absorbed,
-      { x: point.x, y: point.y + 15 }, "barrier-number secondary", 120);
+      { x: point.x, y: point.y + 30 }, "barrier-number secondary", 120);
     if (result.crit && !this.reduced)
       this.animate(
         document.querySelector("#battle-camera"),

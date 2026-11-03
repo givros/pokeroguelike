@@ -139,7 +139,7 @@ function titleView() {
 function battleCard(m, side) {
   const s = catalogue.pokemon[m.id];
   const barrier = side === "ally" && activeSynergies(run).some((recipe) => recipe.id === "lifebloom");
-  return `<section class="battle-card ${side}-card ${barrier ? "has-barrier" : ""} paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><small>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div>${barrier ? `<div class="barrier-line"><span>Barrier <b data-barrier-value>${m.shield || 0}</b></span><div class="barrier-track"><div class="barrier-fill" style="width:${((m.shield || 0) / Math.ceil(m.maxHp * 0.2)) * 100}%"></div></div></div>` : ""}</section>`;
+  return `<section class="battle-card ${side}-card ${barrier ? "has-barrier" : ""} paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><div class="fighter-meta"><small data-fighter-types>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small>${barrier ? `<span class="barrier-label">Barrier <b data-barrier-value>${m.shield || 0}</b></span>` : ""}</div><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div>${barrier ? `<div class="barrier-track"><div class="barrier-fill" style="width:${((m.shield || 0) / Math.ceil(m.maxHp * 0.2)) * 100}%"></div></div>` : ""}</section>`;
 }
 function battleView() {
   const h = { ...run.hero, id: visualHeroId() },
@@ -338,7 +338,7 @@ function updateBattle() {
       card.querySelector(".fighter-name>strong").textContent =
         catalogue.pokemon[m.id].name;
       card.querySelector(".fighter-name>span").textContent = "Lv. " + m.level;
-      card.querySelector(":scope>small").textContent = catalogue.pokemon[
+      card.querySelector("[data-fighter-types]").textContent = catalogue.pokemon[
         m.id
       ].types
         .map((t) => NAME_TYPES[t] || t)

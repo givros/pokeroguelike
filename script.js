@@ -2,7 +2,7 @@ import * as E from "./engine.js";
 import * as L from "./landmarks.js";
 import {RouteCamera} from "./route-camera.js";
 import {configureTranslations,setLocale,PresentationLocalizer} from "./localization.js";
-import { routeGraph, ROUTE_KINDS } from "./route-graph.js";
+import { expeditionGraph, ROUTE_KINDS } from "./route-graph.js";
 import { mapArtworkStyle, applyMapArtwork } from "./artwork-layout.js";
 import { JourneyCheckpoint } from "./checkpoint.js";
 import { GUARDIANS, guardianAbility, guardianState } from "./guardians.js";
@@ -13,6 +13,7 @@ import { BattleEffects, IMPACT_ASSETS, PROJECTILE_ASSETS } from "./presentation.
 import { discoveryRecords } from "./field-guide.js";
 import { GameAudio } from "./audio.js";
 import { SYNERGIES, activeSynergies } from "./builds.js";
+import {SKILLS,EQUIPMENT,unlockSkill,equipSkill,equipGear} from "./legacy.js";
 const app = document.getElementById("app");
 const localizer = new PresentationLocalizer(app);
 const effects = new BattleEffects();
@@ -50,7 +51,7 @@ let catalogue,
   saveAt = 0;
 const workWaiters = new Set();
 const AUTO = new Set(["travel", "arrival", "battle", "victoryBeat"]);
-const hasAutomaticWork = () => run && ((AUTO.has(run.phase) && !E.needsRouteChoice(run)) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || L.landmarkMoving(run) || planDecision(run));
+const hasAutomaticWork = () => run && (run.introPending || (AUTO.has(run.phase) && !E.needsRouteChoice(run)) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || L.landmarkMoving(run) || planDecision(run));
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
 const STARTERS = [1, 4, 7, 25, 133, 152];
 const NAME_TYPES = {
@@ -74,6 +75,7 @@ const NAME_TYPES = {
   fairy: "Fairy",
 };
 const q = (s) => document.querySelector(s);
+const phoneLayout = () => matchMedia("(max-width: 980px)").matches;
 const esc = (s) =>
   String(s).replace(
     /[&<>"']/g,
@@ -196,28 +198,21 @@ function heroCard() {
   return `<div class="map-hero-card paper-panel">${mon(h.id)}<div><strong>${catalogue.pokemon[h.id].name}</strong><small>Level ${h.level}${run.plan && run.plan !== "manual" ? ` · <button class="plan-link" data-action="plans">${PLANS.find(p=>p.id===run.plan).name}</button>` : ""}</small><span class="map-hp-value">${h.hp} / ${h.maxHp} HP</span>${health(h)}</div></div>`;
 }
 function titleView() {
-  const saved = run && !TERMINAL.has(run.phase);
-  return `<div class="title-scene"><div class="title-shade"></div>${languageControl()}<div class="title-brand"><small>ROGUELIKE · AUTOMATIC BATTLES</small><h1>POKÉ<span>ROGUE</span></h1><p>THE GUARDIAN TRAIL</p></div><div class="title-stats"><span>Record <b>${meta.bestScore}</b></span><span>Victories <b>${meta.totalVictories}</b></span><span class="title-gold">${art("gold-coins")}<b>${meta.gold}</b></span></div>
- ${saved ? `<div class="resume-adventure">${button(`Resume expedition · stage ${run.stageIndex + 1}`, "resume", "", "paper-panel main-button")}</div>` : ""}
- <h2 class="starter-heading">${saved ? "Or choose a new partner" : "Choose your partner"}</h2><div class="starter-line">${STARTERS.map(
-   (id) => {
-     const s = catalogue.pokemon[id],
-       locked = !meta.unlockedStarters[id],
-       threshold = { 25: 10, 133: 25, 152: 50 }[id];
-     return button(
-       `${mon(id)}<strong>${s.name}</strong><small>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small>${locked ? `<span class="starter-lock">${art("brass-lock")}<span>${threshold} victories</span></span>` : ""}`,
-       "starter",
-       id,
-       `starter-pokemon ${locked ? "locked" : ""}`,
-       locked,
-     );
-   },
- ).join("")}</div>
- <div class="title-actions">${button(`${art("affinity-crystal")}Permanent upgrades`, "upgrades", "", "paper-panel")}${button(`${art("guardian-crest")}${meta.selectedThreat ? `Threat ${meta.selectedThreat}` : "Normal trail"}`, "threats", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}</div></div>`;
+  const saved=run&&!TERMINAL.has(run.phase),selected=meta.startingPartner&&meta.captured[meta.startingPartner]&&catalogue.pokemon[meta.startingPartner]?Number(meta.startingPartner):null;
+  return `<div class="title-scene"><div class="title-shade"></div>${languageControl()}<div class="title-brand"><small>ENDLESS ROGUELITE · AUTOMATIC BATTLES</small><h1>POKÉ<span>ROGUE</span></h1><p>THE GUARDIAN TRAIL</p></div><div class="title-stats"><span>Best depth <b>${meta.bestDepth}</b></span><span>Legacy marks <b>${meta.legacyMarks}</b></span><span class="title-gold">${art('gold-coins')}<b>${meta.gold}</b></span></div>
+  ${saved?`<div class="resume-adventure">${button(`Resume expedition · depth ${run.stageIndex+1}`,'resume','','paper-panel main-button')}</div>`:''}
+  <section class="expedition-launch">${selected?mon(selected,'launch-partner'):art('capture-ball','launch-ball')}<h2>${selected?catalogue.pokemon[selected].name:'A random partner awaits'}</h2><p>${selected?'Your captured partner joins the next expedition.':'Your partner is revealed when the expedition begins.'}</p>${button(saved?'Begin another expedition':'Begin expedition','random-start','','paper-panel main-button')}</section>
+  <div class="title-actions">${button(`${art('offering-bowl')}Legacy camp`,'legacy','','paper-panel')}${button(`${art('capture-ball')}Partner collection`,'partners','','paper-panel')}${button('Field guide','guide','','paper-panel')}${button('How to play','help','','paper-panel')}</div></div>`;
 }
+function starterRollView(){
+ const chosen=run.introMode==='chosen',pool=[...new Set([1,4,7,25,133,152,...Object.keys(meta.captured).map(Number).filter(id=>catalogue.pokemon[id])])];
+ let seed=(run.initialSeed^0x1b873593)>>>0;const picks=Array.from({length:36},()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return pool[(seed>>>0)%pool.length];});picks[30]=run.hero.id;
+ return `<section id="partner-roll" class="partner-roll-scene"><div class="title-shade"></div><div class="partner-roll-content"><small>${chosen?'YOUR CHOSEN PARTNER':'A NEW EXPEDITION BEGINS'}</small><h1>${chosen?'Your partner is ready':'Your next partner'}</h1>${chosen?mon(run.hero.id,'chosen-reveal'):`<div class="roll-window paper-panel"><div class="roll-strip">${picks.map((id,index)=>`<div class="roll-item" data-roll-index="${index}">${mon(id)}<strong>${catalogue.pokemon[id].name}</strong></div>`).join('')}</div><div class="roll-marker">${art('capture-ball')}</div></div>`}<h2 data-roll-result>${chosen?catalogue.pokemon[run.hero.id].name:'Selecting your partner…'}</h2><p>Your adventure will begin in a moment.</p></div></section>`;
+}
+
 function battleCard(m, side) {
   const s = catalogue.pokemon[m.id];
-  const barrier = side === "ally" && activeSynergies(run).some((recipe) => recipe.id === "lifebloom");
+  const barrier = side === "ally" && (run.skill==='ward'||activeSynergies(run).some((recipe) => recipe.id === "lifebloom"));
   const ability = side === "enemy" ? guardianAbility(run) : null;
   return `<section class="battle-card ${side}-card ${barrier ? "has-barrier" : ""} paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><div class="fighter-meta"><small data-fighter-types>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small>${ability ? button(ability.name, "opponent", "", "guardian-ability") : ""}${barrier ? `<span class="barrier-label">Barrier <b data-barrier-value>${m.shield || 0}</b></span>` : ""}</div><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div>${barrier ? `<div class="barrier-track"><div class="barrier-fill" style="width:${((m.shield || 0) / Math.ceil(m.maxHp * 0.2)) * 100}%"></div></div>` : ""}</section>`;
 }
@@ -238,7 +233,7 @@ function destinationProp() {
   return prop ? worldProp(prop) : "";
 }
 function routeView() {
-  const graph=routeGraph(run.branchSeed,E.STAGES), choices=E.routeChoices(run), available=new Set(choices.map(n=>n.id)), path=new Set(run.branchPath);
+  const graph=expeditionGraph(run,E.STAGES), choices=E.routeChoices(run), available=new Set(choices.map(n=>n.id)), path=new Set(run.branchPath);
   const ready=E.needsRouteChoice(run)&&!run.pendingGrowth&&!run.pendingAwakenings?.length;
   const focus=choices[0]||graph.byId.get(run.branchPath.at(-1))||graph.rows[run.stageIndex][0];
   const lines=graph.nodes.flatMap(n=>n.next.map(id=>{const target=graph.byId.get(id);return `<line data-from="${n.id}" data-to="${id}" class="${path.has(n.id)&&path.has(id)?'traversed':''}" x1="${n.x*600}" y1="${n.y}" x2="${target.x*600}" y2="${target.y}"/>`;})).join('');
@@ -247,11 +242,11 @@ function routeView() {
     return `<button class="route-node ${n.kind==='boss'?'route-boss':''} ${visited?'visited':''} ${current?'current':''} ${available.has(n.id)&&ready?'available':''}" data-route-node="${n.id}" data-action="select-route" data-value="${n.id}" style="left:${n.x*100}%;top:${n.y/graph.height*100}%" aria-label="Stage ${n.row+1}: ${info.name}${visited?', visited':available.has(n.id)?', available':', unreachable'}" aria-disabled="${!(ready&&available.has(n.id))}">${art(info.asset)}<span class="route-node-caption">${info.name}</span></button>`;
   }).join('');
   const h=run.hero,dock=encounterDock();
-  return `<div id="map-scene" class="route-scene"><div class="route-layout" ${dock?"inert":""}><aside class="route-partner paper-panel"><small>YOUR PARTNER</small><div id="map-actor" class="route-avatar">${mon(visualHeroId(),'body-art')}</div><h2>${catalogue.pokemon[h.id].name}</h2><p>Level ${h.level}</p><strong>${h.hp} / ${h.maxHp} HP</strong>${health(h)}<p>${run.wins} victories<br>${run.bonuses.length} boon ranks</p>${button('Partner & moves','partner','','route-inspect')}${run.preparedStrike?'<p>Opening strike +25%</p>':''}</aside><section class="route-map"><div class="route-map-heading"><strong>${ready?'Choose your next encounter':'Your expedition route'}</strong><span>Paths ascend toward the guardian</span></div><div class="route-viewport pannable" tabindex="0" aria-label="Expedition routes; drag to move, wheel to zoom"><div class="route-board" style="height:${graph.height}px"><svg viewBox="0 0 600 ${graph.height}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}<span class="route-start">EXPEDITION START</span></div></div><div class="route-map-footer"><div class="route-camera-controls">${button("Zoom out","route-zoom","out","route-zoom")}<span data-map-zoom>110%</span>${button("Zoom in","route-zoom","in","route-zoom")}${button("Recenter","route-center","","route-zoom")}</div><span>${ready?'Select a glowing connected encounter to continue.':'The selected encounter is in progress.'}</span></div></section><aside class="route-journal paper-panel" aria-live="polite"><small>ENCOUNTER</small><div id="route-preview">${routePreview(focus)}</div><div class="route-key"><p>Golden trail: your chosen path</p><p>Glowing tokens: available choices</p><p>Drag the map to explore. Use the wheel or zoom buttons to inspect a route.</p></div></aside></div>${dock}</div>`;
+  return `<div id="map-scene" class="route-scene"><div class="route-layout" ${dock?"inert":""}><aside class="route-partner paper-panel"><small>YOUR PARTNER</small><div id="map-actor" class="route-avatar">${mon(visualHeroId(),'body-art')}</div><h2>${catalogue.pokemon[h.id].name}</h2><p>Level ${h.level}</p><strong>${h.hp} / ${h.maxHp} HP</strong>${health(h)}<p>${run.wins} victories<br>${run.bonuses.length} boon ranks</p>${button('Partner & moves','partner','','route-inspect')}${run.preparedStrike?'<p>Opening strike +25%</p>':''}</aside><section class="route-map"><div class="route-map-heading"><strong>${ready?'Choose your next encounter':'Your expedition route'}</strong><span>${run.endless?"New paths unfold as you advance · no final stage":"Paths ascend toward the guardian"}</span></div><div class="route-viewport pannable" tabindex="0" aria-label="Expedition routes; drag to move, wheel to zoom"><div class="route-board" style="height:${graph.height}px"><svg viewBox="0 0 600 ${graph.height}" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}<span class="route-start">EXPEDITION START</span></div></div><div class="route-map-footer"><div class="route-camera-controls">${button("Zoom out","route-zoom","out","route-zoom")}<span data-map-zoom>110%</span>${button("Zoom in","route-zoom","in","route-zoom")}${button("Recenter","route-center","","route-zoom")}</div><span class="desktop-route-hint">${ready?'Select a glowing connected encounter to continue.':'The selected encounter is in progress.'}</span><span class="mobile-route-hint">Tap a token to inspect it.</span></div></section><aside class="route-journal paper-panel" aria-live="polite"><small>ENCOUNTER</small><div id="route-preview">${routePreview(focus)}</div><div class="route-key"><p>Golden trail: your chosen path</p><p>Glowing tokens: available choices</p><p>Drag the map to explore. Use the wheel or zoom buttons to inspect a route.</p></div></aside></div>${dock}</div>`;
 }
 function routePreview(node) {
   const info=ROUTE_KINDS[run.branchPath.includes(node.id)?node.stage.kind:node.kind];
-  return `${art(info.asset)}<h2>${info.name}</h2><p>Stage ${node.row+1} / ${E.STAGES.length}</p><p>${info.text}</p>`;
+  return `${art(info.asset)}<h2>${info.name}</h2><p class="route-preview-depth">Stage ${node.row+1} / ${run.endless?"∞":E.STAGES.length}</p><p class="route-preview-description">${info.text}</p>${E.routeChoices(run).some(choice=>choice.id===node.id)?button("Enter encounter","enter-route",node.id,"route-enter"):""}`;
 }
 function mapView() {
   if (run.routeMode === 'branching') return routeView();
@@ -328,6 +323,10 @@ function purchaseDescription(key, preview) {
 }
 function encounterDock() {
   if (run.pendingGrowth || run.pendingAwakenings?.length) return "";
+  if(run.phase==='capture'&&run.pendingCapture){
+    const attempt=run.pendingCapture,name=catalogue.pokemon[attempt.id].name;
+    return `<section class="encounter-dock paper-panel capture-dock"><h2>${attempt.attempted?attempt.caught?'Capture successful':'The Pokémon escaped':'A defeated Pokémon can be captured'}</h2><div class="capture-content"><div class="capture-target">${mon(attempt.id)}<strong>${name}</strong></div><div class="capture-actions">${attempt.attempted?`<p>${attempt.caught?'This partner is secured. After returning to camp, it can be selected for another expedition.':'The capture failed. Your victory rewards are still yours.'}</p>${button('Continue the journey','capture-continue','','paper-panel')}`:`<p>One attempt. Capture chance: ${Math.round(attempt.chance*100)}%.</p>${choice('capture-ball','Attempt capture','Successful captures unlock this Pokémon as a future starting partner.','capture-attempt','')}${button('Leave without capturing','capture-skip','','dock-builds')}`}</div></div></section>`;
+  }
   let title = "",
     content = "";
   if (run.phase === "evolution") {
@@ -420,9 +419,13 @@ function encounterDock() {
 function starterBonusView() {
   return `<div class="starter-bonus-scene">${mon(run.hero.id, "bonus-partner")}<section class="initial-bonus-dock paper-panel"><small>PREPARE YOUR EXPEDITION</small><h2>Choose your first boon</h2><div class="dock-choices">${bonusChoices()}</div><div class="reward-tools">${button("View build combinations", "builds", "", "dock-builds")}${button("Expedition plan", "plans", "", "dock-builds")}</div><p>Your partner fights automatically. Your choices shape the journey.</p></section></div>`;
 }
+function legacySummary(){
+ const reward=run.legacyReward;if(!reward)return '';
+ return `<section class="legacy-summary"><strong>Legacy marks +${reward.marks}</strong><p>Best depth ${meta.bestDepth}. Your permanent progress is ready for the next adventure.</p><div class="secured-equipment">${reward.equipment.map(drop=>{const item=EQUIPMENT.find(i=>i.id===drop.id);return `<span>${art(item.asset)}${item.name} · Tier ${drop.tier}</span>`;}).join('')||'<span>No new equipment secured.</span>'}</div><p>Captured partners: ${Object.keys(run.captures||{}).map(id=>catalogue.pokemon[id].name).join(', ')||'None this expedition.'}</p>${button('Prepare the next adventure','legacy','','paper-panel')}</section>`;
+}
 function endingView() {
   const won = run.phase === "complete";
-  return `<div class="ending-scene"><div class="ending-shade"></div>${mon(run.hero.id, "ending-partner")}<section class="ending-content"><small>${won ? "THE GUARDIANS YIELD" : "EVERY JOURNEY LEAVES A MARK"}</small><h1>${won ? "Expedition complete" : "The journey ends"}</h1><p>${won ? "Your partner crossed the trail and defeated its final guardian." : run.phase === "retired" ? "Your partner returns to camp with everything discovered along the way." : "Your partner gave everything. A new journey awaits."}</p><div class="ending-stats"><span><b>${run.wins}</b>victories</span><span><b>${run.stageIndex + 1} / ${E.STAGES.length}</b>stages</span><span><b>${run.coins.toLocaleString("en-US")}</b>gold retained</span></div>${won ? `<p>${run.threat ? `Threat ${run.threat} cleared. ` : ""}${(run.threat || 0) < E.MAX_THREAT ? `Threat ${Math.min(E.MAX_THREAT, (run.threat || 0)+1)} is available.` : "The highest threat has been conquered."}</p>${button("Choose your next challenge", "threats", "", "paper-panel challenge-next")}` : ""}<div class="ending-actions">${button("Return to camp", "finish", "", "paper-panel main-button")}${button("New expedition", "retry", "", "paper-panel")}</div></section></div>`;
+  return `<div class="ending-scene"><div class="ending-shade"></div>${mon(run.hero.id, "ending-partner")}<section class="ending-content"><small>${won ? "THE GUARDIANS YIELD" : "EVERY JOURNEY LEAVES A MARK"}</small><h1>${won ? "Expedition complete" : "The journey ends"}</h1><p>${won ? "Your partner crossed the trail and defeated its final guardian." : run.phase === "retired" ? "Your partner returns to camp with everything discovered along the way." : "Your partner gave everything. A new journey awaits."}</p><div class="ending-stats"><span><b>${run.wins}</b>victories</span><span><b>${run.stageIndex + 1}${run.endless?"":" / "+E.STAGES.length}</b>stages</span><span><b>${run.coins.toLocaleString("en-US")}</b>gold retained</span></div>${won ? `<p>${run.threat ? `Threat ${run.threat} cleared. ` : ""}${(run.threat || 0) < E.MAX_THREAT ? `Threat ${Math.min(E.MAX_THREAT, (run.threat || 0)+1)} is available.` : "The highest threat has been conquered."}</p>${button("Choose your next challenge", "threats", "", "paper-panel challenge-next")}` : ""}${run.endless?legacySummary():""}<div class="ending-actions">${button("Return to camp", "finish", "", "paper-panel main-button")}${button("New expedition", "retry", "", "paper-panel")}</div></section></div>`;
 }
 function render() {
   effects.clear();
@@ -439,17 +442,17 @@ function render() {
   }
   const mode = titleMode
     ? "title"
-    : run.phase === "starter"
+    : run.introPending ? "roll" : run.phase === "starter"
       ? "starter"
       : TERMINAL.has(run.phase)
         ? "ending"
         : run.enemy && ["battle", "victoryBeat"].includes(run.phase)
           ? "battle"
           : "map";
-  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${saveNoticeView()}<div id="menu-host"></div></div>`;
+  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "roll"?starterRollView():mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${saveNoticeView()}<div id="menu-host"></div></div>`;
   if (!titleMode && run) {
     const heading = q(".stage-heading small");
-    if (heading) heading.textContent = `${run.threat ? `THREAT ${run.threat}` : E.region(run).name.toUpperCase()} · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}`;
+    if (heading) heading.textContent = run.endless?`ENDLESS · DEPTH ${run.stageIndex+1}`:`${run.threat ? `THREAT ${run.threat}` : E.region(run).name.toUpperCase()} · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}`;
     if (run.scouting) {
       const caption = q(".travel-caption");
       if (caption) {
@@ -464,7 +467,7 @@ function render() {
   if (modal) renderMenu();
   localizer.refresh();
   const viewport=q('.route-viewport');
-  if(viewport){const graph=routeGraph(run.branchSeed,E.STAGES),node=E.routeChoices(run)[0]||graph.byId.get(run.branchPath.at(-1))||graph.rows[run.stageIndex][0];routeCamera.mount(viewport,{id:run.id,stage:run.stageIndex,targetY:node.y,height:graph.height});}
+  if(viewport){const graph=expeditionGraph(run,E.STAGES),choice=E.routeChoices(run)[0],node=graph.byId.get(choice?.id||run.branchPath.at(-1))||graph.rows[run.stageIndex][0];routeCamera.mount(viewport,{id:run.id,stage:run.stageIndex,targetY:node.y,height:graph.height});}
 
 }
 function updateBattle() {
@@ -569,11 +572,20 @@ function audioControl() {
   const supported = !!(globalThis.AudioContext || globalThis.webkitAudioContext);
   return `<button class="paper-panel sound-control" data-action="sound" aria-pressed="${meta.sound}" ${supported ? "" : "disabled"}>${supported ? `Sound: ${meta.sound ? "On" : "Off"}` : "Sound unavailable"}</button>`;
 }
+function mobileSpeedControl(){return `<div class="mobile-speed-controls"><strong>Battle speed</strong><div>${[['Slow',2000],['Normal',1500],['Fast',750]].map(([label,value])=>button(label,'speed',value,speed===value?'selected':'')).join('')}</div></div>`;}
 function languageControl() {
   return `<div class="language-picker paper-panel" role="group" aria-label="Language"><span>Language</span>${['en','fr'].map(language=>`<button data-action="language" data-value="${language}" aria-pressed="${meta.language===language}" class="${meta.language===language?'selected':''}" aria-label="${language==='fr'?'Français':'English'}">${language.toUpperCase()}</button>`).join('')}</div>`;
 }
+function legacyView(){
+ const active=run&&!TERMINAL.has(run.phase);
+ return `<h2>Legacy camp</h2><p><strong>${meta.gold} gold · ${meta.legacyMarks} legacy marks · Best depth ${meta.bestDepth}</strong></p><p>Defeat ends the expedition, but earned gold, captured partners and salvaged equipment return with you. Spend marks to learn skills. Equip one skill and one item before your next adventure.</p>${active?'<p>Return to camp before changing your legacy loadout.</p>':''}<div class="pause-actions">${button('Permanent upgrades','upgrades','','paper-panel')}${button('Trail challenge','threats','','paper-panel')}${button('Partner collection','partners','','paper-panel')}</div><h3>Learned skills</h3><div class="legacy-options">${SKILLS.map(skill=>{const owned=meta.learnedSkills.includes(skill.id),selected=meta.equippedSkill===skill.id;return choice(skill.asset,`${skill.name} · ${selected?'Equipped':owned?'Learned':`${skill.cost} marks`}`,skill.text,owned?'equip-skill':'unlock-skill',selected?'':skill.id,active||!owned&&meta.legacyMarks<skill.cost);}).join('')}</div><h3>Equipment</h3><p>Elites and guardians drop equipment. It is secured after defeat or returning to camp. Select an owned item to equip it; select it again to remove it.</p><div class="legacy-options">${EQUIPMENT.filter(item=>meta.equipment[item.id]).map(item=>choice(item.asset,`${item.name} · Tier ${meta.equipment[item.id]}${meta.equippedGear===item.id?' · Equipped':''}`,item.text,'equip-gear',meta.equippedGear===item.id?'':item.id,active)).join('')||'<p>No equipment yet. Defeat an elite or guardian to find your first item.</p>'}</div>`;
+}
+function partnersView(){
+ const active=run&&!TERMINAL.has(run.phase),owned=Object.keys(meta.captured).map(Number).filter(id=>catalogue.pokemon[id]);
+ return `<h2>Partner collection</h2><p>A new expedition begins with a random partner. Pokémon captured during previous expeditions can be selected here instead. Pokéball encounters hide their Pokémon until battle; defeat it before attempting a capture.</p>${button(`Random partner${!meta.startingPartner?' · Selected':''}`,'partner-choice','','paper-panel',active)}<div class="captured-partners">${owned.map(id=>button(`${mon(id)}<span><strong>${catalogue.pokemon[id].name}${meta.startingPartner===id?' · Selected':''}</strong><small>${catalogue.pokemon[id].types.map(t=>NAME_TYPES[t]).join(' / ')} · Captured ${meta.captured[id]}</small></span>`,'partner-choice',id,'captured-partner',active)).join('')||'<p>No captured partners yet. Find a Pokéball encounter and win the battle to try your first capture.</p>'}</div>`;
+}
 function plansView() {
-  return `<h2>Expedition plan</h2><p>Choose a strategy for this expedition. An active plan selects boons, supplies and spring actions, and may spend expedition gold at the merchant. Reforges and Eevee’s evolution remain your decisions.</p><div class="plan-options">${PLANS.map(plan=>choice(plan.asset, plan.name + ((run.plan || "manual") === plan.id ? " · Selected" : ""), plan.text, "set-plan", plan.id)).join("")}</div><p>Plans run while this game is visible. Pause or switch to Manual at any time.</p>${button(`Away progression: ${run.idleEnabled ? "On" : "Off"}`, "idle-toggle", "", "paper-panel", !run.plan || run.plan === "manual")}<p>When enabled, your plan can progress after this window is hidden or closed, for up to eight hours. Pause stops away progression. Eevee waits for your evolution choice. Each expedition ends at victory or defeat; another expedition requires your choice.</p>`;
+  return `<h2>Expedition plan</h2><p>Choose a strategy for this expedition. An active plan selects routes, boons, supplies, spring actions and capture attempts, and may spend expedition gold at the merchant. Reforges and Eevee’s evolution remain your decisions.</p><div class="plan-options">${PLANS.map(plan=>choice(plan.asset, plan.name + ((run.plan || "manual") === plan.id ? " · Selected" : ""), plan.text, "set-plan", plan.id)).join("")}</div><p>Plans run while this game is visible. Pause or switch to Manual at any time.</p>${button(`Away progression: ${run.idleEnabled ? "On" : "Off"}`, "idle-toggle", "", "paper-panel", !run.plan || run.plan === "manual")}<p>When enabled, your plan can progress after this window is hidden or closed, for up to eight hours. Pause stops away progression. Eevee waits for your evolution choice. Each expedition ends at victory or defeat; another expedition requires your choice.</p>`;
 }
 function idleSummaryView() {
   const report = idleReport;
@@ -581,7 +593,7 @@ function idleSummaryView() {
 }
 function threatView() {
   const active = run && !TERMINAL.has(run.phase);
-  return `<h2>Trail challenge</h2><p>Clear the normal trail to unlock Threat 1. Each cleared threat unlocks the next, up to Threat ${E.MAX_THREAT}. Choose between a safer expedition and stronger foes with richer rewards.</p>${active ? "<p>Finish or end your current expedition before changing its challenge.</p>" : ""}<div class="threat-options">${Array.from({length:E.MAX_THREAT+1},(_,tier)=>{
+  return `<h2>Trail challenge</h2><p>Defeat a chapter’s legendary guardian to unlock the next starting threat when you return to camp, up to Threat ${E.MAX_THREAT}. Choose stronger enemies for richer rewards.</p>${active ? "<p>Finish or end your current expedition before changing its challenge.</p>" : ""}<div class="threat-options">${Array.from({length:E.MAX_THREAT+1},(_,tier)=>{
     const locked = tier > meta.unlockedThreat;
     const title = (tier ? `Threat ${tier}` : "Normal trail") + (meta.selectedThreat === tier ? " - Selected" : "");
     const description = locked ? `Locked. Clear ${tier === 1 ? "the normal trail" : `Threat ${tier-1}`} first.` : tier ? `Enemy HP +${tier*20}%. Enemy damage +${tier*12}%. Battle and ending gold +${tier*20}%.` : "The original trail. Standard enemy strength and gold rewards.";
@@ -589,6 +601,8 @@ function threatView() {
   }).join("")}</div><p>Your selected challenge is saved for new expeditions. An expedition keeps its starting threat, including away progression.</p>`;
 }
 function menuContent() {
+  if(modal==='legacy')return legacyView();
+  if(modal==='partners')return partnersView();
   if (modal === "threats") return threatView();
   if (modal === "idle-summary" && idleReport) return idleSummaryView();
   if (modal === "plans" && run) return plansView();
@@ -630,7 +644,7 @@ function menuContent() {
         })
         .join("") || "<p>No boons acquired yet.</p>"
     }</div><h3>Battle journal</h3><div class="log-list">${run.log.map((s) => `<p>${esc(s)}</p>`).join("")}</div>`;
-  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An autobattler roguelike</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><h3>Fifteen stages, three regions</h3><p>Choose connected encounters on an ascending branching map. Each route offers a different balance of battles, elites, springs, supplies, merchants and shrines. Golden lines record your path. Both guardians stand across every route. Selecting an encounter opens it directly; there is no walking wait. Choose a new boon after each victory.</p><h3>Build your strategy</h3><p>Combine damage, defense, critical hits, regeneration and lifesteal. At springs, choose between full recovery, training or preparing a stronger opening strike. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Offer vitality at the shrine</h3><p>Take one free boon, or offer 25% maximum HP to gain two ranks of a compatible boon. The offering cannot faint your partner. Unique boons and instant recovery cannot be empowered. Activate or cancel freely; HP is paid only when you choose the boon.</p><h3>Challenge the guardians</h3><p>Clear the normal trail to unlock Threat 1. Each completed threat unlocks the next, up to Threat 6. Stronger enemies grant more battle and ending gold. Choose the threat in camp before starting; each expedition keeps its starting challenge.</p><h3>Grow and begin again</h3><p>Your partner levels up, learns moves and evolves. The original three partners evolve at levels 8 and 11; Pikachu and Chikorita also have evolved forms. Eevee chooses an evolution at level 7. Retained gold buys permanent upgrades. Pikachu, Eevee and Chikorita unlock after 10, 25 and 50 victories. The field guide records your discoveries and recent expeditions.</p><p class="muted">Escape pauses the game. Your journey saves on this device and can resume during battle or route selection. Open Partner &amp; moves from Pause to inspect HP, PP and the next automatic move.</p></div>`;
+  return `<h2>The wayfarer handbook</h2><div class="help-copy"><h3>An endless roguelite</h3><p>Begin with a random partner. Choose connected encounters on a procedural map. New chapters unfold as you advance; there is no final stage. Enemies grow stronger with depth, so defeat is part of your progression.</p><h3>Capture your next partner</h3><p>Pokéball encounters hide the Pokémon you will face. Win the battle to receive one capture attempt with a displayed success chance. Captured partners are secured when the expedition ends. At camp, choose an owned partner for the next adventure or keep random starts.</p><h3>Return stronger</h3><p>Run boons and levels reset after defeat. Earned gold buys permanent stat upgrades. Legacy marks unlock passive skills. Elites and guardians drop equipment that survives defeat. Equip one learned skill and one item before starting; the current expedition keeps its starting loadout.</p><h3>Automatic battles, deliberate builds</h3><p>Your partner automatically selects its strongest available move against the opponent, accounting for power, types and remaining PP. Prepare your build between battles and watch your choices play out.</p><p>Combine boon ranks to awaken relics. Springs offer recovery, training or a prepared opening strike. Shrines can exchange vitality for two boon ranks. PP are finite; Struggle prevents an unusable move set from blocking battle. Battles end after at most 80 actions.</p><h3>Optional expedition plans</h3><p>Plans can choose routes, boons, recovery, purchases and capture attempts. Away progression is optional and capped at eight hours. Eevee waits for your evolution choice. Defeat stops the expedition; only you can start another.</p><h3>Explore the map</h3><p>Drag to move the map. Use the mouse wheel or zoom buttons to zoom. Focus the map and use arrow keys to pan, plus or minus to zoom, and Home to recenter. Escape pauses the game. Your progress saves on this device.</p></div>`;
 }
 function updateMenuScroll() {
   const content = q("dialog .menu-content"), note = q(".menu-scroll-note");
@@ -644,7 +658,7 @@ function renderMenu() {
   const host = q("#menu-host");
   if (!host) return;
   host.innerHTML = modal
-    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top"><span class="menu-scroll-note" hidden></span>${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}${['help','pause'].includes(modal)?languageControl():''}</div></dialog>`
+    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top"><span class="menu-scroll-note" hidden></span>${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}${modal==='pause'?button('Legacy camp','legacy','','paper-panel')+mobileSpeedControl():''}${['help','pause'].includes(modal)?languageControl():''}</div></dialog>`
     : "";
   if (modal) {
     const d = host.querySelector("dialog");
@@ -693,6 +707,8 @@ function begin(id) {
   audio.setPaused(false);
   run = E.createRun(id, meta, catalogue, Date.now());
   E.enableBranching(run);
+  E.enableEndless(run,meta);
+  run.introPending=true;run.introMode=meta.startingPartner&&meta.captured[meta.startingPartner]?'chosen':'random';
   run.starterId = id;
   titleMode = false;
   modal = null;
@@ -701,6 +717,7 @@ function begin(id) {
   narration = "";
   persist();
   render();
+  pump();
 }
 function live(token) {
   return token === epoch && run && !titleMode && !fatal;
@@ -877,21 +894,35 @@ async function playAwakening(token) {
   persist();
   return true;
 }
+async function playStarterRoll(token){
+ const scene=q('#partner-roll');if(!scene)return false;
+ const strip=scene.querySelector('.roll-strip'),windowNode=scene.querySelector('.roll-window');
+ if(strip&&windowNode){
+  const step=strip.querySelector('.roll-item').getBoundingClientRect().width,start=windowNode.clientWidth/2-step/2,end=windowNode.clientWidth/2-step*30.5;
+  const duration=effects.reduced?250:2800;
+  const animation=effects.animate(strip,[{transform:`translateX(${effects.reduced?end:start}px)`},{transform:`translateX(${end}px)`}],{duration,reducedDuration:250,fill:'forwards',easing:'cubic-bezier(.16,1,.3,1)'});
+  if(!await wait(duration,token,scene))return false;
+  animation?.cancel();strip.style.transform=`translateX(${windowNode.clientWidth/2-step*30.5}px)`;
+  scene.querySelector('[data-roll-result]').textContent=catalogue.pokemon[run.hero.id].name;
+  strip.querySelector('[data-roll-index="30"]').classList.add('roll-winner');
+  audio.play('reward');if(!await wait(900,token,scene))return false;
+ }else if(!await wait(800,token,scene))return false;
+ if(!live(token))return false;run.introPending=false;persist();return true;
+}
 async function pump() {
   if (running || titleMode || !run || fatal) return;
   running = true;
   const token = epoch;
   let transitions = 0;
   try {
+    let batchStage=run.stageIndex,batchActions=run.actions;
     while (live(token) && hasAutomaticWork()) {
-      if (++transitions > 500)
-        throw new Error(
-          "The automatic sequence was stopped to prevent an unexpected loop.",
-        );
+      if (++transitions > 500) {if(run.endless&&(run.stageIndex>batchStage||run.actions>batchActions)){transitions=0;batchStage=run.stageIndex;batchActions=run.actions;}else throw new Error("The automatic sequence was stopped to prevent an unexpected loop.");}
       if (paused || document.hidden) {
         await wait(30, token);
         continue;
       }
+      if(run.introPending){if(!await playStarterRoll(token))break;render();continue;}
       if (run.pendingGrowth && !["battle", "victoryBeat"].includes(run.phase)) {
         if (!await playGrowth(token)) break;
         render();
@@ -956,7 +987,7 @@ async function pump() {
         if (result) {
           effects.impact(result);
           if (result.kind === "hit") audio.play("hit", result.move.type, result.crit);
-          if (["victoryBeat", "complete"].includes(run.phase)) audio.play("victory");
+          if (["victoryBeat", "complete", "capture"].includes(run.phase)) audio.play("victory");
           if (run.phase === "defeat") audio.play("defeat");
         }
         await wait(Math.max(430, speed - duration * 0.7), token);
@@ -968,6 +999,7 @@ async function pump() {
           render();
           break;
         }
+        if(run.phase==='capture'){if(run.pendingGrowth&&!await playGrowth(token))break;render();}
         continue;
       }
       if (run.phase === "victoryBeat") {
@@ -998,6 +1030,19 @@ async function pump() {
   }
 }
 async function dispatch(action, value) {
+  if(action==='random-start'){
+    const id=E.startingPartner(meta,Date.now(),catalogue);
+    if(run&&!TERMINAL.has(run.phase)){pendingStarter=id;openMenu('replace');}else begin(id);
+    return;
+  }
+  if(['unlock-skill','equip-skill','equip-gear','partner-choice'].includes(action)&&meta&&(!run||TERMINAL.has(run.phase))){
+    let changed=false;
+    if(action==='unlock-skill')changed=unlockSkill(meta,value);
+    if(action==='equip-skill')changed=equipSkill(meta,value);
+    if(action==='equip-gear')changed=equipGear(meta,value);
+    if(action==='partner-choice'&&(!value||meta.captured[value]&&catalogue.pokemon[value])){meta.startingPartner=value?Number(value):null;changed=true;}
+    if(changed){persist();render();}return;
+  }
   if(action==='language'&&meta&&['en','fr'].includes(value)){
     meta.language=value;setLocale(value);persist();
     for(const node of app.querySelectorAll('[data-action="language"]')){node.classList.toggle('selected',node.dataset.value===value);node.setAttribute('aria-pressed',String(node.dataset.value===value));}
@@ -1005,8 +1050,10 @@ async function dispatch(action, value) {
   }
   if (fatal && !["recover","reload"].includes(action)) return;
   if (action === 'route-zoom' && !modal && !paused) {routeCamera.zoomBy(value === 'out' ? 0.8 : 1.25);return;}
+  if(action==='enter-route'&&run&&!paused&&!modal){if(E.selectRoute(run,value,catalogue)){persist();render();pump();}return;}
   if (action === 'route-center' && !modal && !paused) {routeCamera.center();routeCamera.apply();return;}
   if (action === 'select-route' && run && !paused && !modal) {
+    if(phoneLayout()){const node=expeditionGraph(run,E.STAGES).byId.get(value);if(node)inspectRouteNode(node);return;}
     if (E.selectRoute(run,value,catalogue)) { persist(); render(); pump(); }
     return;
   }
@@ -1060,7 +1107,7 @@ async function dispatch(action, value) {
     openMenu("pause");
     return;
   }
-  if (["help", "upgrades", "journal", "retire", "guide", "partner", "opponent", "guardians", "builds", "threats"].includes(action)) {
+  if (["help", "upgrades", "journal", "retire", "guide", "partner", "opponent", "guardians", "builds", "threats", "legacy", "partners"].includes(action)) {
     openMenu(action);
     return;
   }
@@ -1139,13 +1186,14 @@ async function dispatch(action, value) {
   }
   if (action === "retry") {
     const starter =
-      run.starterId ||
-      { 2: 1, 3: 1, 5: 4, 6: 4, 8: 7, 9: 7 }[run.hero.id] ||
-      run.hero.id;
-    begin(STARTERS.includes(starter) ? starter : 1);
+      E.startingPartner(meta,Date.now(),catalogue);
+    begin(starter);
     return;
   }
   if (modal || !run || titleMode || paused || fatal) return;
+  if(action==='capture-attempt'){if(E.attemptCapture(run,catalogue)){persist();render();pump();}return;}
+  if(action==='capture-skip'){if(E.skipCapture(run)){persist();render();pump();}return;}
+  if(action==='capture-continue'){if(run.phase==='capture'&&run.pendingCapture?.attempted&&E.depart(run)){persist();render();pump();}return;}
   if (action === "evolve") {
     if (E.chooseEvolution(run, Number(value), catalogue)) {
       persist();
@@ -1200,9 +1248,14 @@ async function dispatch(action, value) {
     pump();
   }
 }
+function inspectRouteNode(node){
+ const preview=q('#route-preview');if(!preview)return;
+ preview.innerHTML=routePreview(node);localizer.refresh();
+ for(const token of app.querySelectorAll('[data-route-node]'))token.classList.toggle('inspected',token.dataset.routeNode===node.id);
+}
 function previewRouteEvent(e) {
-  const token=e.target.closest('[data-route-node]'), preview=q('#route-preview');
-  if(token&&preview&&run?.routeMode==='branching') {const node=routeGraph(run.branchSeed,E.STAGES).byId.get(token.dataset.routeNode);if(node)preview.innerHTML=routePreview(node);}
+ const token=e.target.closest('[data-route-node]');
+ if(token&&run?.routeMode==='branching'&&!token.closest('.route-viewport')?.classList.contains('dragging')){const node=expeditionGraph(run,E.STAGES).byId.get(token.dataset.routeNode);if(node)inspectRouteNode(node);}
 }
 app.addEventListener('pointerover',previewRouteEvent);
 app.addEventListener('focusin',previewRouteEvent);
@@ -1275,6 +1328,7 @@ async function boot() {
     configureTranslations(response[4]);setLocale(meta.language);localizer.refresh();
     run = state.run;
     E.enableBranching(run);
+    E.enableEndless(run,meta);
     warning = state.warning;
     speed = meta.battleSpeed || 1500;
     if (run && TERMINAL.has(run.phase)) {
@@ -1302,6 +1356,7 @@ async function boot() {
       "guardian-eye",
       "field-notes",
       "guardian-crest",
+      "capture-ball",
       "offering-bowl",
       "wayside-shrine",
       "parchment-panel",

@@ -6,11 +6,11 @@ import {validRun} from '../storage.js';
 import {simulate} from './simulate.mjs';
 import {readingContrast} from './reading-contrast.mjs';
 const c={pokemon:JSON.parse(await readFile('data/pokemon.json')),moves:JSON.parse(await readFile('data/moves.json'))};
-const baseline=process.argv.includes('--baseline'),peakOnly=process.argv.includes('--peak-only'),out=`output/playwright/transient-reading${baseline?'-before':peakOnly?'-peak':''}`;
+const french=process.argv.includes('--fr');
+const baseline=process.argv.includes('--baseline'),peakOnly=process.argv.includes('--peak-only'),out=`output/playwright/transient-reading${french?'-fr':''}${baseline?'-before':peakOnly?'-peak':''}`;
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true}),checks=[],errors=[];
 const fixtures=[];
-for(const stage of [0,6,11]){const r=E.createRun(4,E.baseMeta(),c,2026);E.selectBonus(r,r.offers[0]);Object.assign(r,{stageIndex:stage,regionEntry:E.REGIONS[stage===0?0:stage===6?1:2].id});fixtures.push({name:`region-${stage}`,run:r,selector:'.region-entry'});}
 const reward=simulate(2026,4,{stopAt:r=>r.stageIndex===1&&r.phase==='reward'}).run;
 reward.bonuses=['attack_boost','attack_boost'];reward.offers=['crit_chance','defense_boost','regeneration'];
 fixtures.push({name:'awakening',run:reward,selector:'.awakening-toast',action:'[data-action="bonus"][data-value="crit_chance"]'});
@@ -27,9 +27,9 @@ fixtures.push({name:'growth-battle-peak',run:growth,selector:'.evolution-caption
 try{
  for(const [width,height] of baseline?[[1280,720]]:[[1440,900],[1280,720],[1024,768]])for(const f of peakOnly?fixtures.filter(f=>f.peak):fixtures){
   assert.ok(validRun(f.run,c),f.name);const context=await browser.newContext({viewport:{width,height}});
-  await context.addInitScript(data=>localStorage.setItem('pokeRogueAdventureV3',JSON.stringify(data)),{version:3,meta:E.baseMeta(),run:f.run});
+  await context.addInitScript(data=>localStorage.setItem('pokeRogueAdventureV3',JSON.stringify(data)),{version:3,meta:{...E.baseMeta(),language:french?"fr":"en"},run:f.run});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:5173');await page.locator('[data-action="resume"]').click();if(f.action)await page.locator(f.action).click();
-  await page.locator(f.selector).waitFor();if(f.arrival)await page.waitForFunction(selector=>document.querySelector(selector)?.textContent.includes('joins your journey'),f.selector);if(f.name.startsWith('region')||f.name.startsWith('awakening'))await page.waitForFunction(selector=>+getComputedStyle(document.querySelector(selector)).opacity>.99,f.selector);
+  await page.locator(f.selector).waitFor();if(f.arrival)await page.waitForFunction(({selector,french})=>document.querySelector(selector)?.textContent.includes(french?'rejoint l’aventure':'joins your journey'),{selector:f.selector,french});if(f.name.startsWith('region')||f.name.startsWith('awakening'))await page.waitForFunction(selector=>+getComputedStyle(document.querySelector(selector)).opacity>.99,f.selector);
   if(f.peak)await page.waitForFunction(()=>document.querySelector('.actor-ally .body-art')?.dataset.species==='9');await page.locator('[data-action="pause"]').click();
   const saved=await page.evaluate(()=>localStorage.getItem('pokeRogueAdventureV3'));await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>localStorage.getItem('pokeRogueAdventureV3')),saved);
   const hidePause=await page.addStyleTag({content:'dialog,dialog::backdrop{visibility:hidden!important}'});

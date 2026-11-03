@@ -11,8 +11,9 @@ export function planDecision(run) {
   if (!plan || plan.id==="manual") return null;
   const health = run.hero.hp/run.hero.maxHp;
   const depleted = run.hero.moves.some(s=>s.pp<=Math.ceil(s.maxPp*.2));
+  if(run.phase==='capture')return{action:'capture',value:run.pendingCapture?.attempted?'continue':'attempt'};
   if (E.needsRouteChoice(run)) {
-    const order=health<.65||depleted?['camp','cache','shop','shrine','wild','mystery','elite','boss']:plan.id==='predator'?['elite','wild','shrine','cache','camp','shop','mystery','boss']:['shrine','cache','camp','wild','shop','mystery','elite','boss'];
+    const order=health<.65||depleted?['camp','cache','shop','shrine','capture','wild','mystery','elite','boss']:plan.id==='predator'?['elite','capture','wild','shrine','cache','camp','shop','mystery','boss']:['shrine','cache','camp','capture','wild','shop','mystery','elite','boss'];
     const node=E.routeChoices(run).sort((a,b)=>order.indexOf(a.kind)-order.indexOf(b.kind))[0];
     return node?{action:'route',value:node.id}:null;
   }
@@ -45,6 +46,7 @@ export function planDecision(run) {
 }
 export function applyPlanDecision(run, decision, catalogue) {
   if (!decision) return false;
+  if(decision.action==='capture')return decision.value==='continue'?E.depart(run):!!E.attemptCapture(run,catalogue);
   if (decision.action==='route') return E.selectRoute(run,decision.value,catalogue);
   if (decision.action==="bonus") return E.selectBonus(run,decision.value);
   if (decision.action==="encounter") return E.resolveEncounter(run,decision.value,catalogue);

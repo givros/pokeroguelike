@@ -2008,3 +2008,305 @@ html[lang="fr"] .title-actions>button{font-size:15px}
 .route-viewport.pannable .route-node.available:hover,.route-viewport.pannable .route-node.available:focus-visible{transform:translate(-50%,-50%)}
 .route-viewport.pannable .route-boss{width:calc(var(--route-boss-size)*var(--route-zoom,1));height:calc(var(--route-boss-size)*var(--route-zoom,1));background:#273c3b}
 @media(max-width:1100px){.route-viewport.pannable{--route-token-size:42px;--route-boss-size:66px}}
+.expedition-launch{position:absolute;left:25%;right:25%;top:33%;bottom:13%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px}
+.expedition-launch .launch-ball,.expedition-launch .launch-partner{width:180px;height:180px;object-fit:contain;filter:drop-shadow(0 8px 14px #001e2388)}
+.expedition-launch h2{font-size:24px;margin:0;color:#fff7ce;text-shadow:0 2px 4px #163b37}
+.expedition-launch p{font-size:16px;line-height:1.4;margin:0 0 4px;color:#fff8dc;text-shadow:0 2px 3px #15352e}
+.expedition-launch .main-button{font-size:18px;min-height:52px}
+.legacy-options{display:flex;flex-direction:column;gap:12px;margin:12px 0 24px}
+.legacy-options .dock-choice{flex:none;min-height:96px;border-bottom:1px solid #8d9b6e;padding:12px 4px}
+.legacy-options .dock-choice .item-art{width:68px;height:68px;flex-shrink:0}
+.captured-partners{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.captured-partner{display:flex;align-items:center;gap:12px;background:transparent;border:1px solid #899971;color:#28413f;padding:8px;text-align:left;min-width:0}
+.captured-partner .pokemon-art{width:80px;height:80px;flex-shrink:0}
+.captured-partner strong{display:block;font-size:17px}
+.captured-partner small{display:block;font-size:14px;line-height:1.4;margin-top:6px}
+.capture-content{display:flex;align-items:center;gap:30px;justify-content:center}
+.capture-target{text-align:center;flex:0 0 25%;font-size:22px}
+.capture-target .pokemon-art{width:130px;height:130px;display:block;margin:auto}
+.capture-actions{flex:1;max-width:600px;font-size:16px;line-height:1.5}
+.capture-actions .dock-choice{padding:8px 0;width:100%;background:transparent;border:none;text-align:left}
+.capture-actions>.paper-panel{font-size:17px}
+.legacy-summary{margin:12px auto;max-width:650px;font-size:15px;line-height:1.4}
+.legacy-summary p{margin:7px 0!important;font-size:15px!important}
+.secured-equipment{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.secured-equipment span{display:flex;gap:6px;align-items:center;font-size:14px}
+.secured-equipment .item-art{width:34px;height:34px}
+.ending-content:has(.legacy-summary){max-height:90%;overflow-y:auto;padding:12px;scrollbar-width:thin}
+@media(max-width:1100px){.expedition-launch{top:34%;bottom:13%;left:20%;right:20%;gap:6px}.expedition-launch .launch-ball,.expedition-launch .launch-partner{width:120px;height:120px}.expedition-launch h2{font-size:21px}.expedition-launch p{font-size:14px}.expedition-launch .main-button{font-size:16px;min-height:46px}.capture-target .pokemon-art{width:100px;height:100px}.capture-content{gap:16px}.capture-target{font-size:18px}.capture-actions{font-size:14px}.captured-partner .pokemon-art{width:66px;height:66px}}
+.partner-roll-scene{position:absolute;inset:0;background:#173b38 url('assets/generated/forest-arena.webp') center/cover}
+.partner-roll-content{position:absolute;inset:17% 4% 6%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;color:#fff7d1}
+.partner-roll-content>small{font-size:15px;font-weight:bold;letter-spacing:2px}
+.partner-roll-content h1{font-size:34px;margin:0;text-shadow:0 3px 6px #163d32}
+.partner-roll-content h2{font-size:26px;margin:0;text-shadow:0 2px 4px #15352e}
+.partner-roll-content p{font-size:16px;margin:0;text-shadow:0 2px 3px #16372d}
+.roll-window{position:relative;overflow:hidden;width:min(100%,1000px);height:240px;border-width:22px;border-image-width:22px}
+.roll-strip{display:flex;position:absolute;left:0;top:12px;height:180px;will-change:transform}
+.roll-item{width:180px;flex:0 0 180px;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#29413a}
+.roll-item .pokemon-art{width:150px;height:150px;object-fit:contain}
+.roll-item strong{font-size:16px}
+.roll-marker{position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:42px;height:42px;z-index:2;filter:drop-shadow(0 2px 4px #142e2b)}
+.roll-marker .item-art{width:100%;height:100%}
+.roll-winner .pokemon-art{filter:drop-shadow(0 0 10px #f4df6c)}
+.chosen-reveal{width:240px;height:240px;object-fit:contain;filter:drop-shadow(0 8px 20px #001e2399)}
+.mode-roll .hud-left,.mode-roll .stage-heading,.mode-roll .speed-select{visibility:hidden}
+@media(max-width:1100px){.partner-roll-content{inset:16% 4% 5%;gap:12px}.partner-roll-content h1{font-size:27px}.partner-roll-content h2{font-size:23px}.roll-window{height:210px}.roll-strip{height:155px;top:8px}.roll-item{width:150px;flex-basis:150px;height:155px}.roll-item .pokemon-art{width:124px;height:124px}.roll-item strong{font-size:14px}.chosen-reveal{width:180px;height:180px}}
+.route-enter,.mobile-route-hint,.mobile-speed-controls{display:none}
+.route-node.inspected{outline:2px solid #eaf0c8;outline-offset:3px}
+@media(max-width:980px){
+ html,body{min-width:0;width:100%;height:100%;overflow:hidden}
+ .game-screen,.loading-viewport{width:100vw;height:100vh;height:100dvh;box-shadow:none}
+ button{touch-action:manipulation}
+ .title-scene{display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top) + 44px) 12px calc(env(safe-area-inset-bottom) + 12px);gap:8px}
+ .title-brand{position:relative;top:auto;left:auto;right:auto;flex-shrink:0;width:100%}
+ .title-brand>small{display:none}
+ .title-brand h1{font-size:40px;letter-spacing:-2px;margin:4px 0}
+ .title-brand>p{font-size:14px;letter-spacing:2px;margin:6px 0}
+ .title-scene>.language-picker{top:calc(env(safe-area-inset-top) + 6px);right:8px;border-width:8px;border-image-width:8px}
+ .language-picker button{min-width:44px;min-height:44px}
+ .title-stats{position:relative;top:auto;left:auto;right:auto;gap:20px;flex-wrap:wrap;font-size:14px;flex-shrink:0}
+ .title-stats>span:nth-child(2){display:none}
+ .title-stats b{font-size:18px}
+ .title-gold .item-art{width:26px;height:26px}
+ .expedition-launch{position:relative;inset:auto;left:auto;right:auto;top:auto;bottom:auto;width:100%;flex:1;min-height:0;gap:8px}
+ .expedition-launch .launch-ball,.expedition-launch .launch-partner{width:clamp(88px,18dvh,140px);height:clamp(88px,18dvh,140px)}
+ .expedition-launch h2{font-size:20px;max-width:100%}
+ .expedition-launch p{display:none}
+ .expedition-launch .main-button{min-height:48px;font-size:16px;border-width:12px;border-image-width:12px;padding:4px 12px}
+ .resume-adventure{position:relative;inset:auto;width:100%;text-align:center;flex-shrink:0}
+ .resume-adventure .main-button{min-height:44px;border-width:10px;border-image-width:10px;font-size:15px}
+ .title-actions{position:relative;inset:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;flex-shrink:0}
+ .title-actions>button,html[lang='fr'] .title-actions>button{min-height:48px;justify-content:center;border-width:10px;border-image-width:10px;font-size:14px;padding:3px;gap:6px}
+ .title-actions .item-art{width:24px;height:24px}
+ .game-hud{top:calc(env(safe-area-inset-top) + 8px);left:8px;right:8px;padding:0;height:44px}
+ .hud-left{min-height:44px;border-width:9px;border-image-width:9px;padding:0 3px;gap:6px}
+ .hud-left>.item-art{width:24px;height:24px}
+ .hud-left>strong{font-size:16px;min-width:3ch}
+ .hud-score{display:none}
+ .hud-controls{gap:0}
+ .hud-controls .speed-select{display:none}
+ .pause-button{min-height:44px;min-width:64px;border-width:10px;border-image-width:10px;font-size:14px;padding:2px 5px}
+ .stage-heading,.mode-battle .stage-heading{top:50px;left:0;right:0;transform:none;width:auto;max-width:430px;margin:auto;border-width:8px 12px;border-image-width:8px 12px;padding:0 3px}
+ .stage-heading>small{font-size:14px;line-height:16px;letter-spacing:0;white-space:normal}
+ .stage-heading>strong{font-size:16px;line-height:19px;margin-top:2px}
+ .mode-battle .battle-kind{display:none}
+ .route-layout{inset:calc(env(safe-area-inset-top) + 116px) 8px calc(env(safe-area-inset-bottom) + 8px);grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(160px,1fr) auto;gap:8px}
+ .route-partner{display:none}
+ .route-map{min-width:0;grid-column:1;grid-row:1;width:100%}
+ .route-map-heading{display:none}
+ .route-viewport.pannable{--route-token-size:44px;--route-boss-size:66px}
+ .route-map-footer{gap:6px;padding-top:6px}
+ .route-camera-controls{justify-content:center;gap:6px;width:100%}
+ .route-zoom{min-height:44px;padding:8px 10px;font-size:14px}
+ .route-map-footer .desktop-route-hint{display:none}
+ .mobile-route-hint{display:block;font-size:14px;line-height:1.35}
+ .route-journal{grid-column:1;grid-row:2;align-self:stretch;margin:0;border-width:12px;border-image-width:12px;padding:0 2px;max-height:190px;overflow-y:auto}
+ .route-journal>small,.route-journal .route-key{display:none}
+ #route-preview{display:grid;grid-template-columns:58px minmax(0,1fr);column-gap:10px;align-items:center;text-align:left}
+ .route-journal #route-preview>.item-art{grid-column:1;grid-row:1 / 4;width:54px;height:54px;margin:0}
+ .route-journal h2{grid-column:2;font-size:18px;line-height:1.2;margin:2px 0}
+ .route-journal .route-preview-depth{grid-column:2;font-size:14px;margin:3px 0;line-height:1.25}
+ .route-journal .route-preview-description{grid-column:2;font-size:14px;line-height:1.35;margin:2px 0 6px}
+ .route-enter{display:block;grid-column:1 / -1;background:#2f4e41;border:1px solid #68794d;color:#fff5ce;min-height:44px;font-size:16px;font-weight:bold;padding:8px 12px;margin-top:4px;width:100%}
+ .route-scene:has(.encounter-dock) .route-layout{opacity:.25}
+ .encounter-dock,.route-scene .encounter-dock,.initial-bonus-dock{left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 132px);overflow-y:auto;border-width:14px;border-image-width:14px;padding:3px 4px 8px;scrollbar-width:thin}
+ .encounter-dock h2,.initial-bonus-dock>h2{font-size:20px;line-height:1.25;margin:5px 0 12px}
+ .initial-bonus-dock>small{font-size:14px;letter-spacing:1px}
+ .dock-choices,.initial-bonus-dock>.dock-choices,.game-screen[data-phase='shop'] .dock-choices{display:flex;flex-direction:column;gap:8px;margin:0}
+ .dock-choice,.initial-bonus-dock .dock-choice,.game-screen[data-phase='shop'] .dock-choice{display:flex;flex-direction:row;align-items:center;flex:none;min-height:72px;gap:10px;padding:8px 4px;text-align:left;border-bottom:1px solid #9aa77a}
+ .dock-choice>.item-art,.initial-bonus-dock .dock-choice>.item-art,.game-screen[data-phase='shop'] .dock-choice>.item-art{width:54px;height:54px;flex-shrink:0;margin:0}
+ .dock-choice>span,.game-screen[data-phase='shop'] .dock-choice>span{display:block;min-width:0;flex:1}
+ .dock-choice strong,.initial-bonus-dock .dock-choice strong,.game-screen[data-phase='shop'] .dock-choice strong{font-size:16px;line-height:1.3}
+ .dock-choice small,.initial-bonus-dock .dock-choice small,.game-screen[data-phase='shop'] .dock-choice small{font-size:14px;line-height:1.45;margin-top:5px}
+ .dock-builds,.dock-leave,.reforge-control{min-height:44px;font-size:14px;padding:8px 4px}
+ .reward-tools{flex-wrap:wrap;justify-content:center;gap:6px;margin-top:8px}
+ .shrine-footer{flex-direction:column;align-items:stretch;gap:8px}
+ .shrine-offering{min-height:64px;width:100%;font-size:14px}
+ .shrine-offering .item-art{width:44px;height:44px}
+ .initial-bonus-dock>p{font-size:14px;line-height:1.4;margin:10px 0 0}
+ .bonus-partner{display:none}
+ .capture-content{flex-direction:column;gap:10px}
+ .capture-target{display:flex;gap:12px;align-items:center;justify-content:center;font-size:20px;flex:none}
+ .capture-target .pokemon-art{width:96px;height:96px;margin:0}
+ .capture-actions{width:100%;max-width:none;font-size:14px;line-height:1.5}
+ .capture-actions>.paper-panel{min-height:44px;font-size:16px;border-width:10px;border-image-width:10px;width:100%}
+ dialog{width:calc(100vw - 16px);max-width:540px;max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);border-width:14px;border-image-width:14px;padding:5px 5px 10px;margin:auto}
+ .menu-top{gap:8px;min-height:44px;align-items:center;margin-bottom:6px}
+ .menu-close{min-height:44px;min-width:66px;padding:4px;border-width:9px;border-image-width:9px;flex-shrink:0}
+ .menu-scroll-note{font-size:14px;line-height:1.25;flex:1;min-width:0;max-width:none;overflow-wrap:anywhere}
+ .menu-content{padding:2px 5px 4px 0;overflow:auto;scrollbar-gutter:auto;scroll-padding-block:8px}
+ .menu-content h2{font-size:24px;line-height:1.25;margin:4px 0 14px}
+ .menu-content h3{font-size:18px;line-height:1.3}
+ .menu-content p{font-size:14px;line-height:1.6}
+ .pause-actions{display:flex;flex-direction:column;gap:8px}
+ .pause-actions>button{min-height:44px;width:100%;font-size:15px;border-width:10px;border-image-width:10px;padding:5px}
+ .mobile-speed-controls{display:block;text-align:center;margin:14px 0;font-size:14px}
+ .mobile-speed-controls>div{display:flex;justify-content:center;gap:8px;margin-top:6px}
+ .mobile-speed-controls button{min-height:44px;min-width:70px;padding:8px;border:1px solid #819469;background:#efdfb5;color:#28413f;font-size:14px}
+ .mobile-speed-controls button.selected{background:#c9d39d;font-weight:bold}
+ .sound-control{min-height:44px;border-width:10px;border-image-width:10px;font-size:14px;width:100%}
+ .language-picker{font-size:14px;gap:5px}
+ .captured-partners{grid-template-columns:1fr;gap:10px}
+ .captured-partner{min-height:88px;gap:10px;padding:8px}
+ .captured-partner .pokemon-art{width:68px;height:68px}
+ .captured-partner strong{font-size:16px}
+ .legacy-options{gap:6px}
+ .legacy-options .dock-choice{padding:10px 2px;min-height:88px}
+ .legacy-options .dock-choice .item-art{width:52px;height:52px}
+ .guide-species{grid-template-columns:1fr}
+ .guide-entry .pokemon-art{width:70px;height:70px}
+ .partner-profile{gap:12px}
+ .partner-profile>.pokemon-art{width:100px;height:100px}
+ .partner-move{gap:8px;flex-wrap:wrap;font-size:14px}
+ .build-recipe{gap:12px;padding:14px 0}
+ .build-recipe>.item-art{width:64px;height:72px}
+ .build-recipe h3{font-size:18px}
+ .build-recipe p{font-size:14px}
+ .build-requirements{gap:8px}
+ .fighter-name{gap:4px;flex-wrap:wrap}
+ .fighter-name>strong{font-size:16px;line-height:1.25}
+ .fighter-name>span{font-size:14px}
+ .battle-card{width:calc(50% - 14px);border-width:11px;border-image-width:11px;padding:0 2px 2px}
+ .ally-card{left:8px;top:calc(env(safe-area-inset-top) + 116px)}
+ .enemy-card{right:8px;top:calc(env(safe-area-inset-top) + 116px)}
+ .fighter-meta{font-size:14px;line-height:1.3;letter-spacing:0;margin-top:4px}
+ .fighter-hp{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin-top:6px}
+ .fighter-hp>.health-frame{flex:none;width:100%;height:10px}
+ .fighter-hp>span{font-size:14px;min-width:0;text-align:right}
+ .guardian-ability{font-size:14px;min-height:28px}
+ .actor-ally{left:1%;bottom:22%;width:57%;height:37%}
+ .actor-enemy{right:3%;bottom:44%;width:48%;height:31%}
+ .battle-narration{left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:16px;line-height:1.4;border-width:12px;border-image-width:12px;padding:5px;max-height:21dvh;overflow-y:auto;min-height:70px}
+ .relic-rail{display:none}
+ .damage-number{font-size:27px;-webkit-text-stroke-width:1.5px}
+ .damage-number.secondary{font-size:20px;-webkit-text-stroke-width:1.5px}
+ .victory-banner{font-size:38px;top:40%}
+ .awakening-toast{max-width:94%;top:44%}
+ .awakening-toast .item-art{width:90px;height:90px}
+ .awakening-toast strong{font-size:21px}
+ .awakening-reading{max-width:100%;padding:5px 10px}
+ .evolution-caption{font-size:20px;max-width:94%;bottom:20%;padding:5px 8px}
+ .battle-narration .evolution-caption{font-size:18px;max-width:100%}
+ .partner-roll-content{inset:calc(env(safe-area-inset-top) + 76px) 10px calc(env(safe-area-inset-bottom) + 20px);gap:14px}
+ .partner-roll-content>small{font-size:14px;letter-spacing:1px}
+ .partner-roll-content h1{font-size:26px;line-height:1.25}
+ .partner-roll-content h2{font-size:23px}
+ .partner-roll-content p{font-size:14px;line-height:1.4}
+ .roll-window{height:210px;border-width:14px;border-image-width:14px;width:100%}
+ .roll-strip{top:10px;height:160px}
+ .roll-item{width:140px;flex-basis:140px;height:160px;gap:6px}
+ .roll-item .pokemon-art{width:122px;height:122px}
+ .roll-item strong{font-size:14px}
+ .roll-marker{width:36px;height:36px;top:-4px}
+ .chosen-reveal{width:180px;height:180px}
+ .ending-scene{display:flex;flex-direction:column;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 14px) 12px calc(env(safe-area-inset-bottom) + 16px);overflow-y:auto}
+ .ending-shade{position:fixed;background:#0d2e2bd9}
+ .ending-partner{position:relative;inset:auto;width:140px;height:140px;flex-shrink:0;z-index:1}
+ .ending-content,.ending-content:has(.legacy-summary){position:relative;inset:auto;transform:none;width:100%;max-width:520px;max-height:none;overflow:visible;padding:0;text-align:center;flex-shrink:0}
+ .ending-content>small{font-size:14px;letter-spacing:1px}
+ .ending-content>h1{font-size:34px;line-height:1.15;margin:12px 0}
+ .ending-content>p{font-size:14px;line-height:1.5;margin:8px auto;max-width:100%}
+ .ending-stats{justify-content:space-around;gap:8px;margin:18px 0;font-size:14px}
+ .ending-stats>span{flex:1;min-width:0}
+ .ending-stats b{font-size:24px;margin-bottom:5px;overflow-wrap:anywhere}
+ .ending-actions{flex-direction:column;gap:8px;align-items:stretch;margin-top:12px}
+ .ending-actions>button,.ending-actions>.main-button,.legacy-summary>button{min-height:48px;font-size:16px;border-width:12px;border-image-width:12px;padding:4px}
+ .legacy-summary{font-size:14px;max-width:100%;margin:12px 0}
+ .legacy-summary p{font-size:14px!important;line-height:1.5}
+ .secured-equipment{gap:8px}
+ .secured-equipment span{max-width:100%;text-align:left;font-size:14px}
+ .secured-equipment .item-art{width:30px;height:30px;flex-shrink:0}
+ .loading-screen{padding:16px;gap:22px}
+ .loading-brand h1{font-size:40px}
+ .loading-brand p{font-size:14px;letter-spacing:2px}
+ .loading-paper{width:100%;max-width:430px;flex-direction:column;text-align:center;border-width:14px;border-image-width:14px;padding:12px;gap:12px}
+ .loading-emblem{width:80px;height:80px}
+ .loading-copy h2{font-size:22px}
+ .loading-copy p{font-size:14px;line-height:1.5}
+ .save-warning{left:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:14px;max-width:calc(100% - 16px);min-height:44px;border-width:9px;border-image-width:9px}
+ .recovery-emblem{width:80px;height:80px}
+ .recovery-actions{flex-direction:column;gap:10px}
+ .recovery-actions>button{min-height:44px}
+ summary{min-height:44px;padding:12px 0;font-size:14px}
+}
+@media(max-width:980px) and (orientation:landscape){
+ .title-scene{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);grid-template-rows:auto auto 1fr;column-gap:20px;row-gap:4px;padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px)}
+ .title-brand{grid-column:1;grid-row:1;margin-top:32px}
+ .title-brand h1{font-size:34px}
+ .title-brand>p{font-size:14px;margin:3px 0}
+ .title-stats{grid-column:1;grid-row:2;gap:12px;align-self:start}
+ .expedition-launch{grid-column:2;grid-row:1 / 4;align-self:stretch;gap:7px}
+ .expedition-launch .launch-ball,.expedition-launch .launch-partner{width:100px;height:100px}
+ .expedition-launch h2{font-size:18px}
+ .title-actions{grid-column:1;grid-row:3;align-self:center;gap:6px}
+ .title-actions>button{min-height:44px;border-width:8px;border-image-width:8px}
+ .title-scene:has(.resume-adventure){grid-template-rows:auto auto auto 1fr}
+ .resume-adventure{grid-column:1;grid-row:3;align-self:start;z-index:2}
+ .title-scene:has(.resume-adventure) .title-actions{grid-row:4}
+ .title-scene:has(.resume-adventure) .expedition-launch{grid-row:1 / 5;padding-top:50px}
+ .stage-heading,.mode-battle .stage-heading{top:-3px;left:110px;right:78px;max-width:420px;border-width:7px 10px;border-image-width:7px 10px}
+ .stage-heading>strong{font-size:15px;line-height:18px}
+ .route-layout{inset:calc(env(safe-area-inset-top) + 66px) calc(env(safe-area-inset-right) + 8px) calc(env(safe-area-inset-bottom) + 6px) calc(env(safe-area-inset-left) + 8px);grid-template-columns:minmax(0,1fr) 230px;grid-template-rows:minmax(0,1fr);gap:10px}
+ .route-map{grid-column:1;grid-row:1}
+ .route-journal{grid-column:2;grid-row:1;max-height:100%}
+ .route-map-footer .mobile-route-hint{display:none}
+ .route-zoom{min-height:44px;padding:6px 8px}
+ .route-camera-controls{gap:5px}
+ .ally-card,.enemy-card{top:calc(env(safe-area-inset-top) + 60px);width:30%;max-width:260px}
+ .ally-card{left:8px}.enemy-card{right:8px}
+ .fighter-hp{flex-direction:row;align-items:center;gap:6px}
+ .fighter-hp>.health-frame{flex:1;min-width:10px}
+ .fighter-hp>span{font-size:14px}
+ .actor-ally{left:6%;bottom:13%;width:32%;height:57%}
+ .actor-enemy{right:7%;bottom:20%;width:30%;height:53%}
+ .battle-narration{left:32%;right:10px;bottom:calc(env(safe-area-inset-bottom) + 6px);font-size:14px;line-height:1.35;min-height:54px;max-height:25dvh;border-width:10px;border-image-width:10px;padding:4px}
+ .encounter-dock,.route-scene .encounter-dock,.initial-bonus-dock{max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 72px)}
+ .dock-choice,.initial-bonus-dock .dock-choice,.game-screen[data-phase='shop'] .dock-choice{min-height:62px;padding:6px 3px}
+ .capture-content{flex-direction:row;gap:15px}
+ .capture-target{flex-direction:column;flex:0 0 27%;gap:4px}
+ .capture-target .pokemon-art{width:100px;height:100px}
+ .capture-actions{flex:1}
+ .partner-roll-content{inset:calc(env(safe-area-inset-top) + 54px) 12px calc(env(safe-area-inset-bottom) + 8px);gap:8px}
+ .partner-roll-content>small{display:none}
+ .partner-roll-content h1{font-size:23px}
+ .partner-roll-content h2{font-size:20px}
+ .partner-roll-content p{display:none}
+ .roll-window{height:162px;max-width:650px;border-width:12px;border-image-width:12px}
+ .roll-strip{height:126px;top:5px}
+ .roll-item{width:132px;flex-basis:132px;height:126px;gap:4px}
+ .roll-item .pokemon-art{width:102px;height:102px}
+ .chosen-reveal{width:140px;height:140px}
+ .ending-scene{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:start;gap:14px;padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 14px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 14px)}
+ .ending-partner{width:180px;height:220px;position:sticky;top:10px}
+ .ending-content>h1{font-size:30px}
+}
+@media(max-width:980px){
+ button{-webkit-tap-highlight-color:transparent}
+ .title-scene{padding-top:calc(env(safe-area-inset-top) + 76px)}
+ .game-hud{left:calc(env(safe-area-inset-left) + 8px);right:calc(env(safe-area-inset-right) + 8px)}
+ .title-scene>.language-picker{right:calc(env(safe-area-inset-right) + 8px)}
+ .fighter-hp>span{flex:none;line-height:20px;min-height:20px;height:auto}
+ .actor-ally{left:0;width:55%}
+ .actor-enemy{right:0;width:44%;top:max(224px,25%);bottom:auto}
+ .initial-bonus-dock{top:calc(50% + 55px);bottom:auto;transform:translateY(-50%)}
+ .route-journal{max-height:220px}
+ dialog{inset:calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 8px) calc(env(safe-area-inset-bottom) + 8px) calc(env(safe-area-inset-left) + 8px);width:auto}
+ .ally-card{left:calc(env(safe-area-inset-left) + 8px)}
+ .enemy-card{right:calc(env(safe-area-inset-right) + 8px)}
+ .route-viewport .route-node::after{content:'';position:absolute;left:50%;top:50%;width:max(44px,100%);height:max(44px,100%);transform:translate(-50%,-50%);border-radius:50%}
+}
+@media(max-width:980px) and (orientation:landscape){
+ .title-scene{padding-top:calc(env(safe-area-inset-top) + 10px)}
+ .ally-card,.enemy-card{top:calc(env(safe-area-inset-top) + 60px)}
+ .actor-ally{left:max(4%,calc(env(safe-area-inset-left) + 8px));top:calc(env(safe-area-inset-top) + 145px);bottom:auto;width:30%;height:50%}
+ .actor-enemy{right:max(6%,calc(env(safe-area-inset-right) + 8px));top:calc(env(safe-area-inset-top) + 155px);bottom:auto;width:29%;height:40%}
+ .battle-narration{left:42%;right:calc(env(safe-area-inset-right) + 8px)}
+ .initial-bonus-dock{top:calc(50% + 30px)}
+}
+@media(max-width:980px) and (orientation:landscape) and (max-height:360px){
+ .stage-heading>strong{display:none}
+ .ally-card,.enemy-card{top:calc(env(safe-area-inset-top) + 52px)}
+ .actor-ally{top:calc(env(safe-area-inset-top) + 135px);height:42%}
+ .actor-enemy{top:calc(env(safe-area-inset-top) + 135px);height:35%}
+}
+@media(max-width:980px){.partner-roll-content>small,.partner-roll-content>p{display:none}.partner-roll-content{gap:18px}.guardian-ability{position:relative}.guardian-ability::after{content:'';position:absolute;left:50%;top:50%;width:max(44px,100%);height:44px;transform:translate(-50%,-50%)}}

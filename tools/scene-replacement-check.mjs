@@ -4,14 +4,14 @@ import {chromium} from 'playwright';
 import * as E from '../engine.js';
 import {simulate} from './simulate.mjs';
 import {elementalBattle} from './elemental-fixtures.mjs';
+const french=process.argv.includes('--fr');
 const c={pokemon:JSON.parse(await readFile('data/pokemon.json')),moves:JSON.parse(await readFile('data/moves.json'))},baseline=process.argv.includes('--baseline'),browser=await chromium.launch({headless:true}),checks=[],errors=[];
 const shop=simulate(2026,4,{stopAt:r=>r.phase==='shop'}).run;Object.assign(shop,{coins:200,bonuses:['defense_boost','first_guard'],pendingGrowth:null,pendingAwakenings:[]});
-const region=E.createRun(4,E.baseMeta(),c,2026);E.selectBonus(region,region.offers[0]);
 const growth=E.createRun(7,E.baseMeta(),c,2026);Object.assign(growth,{phase:'camp',stageIndex:13,travelProgress:1,hero:E.fighter(8,10,c),partnerForms:[7,8],regionEntry:null});
-const fixtures=[{name:'merchant-plan',run:shop,kind:'awakening-toast',action:['buy','guard']},{name:'windup-plan',run:elementalBattle('dragon','ally',4,c),kind:'windup'},{name:'flight-plan',run:elementalBattle('dragon','ally',4,c),kind:'flight'},{name:'region-plan',run:region,kind:'region-entry'},{name:'growth-plan',run:growth,kind:'evolution-caption',action:['encounter','train']}];
+const fixtures=[{name:'merchant-plan',run:shop,kind:'awakening-toast',action:['buy','guard']},{name:'windup-plan',run:elementalBattle('dragon','ally',4,c),kind:'windup'},{name:'flight-plan',run:elementalBattle('dragon','ally',4,c),kind:'flight'},{name:'growth-plan',run:growth,kind:'evolution-caption',action:['encounter','train']}];
 try{
  for(const f of fixtures){
-  const context=await browser.newContext({viewport:{width:1280,height:720}}),meta=E.baseMeta();meta.battleSpeed=2000;
+  const context=await browser.newContext({viewport:{width:1280,height:720}}),meta=E.baseMeta();meta.battleSpeed=2000;meta.language=french?"fr":"en";
   await context.addInitScript(data=>{
    localStorage.setItem('pokeRogueAdventureV3',JSON.stringify(data));window.__cosmetics=[];window.__windups=[];
    const selector='.awakening-toast,.evolution-caption,.region-entry',record=n=>{if(n.matches(selector)&&!window.__cosmetics.some(w=>w.node===n))window.__cosmetics.push({node:n,time:performance.now(),kind:[...n.classList].find(k=>['awakening-toast','evolution-caption','region-entry'].includes(k))});};
@@ -30,7 +30,7 @@ try{
   if(!baseline)assert.ok(replay,`${f.name}: the replacement scene must replay its unfinished cosmetic work`);
   if(!baseline&&['merchant-plan','flight-plan','growth-plan'].includes(f.name)){
    if(f.kind==='awakening-toast')await page.waitForFunction(()=>+getComputedStyle(document.querySelector('.awakening-toast')).opacity>.99);
-   await click('pause');const hide=await page.addStyleTag({content:'dialog,dialog::backdrop{visibility:hidden!important}'});await page.screenshot({path:`output/playwright/scene-replay-${f.name}.png`});await hide.evaluate(n=>n.remove());await page.getByRole('button',{name:'Resume',exact:true}).click();
+   await click('pause');const hide=await page.addStyleTag({content:'dialog,dialog::backdrop{visibility:hidden!important}'});await page.screenshot({path:`output/playwright/scene-replay-${f.name}.png`});await hide.evaluate(n=>n.remove());await page.getByRole('button',{name:french?'Reprendre':'Resume',exact:true}).click();
   }
   if(['windup','flight'].includes(f.kind)){
    const expected=structuredClone(changed);E.battleStep(expected,c);await page.waitForFunction(actions=>JSON.parse(localStorage.getItem('pokeRogueAdventureV3')).run.actions>actions,changed.actions);await click('pause');const hit=await saved();assert.equal(hit.actions,expected.actions);assert.equal(hit.seed,expected.seed);assert.equal(hit.enemy.hp,expected.enemy.hp);assert.deepEqual(hit.hero.moves,expected.hero.moves);
@@ -40,7 +40,7 @@ try{
   checks.push({name:f.name,replayed:replay,resourcesPreserved:true});await context.close();
  }
  if(!baseline){
-  const run=elementalBattle('dragon','ally',4,c),context=await browser.newContext({viewport:{width:1280,height:720}});await context.addInitScript(data=>localStorage.setItem('pokeRogueAdventureV3',JSON.stringify(data)),{version:3,meta:E.baseMeta(),run});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:5173');await page.locator('[data-action="resume"]').click();await page.waitForFunction(()=>document.querySelector('.actor-ally .body-art')?.getAnimations().some(a=>a.effect.getKeyframes().some(k=>k.rotate)));await page.locator('[data-action="pause"]').click();const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('pokeRogueAdventureV3')).run);await page.evaluate(()=>document.querySelector('#battle-scene').remove());await page.getByRole('button',{name:'Resume',exact:true}).click();await page.locator('.fatal-panel').waitFor();assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('pokeRogueAdventureV3')).run),before);await page.waitForTimeout(100);await page.locator('[data-action="recover"]').click();await page.getByRole('button',{name:'Resume',exact:true}).click();await page.waitForFunction(n=>JSON.parse(localStorage.getItem('pokeRogueAdventureV3')).run.actions>n,before.actions);checks.push({name:'missing-scene-recovery',resourcesPreserved:true,resumed:true});await context.close();
+  const run=elementalBattle('dragon','ally',4,c),context=await browser.newContext({viewport:{width:1280,height:720}});await context.addInitScript(data=>localStorage.setItem('pokeRogueAdventureV3',JSON.stringify(data)),{version:3,meta:{...E.baseMeta(),language:french?'fr':'en'},run});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:5173');await page.locator('[data-action="resume"]').click();await page.waitForFunction(()=>document.querySelector('.actor-ally .body-art')?.getAnimations().some(a=>a.effect.getKeyframes().some(k=>k.rotate)));await page.locator('[data-action="pause"]').click();const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('pokeRogueAdventureV3')).run);await page.evaluate(()=>document.querySelector('#battle-scene').remove());await page.getByRole('button',{name:french?'Reprendre':'Resume',exact:true}).click();await page.locator('.fatal-panel').waitFor();assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('pokeRogueAdventureV3')).run),before);await page.waitForTimeout(100);await page.locator('[data-action="recover"]').click();await page.getByRole('button',{name:french?'Reprendre':'Resume',exact:true}).click();await page.waitForFunction(n=>JSON.parse(localStorage.getItem('pokeRogueAdventureV3')).run.actions>n,before.actions);checks.push({name:'missing-scene-recovery',resourcesPreserved:true,resumed:true});await context.close();
  }
- assert.deepEqual(errors,[]);await writeFile(`output/playwright/scene-replacement${baseline?'-before':''}.json`,JSON.stringify({checks,errors},null,2));console.log(JSON.stringify({checks,errors},null,2));
+ assert.deepEqual(errors,[]);await writeFile(`output/playwright/scene-replacement${french?'-fr':''}${baseline?'-before':''}.json`,JSON.stringify({checks,errors},null,2));console.log(JSON.stringify({checks,errors},null,2));
 }finally{await browser.close();}

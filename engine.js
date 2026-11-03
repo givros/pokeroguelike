@@ -1,6 +1,7 @@
 import { activeSynergies, awakenedBy } from "./builds.js";
 import { guardianAbility } from "./guardians.js";
 import {selectedRouteNode,routeOptions,enableRouteGraph} from './route-graph.js';
+import {gearTier,awardLegacy,salvageEquipment} from './legacy.js';
 
 export const STAGES = [
   { kind: "wild", name: "Woodland Edge", pool: [10, 16, 19] },
@@ -25,7 +26,7 @@ export const REGIONS = [
   { id: "sanctuary", name: "Ancient Sanctuary", from: 11, to: 14, arena: "ancient-shrine-arena" },
 ];
 export const region = (run) => REGIONS.find((r) =>
-  run.stageIndex >= r.from && run.stageIndex <= r.to) || REGIONS[0];
+  (run.endless?run.stageIndex%STAGES.length:run.stageIndex) >= r.from && (run.endless?run.stageIndex%STAGES.length:run.stageIndex) <= r.to) || REGIONS[0];
 export const BONUSES = [
   {
     id: "hp_boost",
@@ -275,8 +276,8 @@ const CHART = {
 export const effectiveness = (type, types) =>
   types.reduce((n, t) => n * (CHART[type]?.[t] ?? 1), 1);
 export const count = (run, id) => run.bonuses.filter((x) => x === id).length;
-export const stage = (run) => selectedRouteNode(run,STAGES)?.stage || STAGES[run.stageIndex];
-export const stageAt = (run,index) => selectedRouteNode(run,STAGES,index)?.stage || STAGES[index];
+export const stage = (run) => selectedRouteNode(run,STAGES)?.stage || STAGES[run.endless?run.stageIndex%STAGES.length:run.stageIndex];
+export const stageAt = (run,index) => selectedRouteNode(run,STAGES,index)?.stage || STAGES[run.endless?index%STAGES.length:index];
 export const enableBranching = run => enableRouteGraph(run,STAGES);
 export const routeChoices = run => routeOptions(run,STAGES);
 export const needsRouteChoice = run => run.routeMode==='branching'&&run.phase==='travel'&&!selectedRouteNode(run,STAGES);
@@ -284,6 +285,7 @@ export function selectRoute(run,id,catalogue) {
  if(!needsRouteChoice(run)||run.pendingGrowth||run.pendingAwakenings?.length)return false;
  const node=routeChoices(run).find(node=>node.id===id);if(!node)return false;
  run.branchPath.push(id);run.landmark=null;run.travelProgress=1;
+ if(run.endless&&run.branchPath.length>256){run.branchPath.shift();run.branchStart++;}
  addLog(run,`${node.stage.name} chosen.`);return arrive(run,catalogue);
 }
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
@@ -324,6 +326,7 @@ export function baseMeta() {
     expeditionHistory: [],
     battleSpeed: 1500,
     language: "en",
+    legacyMarks:0,bestDepth:0,learnedSkills:[],equippedSkill:null,equipment:{},equippedGear:null,captured:{},startingPartner:null,
     unlockedStarters: {
       1: true,
       4: true,
@@ -459,6 +462,22 @@ export function createRun(id, meta, catalogue, seed = Date.now()) {
   run.offers = offerBonuses(run);
   return run;
 }
+export function enableEndless(run,meta){
+ if(!run||run.endless||['complete','defeat','retired'].includes(run.phase))return false;
+ enableBranching(run);const fresh=run.phase==='starter'&&run.stageIndex===0;
+ run.endless=true;run.proceduralFromChapter=fresh?0:1;run.salvage={};run.captures={};run.discoveryLedger={};
+ run.carriedBank=!fresh;
+ for(const encounter of run.encounters||[]){const record=run.discoveryLedger[encounter.id]||={seen:0,defeated:0};record.seen++;if(encounter.won)record.defeated++;}
+ run.skill=fresh?meta.equippedSkill||null:null;
+ run.gear=fresh&&meta.equippedGear?{id:meta.equippedGear,tier:meta.equipment[meta.equippedGear]}:null;
+ if(fresh){run.coins=0;const hp=8*gearTier(run,'charm');run.hero.maxHp+=hp;run.hero.hp+=hp;}
+ return true;
+}
+export function startingPartner(meta,seed=Date.now(),catalogue=null){
+ if(meta.startingPartner&&meta.captured?.[meta.startingPartner]&&(!catalogue||catalogue.pokemon[meta.startingPartner]))return Number(meta.startingPartner);
+ const pool=[...new Set([1,4,7,25,133,152,...Object.keys(meta.captured||{}).map(Number).filter(id=>!catalogue||catalogue.pokemon[id])])];let x=seed>>>0||1;x^=x<<13;x^=x>>>17;x^=x<<5;return pool[(x>>>0)%pool.length];
+}
+export const depthPressure = run => run.endless?{hp:1.18+run.stageIndex*.045,damage:1.12+run.stageIndex*.035}:{hp:1,damage:1};
 function grantBonus(run, id) {
   const b = BONUSES.find((b) => b.id === id);
   if (!b || count(run, id) >= b.max) return false;
@@ -626,25 +645,28 @@ export function activateStage(run, catalogue) {
   const node = stage(run);
   run.stats.encounters++;
   addLog(run, node.name + ".");
-  if (["wild", "elite", "boss"].includes(node.kind)) {
+  if (["wild", "elite", "boss", "capture"].includes(node.kind)) {
     const prepared = run.scouting?.stageIndex === run.stageIndex &&
       node.pool.includes(run.scouting.speciesId);
     const id = prepared ? run.scouting.speciesId :
       node.pool[Math.floor(random(run) * node.pool.length)],
-      level =
+      level = Math.min(100,
         4 +
         Math.floor(run.stageIndex * 0.65) +
-        (node.kind === "elite" ? 1 : node.kind === "boss" ? 2 : 0);
+        (node.kind === "elite" ? 1 : node.kind === "boss" ? 2 : 0));
     run.enemy = fighter(id, level, catalogue);
     (run.encounters ||= []).push({ id, stage: run.stageIndex, level, won: false });
+    if(run.endless){run.encounters=run.encounters.slice(-32);const record=run.discoveryLedger[id]||={seen:0,defeated:0};record.seen++;}
     run.enemy.maxHp = Math.max(1, Math.ceil((run.enemy.maxHp - 20) * threatModifiers(run).enemyHp));
     run.enemy.hp = run.enemy.maxHp;
     if (node.kind === "boss") {
       run.enemy.maxHp = Math.ceil(run.enemy.maxHp * 1.15);
       run.enemy.hp = run.enemy.maxHp;
     }
+    if(run.endless){run.enemy.maxHp=Math.min(900000,Math.ceil(run.enemy.maxHp*depthPressure(run).hp));run.enemy.hp=run.enemy.maxHp;}
     run.hero.guardUsed = false;
     run.hero.shield = 0;
+    if(run.endless&&run.skill==='ward')run.hero.shield=Math.ceil(run.hero.maxHp*.12);
     run.preparedStrike = !!prepared || (run.routeMode==='branching'&&run.preparedStrike===true);
     run.scouting = null;
     run.battleActions = 0;
@@ -668,11 +690,11 @@ function attackStats(run, attacker, defender, move, catalogue, player) {
   if (player)
     atk =
       (atk + (run.upgrades.attackBonus || 0) * 3) *
-      (1 + 0.15 * count(run, "attack_boost"));
+      (1 + 0.15 * count(run, "attack_boost"))*(1+.06*gearTier(run,'fang'));
   else
     def =
       (def + (run.upgrades.defenseBonus || 0) * 3) *
-      (1 + 0.15 * count(run, "defense_boost"));
+      (1 + 0.15 * count(run, "defense_boost"))*(1+.06*gearTier(run,'shell'));
   const stab = a.types.includes(move.type)
     ? 1.5 + (player ? 0.2 * count(run, "type_boost") : 0)
     : 1;
@@ -702,7 +724,7 @@ export function expectedDamage(
     ) +
       2) *
     stab *
-    eff * (player ? 1 : threatModifiers(run).enemyDamage) *
+    eff * (player ? (run.endless&&run.skill==='adrenaline'&&attacker.hp<attacker.maxHp*.35?1.25:1) : threatModifiers(run).enemyDamage*depthPressure(run).damage) *
     (player && guardianAbility(run)?.key === "multiscale" && defender.hp === defender.maxHp ? 0.5 : 1) *
     (!player && guardianAbility(run)?.key === "swarm" && attacker.hp * 3 <= attacker.maxHp && move.type === "bug" ? 1.5 : 1)
   );
@@ -750,7 +772,7 @@ export function battleStep(run, catalogue) {
       0.0625 +
         (player
           ? (run.upgrades.criticalChance || 0) * 0.05 +
-            0.1 * count(run, "crit_chance")
+            0.1 * count(run, "crit_chance")+.03*gearTier(run,'lens')
           : 0),
       0,
       0.75,
@@ -798,8 +820,8 @@ export function battleStep(run, catalogue) {
     run.stats.damage += reflectDamage;
   }
   let healing = 0, shielding = 0;
-  if (player && count(run, "lifesteal")) {
-    const recovery = Math.ceil(actual * 0.15 * count(run, "lifesteal"));
+  if (player && (count(run, "lifesteal")||gearTier(run,'root'))) {
+    const recovery = Math.ceil(actual * (0.15 * count(run, "lifesteal")+.02*gearTier(run,'root')));
     healing = Math.min(
       a.maxHp - a.hp,
       recovery,
@@ -854,6 +876,7 @@ function winBattle(run, catalogue) {
   run.hero.shield = 0;
   const encounter = run.encounters?.at(-1);
   if (encounter?.stage === run.stageIndex) encounter.won = true;
+  if(run.endless)run.discoveryLedger[run.enemy.id].defeated++;
   const node = stage(run),
     gold = Math.floor(
       (node.kind === "boss" ? 80 : node.kind === "elite" ? 45 : 25) *
@@ -864,6 +887,7 @@ function winBattle(run, catalogue) {
   const xp = node.kind === "boss" ? 3 : node.kind === "elite" ? 2 : 1;
   run.hero.xp += xp;
   while (run.hero.xp >= 2) {
+    if(run.hero.level>=100){run.hero.xp=0;break;}
     run.hero.xp -= 2;
     run.hero.level++;
     run.hero.maxHp += 5;
@@ -872,7 +896,7 @@ function winBattle(run, catalogue) {
   }
   refreshGrowth(run, catalogue);
   const healing = Math.ceil(
-    run.hero.maxHp * (0.12 + 0.1 * count(run, "regeneration")),
+    run.hero.maxHp * (0.12 + 0.1 * count(run, "regeneration")+(run.endless&&run.skill==='renewal'?.06:0)),
   );
   run.hero.hp = Math.min(run.hero.maxHp, run.hero.hp + healing);
   run.hero.moves.forEach((slot) => {
@@ -881,16 +905,22 @@ function winBattle(run, catalogue) {
   });
   addLog(run, `Victory! +${gold} gold, +${xp} experience.`);
   run.pendingReward = true;
-  if (run.stageIndex === STAGES.length - 1) {
+  if(run.endless&&['elite','boss'].includes(node.kind)){const loot=salvageEquipment(run);addLog(run,`Equipment found: ${loot.name} · tier ${loot.tier}.`);}
+  if(run.endless&&node.kind==='capture'){
+    const chance=Math.min(.85,([150,149].includes(run.enemy.id)?.35:[123,131].includes(run.enemy.id)?.45:.7)+.02*gearTier(run,'lens'));
+    run.pendingCapture={id:run.enemy.id,chance,attempted:false,caught:false};run.phase='capture';
+  }else if (!run.endless&&run.stageIndex === STAGES.length - 1) {
     run.phase = "complete";
     run.pendingReward = false;
     addLog(run, "The legendary guardian falls. Expedition complete!");
   } else run.phase = "victoryBeat";
 }
 export function depart(run) {
-  if (!["victoryBeat", "camp", "cache", "shop", "shrine"].includes(run.phase))
+  if (!["victoryBeat", "camp", "cache", "shop", "shrine", "capture"].includes(run.phase))
     return false;
-  if (run.stageIndex >= STAGES.length - 1) {
+  if(run.phase==='capture'&&!run.pendingCapture?.attempted)return false;
+  run.pendingCapture=null;
+  if (!run.endless&&run.stageIndex >= STAGES.length - 1) {
     run.phase = "complete";
     return true;
   }
@@ -905,6 +935,13 @@ export function depart(run) {
   run.enemy = null;
   return true;
 }
+export function attemptCapture(run,catalogue=null){
+ if(run.phase!=='capture'||!run.pendingCapture||run.pendingCapture.attempted||run.enemy?.hp!==0)return null;
+ const attempt=run.pendingCapture;attempt.attempted=true;attempt.caught=random(run)<attempt.chance;
+ if(attempt.caught){run.captures[attempt.id]=(run.captures[attempt.id]||0)+1;addLog(run,`Pokémon captured: ${catalogue?.pokemon[attempt.id]?.name||attempt.id}.`);}else addLog(run,'The Pokémon escaped the capture.');
+ return{...attempt};
+}
+export function skipCapture(run){if(run.phase!=='capture'||!run.pendingCapture||run.pendingCapture.attempted)return false;run.pendingCapture.attempted=true;return depart(run);}
 function trainPartner(run, catalogue) {
   if (run.hero.level >= 100) return false;
   run.hero.level++;
@@ -1034,24 +1071,28 @@ export function settle(run, meta) {
   if (!["defeat", "complete", "retired"].includes(run.phase) || run.settled)
     return false;
   run.settled = true;
+  if(run.endless)run.pendingCapture=null;
+  if(run.introPending)run.introPending=false;
   run.landmark = null;
   run.endBonus =
     run.phase === "defeat"
       ? 0
       : Math.floor(run.wins * 35 * (1 + run.hero.level * 0.1) * threatModifiers(run).gold);
   run.coins += run.endBonus;
-  meta.gold = run.coins;
+  if(run.endless){meta.gold=run.carriedBank?run.coins:meta.gold+run.coins;awardLegacy(run,meta);for(const[id,n]of Object.entries(run.captures||{}))meta.captured[id]=(meta.captured[id]||0)+n;}
+  else meta.gold = run.coins;
   meta.totalRuns++;
   meta.totalVictories += run.wins;
   meta.bestScore = Math.max(meta.bestScore, run.wins);
-  if (run.phase === "complete")
+  if (run.phase === "complete"||(run.endless&&(run.encounters||[]).some(e=>e.won&&e.stage%STAGES.length===14)))
     meta.unlockedThreat = Math.max(meta.unlockedThreat || 0, Math.min(MAX_THREAT, threatModifiers(run).tier + 1));
   meta.discoveries ||= {};
-  for (const encounter of run.encounters || []) {
+  for (const encounter of run.endless?[]:run.encounters || []) {
     const record = meta.discoveries[encounter.id] ||= { seen: 0, defeated: 0 };
     record.seen++;
     if (encounter.won) record.defeated++;
   }
+  if(run.endless)for(const[id,counts]of Object.entries(run.discoveryLedger||{})){const record=meta.discoveries[id]||={seen:0,defeated:0};record.seen+=counts.seen;record.defeated+=counts.defeated;}
   for (const id of new Set(run.partnerForms || [run.hero.id])) {
     const record = meta.discoveries[id] ||= { seen: 0, defeated: 0 };
     record.seen++;

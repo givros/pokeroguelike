@@ -9,39 +9,47 @@ export class RouteCamera {
     this.board = viewport.querySelector('.route-board');
     this.tokens = new Map([...this.board.querySelectorAll('[data-route-node]')].map(node=>[node.dataset.routeNode,node]));
     this.links = [...this.board.querySelectorAll('line[data-from]')];
-    this.width = Math.max(600, viewport.clientWidth);
+    this.width = Math.max(matchMedia("(max-width:980px)").matches?340:600, viewport.clientWidth);
     this.height = height;
     this.board.style.width = `${this.width}px`;
     this.board.style.height = `${height}px`;
     this.targetY = targetY;
-    if (this.id !== id) this.zoom = 1.1;
+    if (this.id !== id) this.zoom = matchMedia("(max-width:980px)").matches?1:1.1;
     if (this.id !== id || this.stage !== stage) this.center();
     this.id = id; this.stage = stage;
     this.apply();
     const events = new AbortController(); this.events = events;
     const listen = (type, handler, options = {}) => viewport.addEventListener(type, handler, { ...options, signal: events.signal });
-    let drag = null, suppressUntil = 0;
-    listen('pointerdown', event => {
-      if (event.button !== 0) return;
-      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, originX: this.x, originY: this.y, moved: false };
+    let drag=null,pinch=null,suppressUntil=0;
+    const pointers=new Map();
+    const midpoint=()=>{const[a,b]=[...pointers.values()],box=viewport.getBoundingClientRect();return{x:(a.x+b.x)/2-box.left,y:(a.y+b.y)/2-box.top,distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y))};};
+    listen('pointerdown',event=>{
+      if(event.button!==0)return;
+      pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      if(pointers.size===2){const mid=midpoint();pinch={distance:mid.distance,zoom:this.zoom,worldX:(mid.x-this.x)/this.zoom,worldY:(mid.y-this.y)/this.zoom};drag=null;for(const id of pointers.keys())viewport.setPointerCapture(id);viewport.classList.add('dragging');suppressUntil=performance.now()+400;}
+      else if(pointers.size===1)drag={id:event.pointerId,x:event.clientX,y:event.clientY,originX:this.x,originY:this.y,moved:false};
     });
-    listen('pointermove', event => {
-      if (!drag || drag.id !== event.pointerId) return;
-      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
-      if (!drag.moved && Math.hypot(dx, dy) > 5) {
-        drag.moved = true; viewport.setPointerCapture(event.pointerId); viewport.classList.add('dragging');
-      }
-      if (drag.moved) { this.x = drag.originX + dx; this.y = drag.originY + dy; this.apply(); }
+    listen('pointermove',event=>{
+      if(!pointers.has(event.pointerId))return;
+      pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      if(pinch&&pointers.size>=2){const mid=midpoint();this.zoom=clamp(pinch.zoom*mid.distance/pinch.distance,.35,2.2);this.x=mid.x-pinch.worldX*this.zoom;this.y=mid.y-pinch.worldY*this.zoom;this.apply();suppressUntil=performance.now()+400;return;}
+      if(!drag||drag.id!==event.pointerId)return;
+      const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+      if(!drag.moved&&Math.hypot(dx,dy)>5){drag.moved=true;viewport.setPointerCapture(event.pointerId);viewport.classList.add('dragging');}
+      if(drag.moved){this.x=drag.originX+dx;this.y=drag.originY+dy;this.apply();}
     });
-    const release = event => {
-      if (!drag || drag.id !== event.pointerId) return;
-      if (drag.moved) suppressUntil = performance.now() + 350;
-      drag = null; viewport.classList.remove('dragging');
-      if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+    const release=event=>{
+      if(!pointers.has(event.pointerId))return;
+      pointers.delete(event.pointerId);
+      if(pinch||drag?.moved)suppressUntil=performance.now()+400;
+      pinch=null;drag=null;
+      if(pointers.size===1){const[id,point]=[...pointers][0];drag={id,x:point.x,y:point.y,originX:this.x,originY:this.y,moved:true};}
+      if(!pointers.size)viewport.classList.remove('dragging');
+      if(viewport.hasPointerCapture(event.pointerId))viewport.releasePointerCapture(event.pointerId);
     };
-    listen('pointerup', release); listen('pointercancel', release); listen('lostpointercapture', release);
-    window.addEventListener('pointerup', release, { signal: events.signal });
-    window.addEventListener('blur', () => { if(drag) release({pointerId:drag.id}); }, { signal: events.signal });
+    listen('pointerup',release);listen('pointercancel',release);listen('lostpointercapture',release);
+    window.addEventListener('pointerup',release,{signal:events.signal});
+    window.addEventListener('blur',()=>{for(const id of [...pointers.keys()])release({pointerId:id});},{signal:events.signal});
     listen('click', event => {
       if (performance.now() < suppressUntil) { event.preventDefault(); event.stopPropagation(); }
     }, { capture: true });

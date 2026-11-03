@@ -1,7 +1,23 @@
 import { baseMeta, BONUSES, STAGES, clamp, region, MAX_THREAT, stageAt } from "./engine.js";
 import {validBranchState} from './route-graph.js';
 import { SYNERGIES } from "./builds.js";
+import {SKILLS,EQUIPMENT} from './legacy.js';
 export const SAVE_KEY = "pokeRogueAdventureV3";
+function validEndless(r,c){
+ if(r.routeMode!=='branching'||![0,1].includes(r.proceduralFromChapter)||r.phase==='complete')return false;
+ if(r.skill!=null&&!SKILLS.some(s=>s.id===r.skill))return false;
+ const gearMap=value=>value&&typeof value==='object'&&!Array.isArray(value)&&Object.entries(value).every(([id,tier])=>EQUIPMENT.some(g=>g.id===id)&&Number.isInteger(tier)&&tier>=1&&tier<=10);
+ if(!gearMap(r.salvage)||r.gear!=null&&(!EQUIPMENT.some(g=>g.id===r.gear.id)||!Number.isInteger(r.gear.tier)||r.gear.tier<1||r.gear.tier>10))return false;
+ const record=value=>value&&typeof value==='object'&&!Array.isArray(value);
+ if(!record(r.captures)||!Object.entries(r.captures).every(([id,n])=>c.pokemon[id]&&Number.isSafeInteger(n)&&n>0))return false;
+ if(!record(r.discoveryLedger)||!Object.entries(r.discoveryLedger).every(([id,n])=>c.pokemon[id]&&record(n)&&Number.isSafeInteger(n.seen)&&n.seen>0&&Number.isSafeInteger(n.defeated)&&n.defeated>=0&&n.defeated<=n.seen))return false;
+ if(r.carriedBank!=null&&typeof r.carriedBank!=='boolean')return false;
+ if(r.lootSeed!=null&&(!Number.isInteger(r.lootSeed)||r.lootSeed<1||r.lootSeed>4294967295))return false;
+ if(r.legacyReward!=null&&(!record(r.legacyReward)||!Number.isSafeInteger(r.legacyReward.marks)||r.legacyReward.marks<0||!Array.isArray(r.legacyReward.equipment)||r.legacyReward.equipment.length>5||!r.legacyReward.equipment.every(g=>g&&EQUIPMENT.some(item=>item.id===g.id)&&Number.isInteger(g.tier)&&g.tier>=1&&g.tier<=10)))return false;
+ if(r.pendingCapture!=null){const p=r.pendingCapture;if(r.phase!=='capture'||!c.pokemon[p.id]||p.id!==r.enemy?.id||!Number.isFinite(p.chance)||p.chance<0||p.chance>1||typeof p.attempted!=='boolean'||typeof p.caught!=='boolean'||p.caught&&!p.attempted)return false;}
+ if(r.phase==='capture'&&!r.pendingCapture)return false;
+ return true;
+}
 const integer = (n, limit = 1e8) => clamp(Math.floor(Number(n) || 0), 0, limit);
 export function normalizeMeta(source) {
   const m = baseMeta();
@@ -14,6 +30,13 @@ export function normalizeMeta(source) {
     m.permanentUpgrades[key] = integer(source.permanentUpgrades?.[key], 10);
   m.sound = !!source.sound;
   m.language = source.language === "fr" ? "fr" : "en";
+  m.legacyMarks=integer(source.legacyMarks);m.bestDepth=integer(source.bestDepth,Number.MAX_SAFE_INTEGER);
+  m.learnedSkills=SKILLS.filter(s=>Array.isArray(source.learnedSkills)&&source.learnedSkills.includes(s.id)).map(s=>s.id);
+  m.equippedSkill=m.learnedSkills.includes(source.equippedSkill)?source.equippedSkill:null;
+  for(const gear of EQUIPMENT){const tier=integer(source.equipment?.[gear.id],10);if(tier)m.equipment[gear.id]=tier;}
+  m.equippedGear=m.equipment[source.equippedGear]?source.equippedGear:null;
+  if(source.captured&&typeof source.captured==='object')for(const[id,n]of Object.entries(source.captured)){const key=integer(id,2000),amount=integer(n);if(String(key)===id&&amount)m.captured[id]=amount;}
+  m.startingPartner=m.captured[source.startingPartner]?Number(source.startingPartner):null;
   if (source.discoveries && typeof source.discoveries === "object")
     for (const [key, value] of Object.entries(source.discoveries)) {
       const id = integer(key, 2000);
@@ -28,8 +51,8 @@ export function normalizeMeta(source) {
       Number.isInteger(r.partnerId) && r.partnerId > 0 && r.partnerId < 2000
     ).slice(0, 12).map((r) => ({
       id: r.id, starterId: integer(r.starterId, 2000), partnerId: r.partnerId,
-      outcome: r.outcome, stage: Math.max(1, integer(r.stage, STAGES.length)),
-      wins: integer(r.wins, STAGES.length), actions: integer(r.actions),
+      outcome: r.outcome, stage: Math.max(1, integer(r.stage, Number.MAX_SAFE_INTEGER)),
+      wins: integer(r.wins), actions: integer(r.actions),
       damage: integer(r.damage), seed: r.seed == null ? null : integer(r.seed, 4294967295),
       threat: integer(r.threat, MAX_THREAT),
     }));
@@ -86,12 +109,17 @@ export function validRun(r, c) {
     r.version !== 3 ||
     typeof r.id !== "string" ||
     r.id.length > 100 ||
-    !Number.isInteger(r.stageIndex) ||
+    !Number.isSafeInteger(r.stageIndex) ||
     r.stageIndex < 0 ||
-    r.stageIndex >= STAGES.length
+    (!r.endless&&r.stageIndex >= STAGES.length)
   )
     return false;
   if(r.routeMode==='branching'&&!validBranchState(r,STAGES))return false;
+  if(r.endless!==undefined&&typeof r.endless!=='boolean')return false;
+  if(r.phase==='capture'&&!r.endless)return false;
+  if(r.endless&&!validEndless(r,c))return false;
+  if(r.introPending!=null&&(typeof r.introPending!=='boolean'||r.introPending&&r.phase!=='starter'))return false;
+  if(r.introMode!=null&&!['random','chosen'].includes(r.introMode))return false;
   if (typeof r.settled !== "boolean" || typeof r.pendingReward !== "boolean" ||
     (r.pendingEvolution != null && typeof r.pendingEvolution !== "boolean")) return false;
   if (r.settled && !["complete", "defeat", "retired"].includes(r.phase)) return false;
@@ -105,6 +133,7 @@ export function validRun(r, c) {
       "reward",
       "evolution",
       "camp",
+      "capture",
       "cache",
       "shop",
       "shrine",
@@ -117,12 +146,12 @@ export function validRun(r, c) {
   if (
     !validFighter(r.hero, c) ||
     (r.enemy != null && !validFighter(r.enemy, c)) ||
-    (["battle", "victoryBeat", "complete"].includes(r.phase) &&
+    (["battle", "victoryBeat", "complete", "capture"].includes(r.phase) &&
       !validFighter(r.enemy, c))
   )
     return false;
   if ((r.phase === "battle" && r.enemy.hp <= 0) ||
-    (["victoryBeat", "complete"].includes(r.phase) && r.enemy.hp !== 0)) return false;
+    (["victoryBeat", "complete", "capture"].includes(r.phase) && r.enemy.hp !== 0)) return false;
   if (r.phase === "complete" && r.stageIndex !== STAGES.length - 1) return false;
   if (["camp", "cache", "shop", "shrine"].includes(r.phase) &&
     stageAt(r,r.stageIndex).kind !== r.phase) return false;
@@ -142,7 +171,7 @@ export function validRun(r, c) {
   )
     return false;
   if (
-    r.wins > 15 ||
+    r.wins > (r.endless?r.stageIndex+1:15) ||
     r.battleActions > 80 ||
     !["ally", "enemy"].includes(r.nextSide)
   )
@@ -219,7 +248,7 @@ export function validRun(r, c) {
   if (r.preparedStrike != null && typeof r.preparedStrike !== "boolean")
     return false;
   if (r.encounters != null && (!Array.isArray(r.encounters) ||
-    r.encounters.length > STAGES.length ||
+    r.encounters.length > (r.endless?32:STAGES.length) ||
     !r.encounters.every((entry, i, entries) => entry &&
       Number.isInteger(entry.stage) && entry.stage >= 0 && entry.stage <= r.stageIndex &&
       (i === 0 || entry.stage > entries[i - 1].stage) &&

@@ -5,6 +5,7 @@ export const MAX_IDLE_MS = 8 * 60 * 60 * 1000;
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
 export function idleStepCost(run, world) {
   if (TERMINAL.has(run.phase) || run.phase === "evolution") return null;
+  if(run.introPending)return 3700;
   if (run.pendingGrowth || run.pendingAwakenings?.length || run.regionEntry) return 1600;
   if (L.landmarkMoving(run)) return L.remainingMotionMs(run);
   if (L.departurePending(run)) return run.landmark.duration;
@@ -18,6 +19,7 @@ export function idleStepCost(run, world) {
   return null;
 }
 function step(run, catalogue, world) {
+  if(run.introPending){run.introPending=false;return;}
   if (run.pendingGrowth) { run.pendingGrowth = null; return; }
   if (run.pendingAwakenings?.length) { run.pendingAwakenings.shift(); return; }
   if (run.regionEntry) { run.regionEntry = null; return; }

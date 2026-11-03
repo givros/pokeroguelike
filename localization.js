@@ -13,6 +13,11 @@ export function getLocale() { return locale; }
 // The simulation and saved journal retain their original messages. Translate only
 // their presentation, so changing language cannot alter a fight or its RNG.
 const templates = [
+  [/^Resume expedition · depth (\d+)$/,(_,n)=>`Reprendre · profondeur ${n}`],
+  [/One attempt\. Capture chance: (\d+)%\./g,(_,n)=>`Une tentative. Chance de capture : ${n} %.`],
+  [/Best depth (\d+)\. Your permanent progress is ready for the next adventure\./g,(_,n)=>`Meilleure profondeur : ${n}. Votre progression permanente vous attend pour la prochaine aventure.`],
+  [/Equipment found: (.+) · tier (\d+)\./g,(_,name,n)=>`Équipement trouvé : ${translate(name)} · palier ${n}.`],
+  [/Pokémon captured: (.+)\./g,(_,name)=>`Pokémon capturé : ${translate(name)}.`],
   [/^(Woodland|Silvermist|Sanctuary) (Battle|Elite|Spring|Supplies|Merchant|Shrine)(\.)?$/, (_,area,kind,dot)=>`${translate(kind)} — ${translate(area)}${dot||''}`],
   [/^(\d+) boon ranks$/, (_,n)=>`${n} rang${Number(n)===1?'':'s'} de bonus`],
   [/^Seen (\d+) · Defeated (\d+)$/, (_,seen,won)=>`Vu : ${seen} · Vaincu : ${won}`],

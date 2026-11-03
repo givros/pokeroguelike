@@ -19,6 +19,7 @@ export const GUARDIANS = Object.freeze([
 })));
 
 export function guardianAbility(run, species = run.enemy?.id, stageIndex = run.stageIndex) {
+  if(run.endless)stageIndex%=15;
   // Old expeditions retain their original rules, including a saved battle in progress.
   if (run.guardianAbilities !== true || ![5,14].includes(stageIndex)) return null;
   if (stageIndex === 5 && species !== 123) return null;

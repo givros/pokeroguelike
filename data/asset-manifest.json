@@ -777,5 +777,18 @@
     "columns": 2,
     "frames": 4,
     "qc": "assets/effects/wind-impact.qc.json"
+  },
+  {
+    "id": "capture-ball",
+    "image": "assets/generated/capture-ball.webp",
+    "source": "assets/generated/capture-ball.png",
+    "prompt": "assets/generated/capture-ball.prompt.txt",
+    "generator": "built-in imagegen",
+    "size": [
+      1254,
+      1254
+    ],
+    "transparent": true,
+    "encoding": "lossless WebP"
   }
 ]

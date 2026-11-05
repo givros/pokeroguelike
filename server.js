@@ -36,6 +36,7 @@ http
       res.writeHead(404).end("Not found");
     }
   })
-  .listen(5173, "127.0.0.1", () =>
-    console.log("PokéRogue: http://127.0.0.1:5173"),
+  .listen(Number(process.env.PORT ?? 5173), "127.0.0.1", function () {
+    console.log(`PokéRogue: http://127.0.0.1:${this.address().port}`);
+  },
   );

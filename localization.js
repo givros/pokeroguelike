@@ -9,6 +9,7 @@ export function configureTranslations(messages) {
 }
 export function setLocale(value) { locale = value === 'fr' ? 'fr' : 'en'; }
 export function getLocale() { return locale; }
+export const frenchName = name => Object.hasOwn(dictionary, name) ? dictionary[name] : name;
 
 // The simulation and saved journal retain their original messages. Translate only
 // their presentation, so changing language cannot alter a fight or its RNG.

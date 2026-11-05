@@ -30,7 +30,7 @@ export function routeGraph(seed, stages, procedural=false) {
   const elitePool=biomeStages.find(s=>s.kind==='elite')?.pool||stages[3].pool;
   rows[row]=kinds.map((kind,lane)=>{
    const actual=kind==='mystery'?['wild','cache','camp','shrine'][Math.floor(random()*4)]:kind;
-   const stage=lane===0&&!procedural||base.kind==='boss'?{...base,pool:base.pool?[...base.pool]:undefined}:{kind:actual,name:`${area} ${ROUTE_KINDS[actual].name}`,pool:['wild','capture'].includes(actual)?[...(wildPool.length?wildPool:stages[6].pool)]:actual==='elite'?[...elitePool]:undefined};
+   const stage=lane===0&&!procedural||base.kind==='boss'?{...base,pool:base.pool?[...base.pool]:undefined}:{kind:actual,name:`${area} ${ROUTE_KINDS[actual].name}`,pool:actual==='wild'?[...(wildPool.length?wildPool:stages[6].pool)]:actual==='elite'?[...elitePool]:undefined};
    if(procedural&&row===0)stage.pool=[...base.pool];
    const node={id:`${row}-${lane}`,row,lane,x:kinds.length===1?.5:.13+lane*(procedural?.74/(kinds.length-1):.246)+(random()-.5)*.035,y:70+(stages.length-1-row)*60,kind,stage,next:[]};nodes.push(node);return node;
   });
@@ -83,10 +83,6 @@ export function chapterGraph(run,stages,chapter=0){
  if(chapters.has(key))return chapters.get(key);
  const seed=chapter===0?run.branchSeed:((run.branchSeed^Math.imul(chapter,0x9e3779b9))>>>0)||1,base=routeGraph(seed,stages,procedural),offset=chapter*stages.length;
  const nodes=base.nodes.map(n=>({...n,id:`${n.row+offset}-${n.lane}`,row:n.row+offset,next:n.next.map(id=>`${Number(id.split('-')[0])+offset}-${id.split('-')[1]}`)}));
- if(procedural)for(const node of nodes)if(node.kind==='capture'){
-  const basics=[1,4,7,25,133,152,10,16,19,23,43,27,37,50,74,39,41,52,54,63,129,147],advanced=[2,3,5,6,8,9,26,134,135,136,153,154,...stages.flatMap(s=>s.pool||[])];
-  node.stage={...node.stage,pool:chapter===0?basics:[...new Set([...basics,...advanced])].filter(id=>chapter>=3||![150,149,131,123].includes(id))};
- }
  const last=nodes.find(n=>n.row===offset+stages.length-1);last.next=Array.from({length:4},(_,i)=>`${offset+stages.length}-${i}`);
  const rows={};for(const n of nodes)(rows[n.row]||=[]).push(n);
  const graph={nodes,rows,height:base.height,byId:new Map(nodes.map(n=>[n.id,n]))};if(chapters.size>=64)chapters.delete(chapters.keys().next().value);chapters.set(key,graph);return graph;

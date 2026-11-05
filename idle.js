@@ -4,6 +4,7 @@ import * as L from "./landmarks.js";
 export const MAX_IDLE_MS = 8 * 60 * 60 * 1000;
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
 export function idleStepCost(run, world) {
+  if (run.introChoicePending || (run.introPending && run.introMode === 'random')) return null;
   if (TERMINAL.has(run.phase) || run.phase === "evolution") return null;
   if(run.introPending)return 3700;
   if (run.pendingGrowth || run.pendingAwakenings?.length || run.regionEntry) return 1600;

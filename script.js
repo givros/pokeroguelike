@@ -1,14 +1,14 @@
 import * as E from "./engine.js";
 import * as L from "./landmarks.js";
 import {RouteCamera} from "./route-camera.js";
-import {configureTranslations,setLocale,PresentationLocalizer} from "./localization.js";
+import {configureTranslations,setLocale,PresentationLocalizer,frenchName} from "./localization.js";
 import { expeditionGraph, ROUTE_KINDS } from "./route-graph.js";
 import { mapArtworkStyle, applyMapArtwork } from "./artwork-layout.js";
 import { JourneyCheckpoint } from "./checkpoint.js";
 import { GUARDIANS, guardianAbility, guardianState } from "./guardians.js";
 import { advanceIdle } from "./idle.js";
 import { PLANS, planDecision, applyPlanDecision } from "./plans.js";
-import { readState, writeState } from "./storage.js";
+import { openSaveSession, readState, resetSave, writeState } from "./storage.js";
 import { BattleEffects, IMPACT_ASSETS, PROJECTILE_ASSETS } from "./presentation.js";
 import { discoveryRecords } from "./field-guide.js";
 import { GameAudio } from "./audio.js";
@@ -20,6 +20,7 @@ const effects = new BattleEffects();
 const audio = new GameAudio();
 const checkpoint = new JourneyCheckpoint();
 let saveStorage;
+let saveSessionIsCurrent;
 const routeCamera = new RouteCamera();
 try {
   saveStorage = window.localStorage;
@@ -31,6 +32,7 @@ try {
     setItem() {
       throw new Error("Storage unavailable");
     },
+    removeItem() {},
   };
 }
 let catalogue,
@@ -51,9 +53,10 @@ let catalogue,
   saveAt = 0;
 const workWaiters = new Set();
 const AUTO = new Set(["travel", "arrival", "battle", "victoryBeat"]);
-const hasAutomaticWork = () => run && (run.introPending || (AUTO.has(run.phase) && !E.needsRouteChoice(run)) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || L.landmarkMoving(run) || planDecision(run));
+let captureReveal = null;
+const captureAnimating = () => captureReveal !== null && run?.pendingCapture === captureReveal;
+const hasAutomaticWork = () => run && !run.introChoicePending && (run.introPending || captureAnimating() || (AUTO.has(run.phase) && !E.needsRouteChoice(run)) || run.pendingGrowth || run.regionEntry || run.pendingAwakenings?.length || L.landmarkMoving(run) || planDecision(run));
 const TERMINAL = new Set(["complete", "defeat", "retired"]);
-const STARTERS = [1, 4, 7, 25, 133, 152];
 const NAME_TYPES = {
   grass: "Grass",
   poison: "Poison",
@@ -86,13 +89,18 @@ const esc = (s) =>
   );
 const art = (asset, cls = "", alt = "") =>
   `<img class="item-art ${cls}" src="assets/generated/${asset}.webp" alt="${esc(alt)}" draggable="false">`;
-const mon = (id, cls = "") =>
-  `<img class="pokemon-art ${cls}" data-species="${id}" src="${catalogue.pokemon[id].artwork}" alt="${esc(catalogue.pokemon[id].name)}" draggable="false">`;
+const mon = (id, cls = "", loading = "eager") =>
+  `<img class="pokemon-art ${cls}" data-species="${id}" src="${catalogue.pokemon[id].artwork}" alt="${esc(catalogue.pokemon[id].name)}" loading="${loading}" draggable="false">`;
 const visualHeroId = () => run.pendingGrowth?.fromId || run.hero.id;
 const button = (label, action, value = "", cls = "", disabled = false) =>
   `<button class="${cls}" data-action="${action}" data-value="${value}" ${disabled ? "disabled" : ""}>${label}</button>`;
+function keepSaveSession() {
+  if (!saveSessionIsCurrent || saveSessionIsCurrent()) return true;
+  location.reload();
+  return false;
+}
 function persist() {
-  if (fatal || !meta) return false;
+  if (fatal || !meta || !keepSaveSession()) return false;
   if (run?.idleEnabled) run.idleAt = !paused && !titleMode && !TERMINAL.has(run.phase) ? Date.now() : null;
   checkpoint.capture(meta,run);
   saveAvailable = writeState(saveStorage, meta, run);
@@ -123,6 +131,7 @@ function syncSaveNotice() {
   if (modal === "save-notice") updateMenuScroll();
 }
 function interruptJourney(error) {
+  if (!keepSaveSession()) return;
   invalidateWork();
   fatal = error?.message || "An unexpected error interrupted the journey.";
   modal = null;
@@ -168,7 +177,9 @@ function battleKindView() {
 }
 function hud() {
   const stage = E.stage(run);
-  return `<header class="game-hud"><div class="hud-left paper-panel">${art("gold-coins")}<strong id="hud-coins">${run.coins}</strong><span class="hud-score">${run.wins} ${run.wins === 1 ? "victory" : "victories"}</span></div><div class="stage-heading"><small>THE GUARDIAN TRAIL · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}</small><strong>${E.needsRouteChoice(run)?"Choose your route":stage.name}</strong>${battleKindView()}</div><div class="hud-controls"><div class="speed-select paper-panel">${[
+  const stageName = stage.kind === 'capture' && ['battle', 'capture'].includes(run.phase)
+    ? 'Capture encounter' : stage.name;
+  return `<header class="game-hud"><div class="hud-left paper-panel">${art("gold-coins")}<strong id="hud-coins">${run.coins}</strong><span class="hud-score">${run.wins} ${run.wins === 1 ? "victory" : "victories"}</span></div><div class="stage-heading"><small>THE GUARDIAN TRAIL · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}</small><strong>${E.needsRouteChoice(run)?"Choose your route":stageName}</strong>${battleKindView()}</div><div class="hud-controls"><div class="speed-select paper-panel">${[
     ["Slow", 2000],
     ["Normal", 1500],
     ["Fast", 750],
@@ -198,28 +209,62 @@ function heroCard() {
   return `<div class="map-hero-card paper-panel">${mon(h.id)}<div><strong>${catalogue.pokemon[h.id].name}</strong><small>Level ${h.level}${run.plan && run.plan !== "manual" ? ` · <button class="plan-link" data-action="plans">${PLANS.find(p=>p.id===run.plan).name}</button>` : ""}</small><span class="map-hp-value">${h.hp} / ${h.maxHp} HP</span>${health(h)}</div></div>`;
 }
 function titleView() {
-  const saved=run&&!TERMINAL.has(run.phase),selected=meta.startingPartner&&meta.captured[meta.startingPartner]&&catalogue.pokemon[meta.startingPartner]?Number(meta.startingPartner):null;
-  return `<div class="title-scene"><div class="title-shade"></div>${languageControl()}<div class="title-brand"><small>ENDLESS ROGUELITE · AUTOMATIC BATTLES</small><h1>POKÉ<span>ROGUE</span></h1><p>THE GUARDIAN TRAIL</p></div><div class="title-stats"><span>Best depth <b>${meta.bestDepth}</b></span><span>Legacy marks <b>${meta.legacyMarks}</b></span><span class="title-gold">${art('gold-coins')}<b>${meta.gold}</b></span></div>
+  const saved = run && !TERMINAL.has(run.phase);
+  const selected = E.selectedStartingPartner(meta, catalogue);
+  return `<div class="title-scene"><div class="title-shade"></div>${languageControl()}${button('Start over from scratch','reset-save','','paper-panel reset-save-button title-reset')}<div class="title-brand"><small>ENDLESS ROGUELITE · AUTOMATIC BATTLES</small><h1>POKÉ<span>ROGUE</span></h1><p>THE GUARDIAN TRAIL</p></div><div class="title-stats"><span>Best depth <b>${meta.bestDepth}</b></span><span>Legacy marks <b>${meta.legacyMarks}</b></span><span class="title-gold">${art('gold-coins')}<b>${meta.gold}</b></span></div>
   ${saved?`<div class="resume-adventure">${button(`Resume expedition · depth ${run.stageIndex+1}`,'resume','','paper-panel main-button')}</div>`:''}
-  <section class="expedition-launch">${selected?mon(selected,'launch-partner'):art('capture-ball','launch-ball')}<h2>${selected?catalogue.pokemon[selected].name:'A random partner awaits'}</h2><p>${selected?'Your captured partner joins the next expedition.':'Your partner is revealed when the expedition begins.'}</p>${button(saved?'Begin another expedition':'Begin expedition','random-start','','paper-panel main-button')}</section>
+  <section class="expedition-launch">${selected?mon(selected,'launch-partner'):art('capture-ball','launch-ball')}<h2>${selected?catalogue.pokemon[selected].name:'A random partner awaits'}</h2><p>${selected?'Your captured partner joins the next expedition.':'Your partner is revealed when the expedition begins.'}</p><div class="launch-actions${selected ? ' launch-actions-pair' : ''}">${selected ? button('Start with this partner','chosen-start','','paper-panel main-button') : ''}${button('Draw at random','random-start','','paper-panel main-button')}</div></section>
   <div class="title-actions">${button(`${art('offering-bowl')}Legacy camp`,'legacy','','paper-panel')}${button(`${art('capture-ball')}Partner collection`,'partners','','paper-panel')}${button('Field guide','guide','','paper-panel')}${button('How to play','help','','paper-panel')}</div></div>`;
 }
+const rarityLabels = { common: 'Common', rare: 'Rare', legendary: 'Legendary', mythical: 'Mythical' };
+const rarityOf = species => species.mythical ? 'mythical' : species.rarity ?? 'common';
+
+function rarityBadge(rarity) {
+  return `<span class="roll-rarity" data-reveal-rarity="${rarity}">${rarityLabels[rarity]}</span>`;
+}
+
+function specialCaptureRarity(attempt) {
+  if (!attempt?.caught) return null;
+  const species = catalogue.pokemon[attempt.id];
+  return species.rarity === 'legendary' ? rarityOf(species) : null;
+}
+
+const rollWinnerIndex = 14;
+
+function starterChoices() {
+  const owned = Object.keys(meta.captured).map(id => catalogue.pokemon[id]).filter(Boolean);
+  return `<section class="roll-choices" data-roll-choices ${run.introChoicePending ? '' : 'hidden'}>
+    ${button('Keep this draw','accept-starter-draw','','paper-panel main-button')}
+    <div class="roll-collection"><h3>Captured partners</h3>
+      ${owned.length ? `<div class="roll-collection-list">${owned.map(({id,name}) =>
+        button(`${mon(id, '', 'lazy')}<span>${esc(name)}</span>`,'choose-captured-starter',id,'roll-captured-partner')
+      ).join('')}</div>` : '<p>No partners captured yet.</p>'}
+    </div>
+  </section>`;
+}
+
 function starterRollView(){
- const chosen=run.introMode==='chosen',pool=[...new Set([1,4,7,25,133,152,...Object.keys(meta.captured).map(Number).filter(id=>catalogue.pokemon[id])])];
- let seed=(run.initialSeed^0x1b873593)>>>0;const picks=Array.from({length:36},()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return pool[(seed>>>0)%pool.length];});picks[30]=run.hero.id;
- return `<section id="partner-roll" class="partner-roll-scene"><div class="title-shade"></div><div class="partner-roll-content"><small>${chosen?'YOUR CHOSEN PARTNER':'A NEW EXPEDITION BEGINS'}</small><h1>${chosen?'Your partner is ready':'Your next partner'}</h1>${chosen?mon(run.hero.id,'chosen-reveal'):`<div class="roll-window paper-panel"><div class="roll-strip">${picks.map((id,index)=>`<div class="roll-item" data-roll-index="${index}">${mon(id)}<strong>${catalogue.pokemon[id].name}</strong></div>`).join('')}</div><div class="roll-marker">${art('capture-ball')}</div></div>`}<h2 data-roll-result>${chosen?catalogue.pokemon[run.hero.id].name:'Selecting your partner…'}</h2><p>Your adventure will begin in a moment.</p></div></section>`;
+ const chosen = run.introMode === 'chosen';
+ const reel = { seed: ((run.initialSeed ^ 0x1b873593) >>> 0) || 1 };
+ const picks = Array.from({length:rollWinnerIndex + 5}, () => E.drawCatalogueSpecies(catalogue, E.random(reel)));
+ picks[rollWinnerIndex] = run.hero.id;
+ return `<section id="partner-roll" class="partner-roll-scene${chosen ? '' : ' roll-with-choices'}"><div class="title-shade"></div><div class="partner-roll-content"><h1>${chosen?'Your partner is ready':'Your next partner'}</h1>${chosen?mon(run.hero.id,'chosen-reveal'):`<div class="roll-window paper-panel"><div class="roll-strip">${picks.map((id,index)=>`<div class="roll-item" data-roll-index="${index}">${mon(id)}<strong>${catalogue.pokemon[id].name}</strong></div>`).join('')}</div><div class="roll-marker">${art('capture-ball')}</div></div>`}<div class="roll-result" role="status" aria-atomic="true"><h2 data-roll-result>${chosen?catalogue.pokemon[run.hero.id].name:'Selecting your partner…'}</h2>${chosen?'':'<span class="roll-rarity" data-roll-rarity></span>'}</div>${chosen ? '' : starterChoices()}</div></section>`;
 }
 
 function battleCard(m, side) {
   const s = catalogue.pokemon[m.id];
-  const barrier = side === "ally" && (run.skill==='ward'||activeSynergies(run).some((recipe) => recipe.id === "lifebloom"));
+  const barrier = side === "ally" && (run.skill==='ward'||E.count(run,'trail_barrier')||activeSynergies(run).some((recipe) => recipe.id === "lifebloom"));
   const ability = side === "enemy" ? guardianAbility(run) : null;
   return `<section class="battle-card ${side}-card ${barrier ? "has-barrier" : ""} paper-panel"><div class="fighter-name"><strong>${s.name}</strong><span>Lv. ${m.level}</span></div><div class="fighter-meta"><small data-fighter-types>${s.types.map((t) => NAME_TYPES[t] || t).join(" / ")}</small>${ability ? button(ability.name, "opponent", "", "guardian-ability") : ""}${barrier ? `<span class="barrier-label">Barrier <b data-barrier-value>${m.shield || 0}</b></span>` : ""}</div><div class="fighter-hp">${health(m)}<span>${m.hp} / ${m.maxHp}</span></div>${barrier ? `<div class="barrier-track"><div class="barrier-fill" style="width:${((m.shield || 0) / Math.ceil(m.maxHp * 0.2)) * 100}%"></div></div>` : ""}</section>`;
 }
 function battleView() {
   const h = { ...run.hero, id: visualHeroId() },
     e = run.enemy;
-  return `<div id="battle-scene" style="--battle-arena:url(assets/generated/${E.region(run).arena}.webp)"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${esc(narration || run.log.at(-1))}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTORY</div>' : ""}</div>`;
+  const species = catalogue.pokemon[e.id];
+  const reading = run.phase === 'battle' && run.battleActions === 0 && !narration
+    ? `<span>${esc(species.name)} challenges you!</span>${rarityBadge(rarityOf(species))}`
+    : esc(narration || run.log.at(-1));
+  return `<div id="battle-scene" style="--battle-arena:url(assets/generated/${E.region(run).arena}.webp)"><div id="battle-camera"><div class="arena-shade"></div><div class="actor actor-ally ${h.hp <= 0 ? "fainted" : ""}">${mon(h.id, "body-art")}</div><div class="actor actor-enemy ${e.hp <= 0 ? "fainted" : ""}">${mon(e.id, "body-art")}</div></div><div id="battle-cards">${battleCard(h, "ally")}${battleCard(e, "enemy")}</div>${buffRail()}<div class="battle-narration paper-panel" aria-live="polite">${reading}</div>${run.phase === "victoryBeat" ? '<div class="victory-banner">VICTORY</div>' : ""}</div>`;
 }
 function worldProp(p) {
   return `<img class="map-prop" src="assets/generated/${p.asset}.webp" alt="" style="left:${p.x * 100}%;top:${p.y * 100}%;width:${p.w * 100}%;height:${p.h * 100}%;z-index:${p.layer === "ground" ? 30 : Math.round(p.y * 1000)}" draggable="false">`;
@@ -256,6 +301,48 @@ function mapView() {
   const activity = run.landmark?.state === "approaching" ? "approaches the next halt" : run.landmark?.state === "returning" ? "returns to the trail" : "travels to the next destination";
   return `<div id="map-scene"><div class="map-canvas"><img class="map-foundation" src="${biome.base}" alt="${esc(E.region(run).name)}">${biome.props.map(worldProp).join("")}${destinationProp()}<div id="map-actor" class="map-actor ${walking ? "walking" : ""}" style="left:${x * 100}%;top:${y * 100}%;z-index:${Math.round(y * 1000)};--map-facing:${L.mapFacing(run, world)};${mapArtworkStyle(catalogue.artworkLayout[visualHeroId()])}" data-x="${x}" data-y="${y}">${mon(visualHeroId(), "body-art")}</div></div>${heroCard()}${walking ? `<div class="travel-caption paper-panel"><strong>${catalogue.pokemon[run.hero.id].name} ${activity}</strong><span>On the way to ${esc(E.stage(run).name)}</span></div>` : ""}${encounterDock()}</div>`;
 }
+
+const encounterScenes = {
+  cache: { backdrop: 'ancient-shrine-arena', prop: 'supply-chest' },
+  shop: { backdrop: 'forest-arena', prop: 'merchant-cart' },
+  camp: { backdrop: 'mist-lake-arena', prop: 'rest-spring' },
+};
+
+function landmarkSceneView(entering) {
+  const {backdrop, prop} = encounterScenes[run.phase];
+  const id = visualHeroId();
+  return `<div id="landmark-scene" class="landmark-scene${entering ? ' landmark-entry' : ''}" style="--landmark-backdrop:url('assets/generated/${backdrop}.webp')">
+    <div class="landmark-layout">
+      <div class="landmark-stage" aria-hidden="true">
+        <div id="map-actor" class="landmark-visitor" style="${mapArtworkStyle(catalogue.artworkLayout[id])}">${mon(id, 'body-art')}</div>
+        <div class="landmark-prop landmark-prop-${run.phase}">${art(prop)}</div>
+      </div>
+      ${encounterDock()}
+    </div>
+  </div>`;
+}
+
+function captureSceneView() {
+  const attempt = run.pendingCapture;
+  const animating = captureAnimating();
+  const captured = attempt.caught && !animating;
+  const rarity = captured ? specialCaptureRarity(attempt) : null;
+  const id = visualHeroId();
+  return `<div id="landmark-scene" class="landmark-scene capture-scene${rarity ? ' roll-special' : ''}" ${rarity ? `data-reveal-rarity="${rarity}"` : ''} style="--landmark-backdrop:url('assets/generated/${E.region(run).arena}.webp')">
+    <div class="landmark-layout">
+      <div class="landmark-stage" aria-hidden="true">
+        <div id="map-actor" class="landmark-visitor" style="${mapArtworkStyle(catalogue.artworkLayout[id])}">${mon(id, 'body-art')}</div>
+        <div class="capture-spot">
+          <div class="capture-wild" ${captured ? 'hidden' : ''}>${mon(attempt.id)}</div>
+          <div class="capture-ball-position" ${!captured && !animating ? 'hidden' : ''}>
+            <div class="capture-portrait">${art('capture-ball')}</div>
+          </div>
+        </div>
+      </div>
+      ${encounterDock()}
+    </div>
+  </div>`;
+}
 function choice(asset, title, text, action, value, disabled = false) {
   return button(
     `${art(asset)}<span><strong>${title}</strong><small>${text}</small></span>`,
@@ -265,8 +352,8 @@ function choice(asset, title, text, action, value, disabled = false) {
     disabled,
   );
 }
-function bonusChoices(action = "bonus") {
-  return run.offers
+function bonusChoices(action = "bonus", offers = run.offers) {
+  return offers
     .map((id) => {
       const b = E.BONUSES.find((b) => b.id === id);
       const empowered = run.phase === "shrine" && run.shrineEmpowered;
@@ -324,8 +411,20 @@ function purchaseDescription(key, preview) {
 function encounterDock() {
   if (run.pendingGrowth || run.pendingAwakenings?.length) return "";
   if(run.phase==='capture'&&run.pendingCapture){
-    const attempt=run.pendingCapture,name=catalogue.pokemon[attempt.id].name;
-    return `<section class="encounter-dock paper-panel capture-dock"><h2>${attempt.attempted?attempt.caught?'Capture successful':'The Pokémon escaped':'A defeated Pokémon can be captured'}</h2><div class="capture-content"><div class="capture-target">${mon(attempt.id)}<strong>${name}</strong></div><div class="capture-actions">${attempt.attempted?`<p>${attempt.caught?'This partner is secured. After returning to camp, it can be selected for another expedition.':'The capture failed. Your victory rewards are still yours.'}</p>${button('Continue the journey','capture-continue','','paper-panel')}`:`<p>One attempt. Capture chance: ${Math.round(attempt.chance*100)}%.</p>${choice('capture-ball','Attempt capture','Successful captures unlock this Pokémon as a future starting partner.','capture-attempt','')}${button('Leave without capturing','capture-skip','','dock-builds')}`}</div></div></section>`;
+    const attempt = run.pendingCapture;
+    const name = esc(catalogue.pokemon[attempt.id].name);
+    const animating = captureAnimating();
+    const rarity = animating ? null : specialCaptureRarity(attempt);
+    const title = animating ? 'Capture in progress' : !attempt.attempted ? 'A defeated Pokémon can be captured' : attempt.caught ? 'Capture successful' : 'The Pokémon escaped';
+    const resultText = attempt.caught
+      ? 'This partner is secured. After returning to camp, it can be selected for another expedition.'
+      : 'The capture failed. Your victory rewards are still yours.';
+    const actions = animating
+      ? '<p data-capture-reading role="status">Throwing the Pokéball…</p>'
+      : attempt.attempted
+        ? `<p>${resultText}</p>${button('Continue the journey','capture-continue','','paper-panel')}`
+        : `<p>One attempt. Capture chance: ${Math.round(attempt.chance*100)}%.</p>${choice('capture-ball','Attempt capture','Successful captures unlock this Pokémon as a future starting partner.','capture-attempt','')}${button('Leave without capturing','capture-skip','','dock-builds')}`;
+    return `<section class="encounter-dock paper-panel capture-dock"><h2>${title}</h2><div class="capture-name"><strong>${name}</strong>${rarity ? rarityBadge(rarity) : ''}</div><div class="capture-actions">${actions}</div></section>`;
   }
   let title = "",
     content = "";
@@ -373,7 +472,7 @@ function encounterDock() {
       );
   }
   if (run.phase === "cache") {
-    title = "A discovery along the trail";
+    title = "The supply chest";
     content =
       choice(
         "gold-coins",
@@ -416,8 +515,20 @@ function encounterDock() {
     ? `<section class="encounter-dock paper-panel"><h2>${title}</h2><div class="dock-choices">${content}</div>${run.phase === "shrine" ? offeringControl() : ""}${["reward", "shrine"].includes(run.phase) ? `<div class="reward-tools">${button("View build combinations", "builds", "", "dock-builds")}${rerollControl()}</div>` : ""}${note ? `<p class="dock-note">${esc(note)}</p>` : ""}</section>`
     : "";
 }
+let starterBoonCategory = 'all';
+const boonCategories = {all:'All boons',offense:'Offense',defense:'Defense',expedition:'Expedition'};
+
+function starterBoonChoices() {
+  const offers = starterBoonCategory === 'all' ? run.offers : run.offers.filter(id =>
+    E.BONUSES.find(boon => boon.id === id)?.category === starterBoonCategory);
+  return bonusChoices('bonus', offers);
+}
+
 function starterBonusView() {
-  return `<div class="starter-bonus-scene">${mon(run.hero.id, "bonus-partner")}<section class="initial-bonus-dock paper-panel"><small>PREPARE YOUR EXPEDITION</small><h2>Choose your first boon</h2><div class="dock-choices">${bonusChoices()}</div><div class="reward-tools">${button("View build combinations", "builds", "", "dock-builds")}${button("Expedition plan", "plans", "", "dock-builds")}</div><p>Your partner fights automatically. Your choices shape the journey.</p></section></div>`;
+  const options = Object.entries(boonCategories).map(([value,label]) =>
+    `<option value="${value}"${starterBoonCategory === value ? ' selected' : ''}>${label}</option>`
+  ).join('');
+  return `<div class="starter-bonus-scene"><section class="initial-bonus-dock paper-panel" aria-labelledby="starter-boon-title"><h2 id="starter-boon-title">Choose your first boon</h2><div class="starter-boon-toolbar"><span><b>${run.offers.length}</b> <span>boons available</span></span><select data-starter-boon-category aria-label="Boon category">${options}</select></div><div class="dock-choices">${starterBoonChoices()}</div><div class="reward-tools">${button("View build combinations", "builds", "", "dock-builds")}${button("Expedition plan", "plans", "", "dock-builds")}</div></section></div>`;
 }
 function legacySummary(){
  const reward=run.legacyReward;if(!reward)return '';
@@ -442,14 +553,14 @@ function render() {
   }
   const mode = titleMode
     ? "title"
-    : run.introPending ? "roll" : run.phase === "starter"
+    : run.introPending || run.introChoicePending ? "roll" : run.phase === "starter"
       ? "starter"
       : TERMINAL.has(run.phase)
         ? "ending"
         : run.enemy && ["battle", "victoryBeat"].includes(run.phase)
           ? "battle"
-          : "map";
-  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "roll"?starterRollView():mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mapView()}`}${saveNoticeView()}<div id="menu-host"></div></div>`;
+          : run.phase === 'capture' ? 'capture' : Object.hasOwn(encounterScenes, run.phase) ? "landmark" : "map";
+  app.innerHTML = `<div class="game-screen mode-${mode} ${paused ? "paused" : ""}" data-phase="${run?.phase || "title"}">${mode === "title" ? titleView() : mode === "ending" ? endingView() : `${hud()}${mode === "roll"?starterRollView():mode === "starter" ? starterBonusView() : mode === "battle" ? battleView() : mode === 'capture' ? captureSceneView() : mode === "landmark" ? landmarkSceneView(!q('#landmark-scene')) : mapView()}`}${saveNoticeView()}<div id="menu-host"></div></div>`;
   if (!titleMode && run) {
     const heading = q(".stage-heading small");
     if (heading) heading.textContent = run.endless?`ENDLESS · DEPTH ${run.stageIndex+1}`:`${run.threat ? `THREAT ${run.threat}` : E.region(run).name.toUpperCase()} · ${String(run.stageIndex + 1).padStart(2, "0")} / ${E.STAGES.length}`;
@@ -464,6 +575,7 @@ function render() {
       }
     }
   }
+  if (mode === 'roll' && run.introChoicePending) showStarterResult(q('#partner-roll'));
   if (modal) renderMenu();
   localizer.refresh();
   const viewport=q('.route-viewport');
@@ -580,9 +692,40 @@ function legacyView(){
  const active=run&&!TERMINAL.has(run.phase);
  return `<h2>Legacy camp</h2><p><strong>${meta.gold} gold · ${meta.legacyMarks} legacy marks · Best depth ${meta.bestDepth}</strong></p><p>Defeat ends the expedition, but earned gold, captured partners and salvaged equipment return with you. Spend marks to learn skills. Equip one skill and one item before your next adventure.</p>${active?'<p>Return to camp before changing your legacy loadout.</p>':''}<div class="pause-actions">${button('Permanent upgrades','upgrades','','paper-panel')}${button('Trail challenge','threats','','paper-panel')}${button('Partner collection','partners','','paper-panel')}</div><h3>Learned skills</h3><div class="legacy-options">${SKILLS.map(skill=>{const owned=meta.learnedSkills.includes(skill.id),selected=meta.equippedSkill===skill.id;return choice(skill.asset,`${skill.name} · ${selected?'Equipped':owned?'Learned':`${skill.cost} marks`}`,skill.text,owned?'equip-skill':'unlock-skill',selected?'':skill.id,active||!owned&&meta.legacyMarks<skill.cost);}).join('')}</div><h3>Equipment</h3><p>Elites and guardians drop equipment. It is secured after defeat or returning to camp. Select an owned item to equip it; select it again to remove it.</p><div class="legacy-options">${EQUIPMENT.filter(item=>meta.equipment[item.id]).map(item=>choice(item.asset,`${item.name} · Tier ${meta.equipment[item.id]}${meta.equippedGear===item.id?' · Equipped':''}`,item.text,'equip-gear',meta.equippedGear===item.id?'':item.id,active)).join('')||'<p>No equipment yet. Defeat an elite or guardian to find your first item.</p>'}</div>`;
 }
-function partnersView(){
- const active=run&&!TERMINAL.has(run.phase),owned=Object.keys(meta.captured).map(Number).filter(id=>catalogue.pokemon[id]);
- return `<h2>Partner collection</h2><p>A new expedition begins with a random partner. Pokémon captured during previous expeditions can be selected here instead. Pokéball encounters hide their Pokémon until battle; defeat it before attempting a capture.</p>${button(`Random partner${!meta.startingPartner?' · Selected':''}`,'partner-choice','','paper-panel',active)}<div class="captured-partners">${owned.map(id=>button(`${mon(id)}<span><strong>${catalogue.pokemon[id].name}${meta.startingPartner===id?' · Selected':''}</strong><small>${catalogue.pokemon[id].types.map(t=>NAME_TYPES[t]).join(' / ')} · Captured ${meta.captured[id]}</small></span>`,'partner-choice',id,'captured-partner',active)).join('')||'<p>No captured partners yet. Find a Pokéball encounter and win the battle to try your first capture.</p>'}</div>`;
+let partnerRarityFilter = 'all';
+let partnerSearch = '';
+const normalizePartnerName = name => name.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+
+function capturedPartnersView() {
+  const active = run && !TERMINAL.has(run.phase);
+  const owned = Object.keys(meta.captured).map(id => catalogue.pokemon[id]).filter(Boolean);
+  if (!owned.length) return '<p>No captured partners yet. Find a Pokéball encounter and win the battle to try your first capture.</p>';
+  const query = normalizePartnerName(partnerSearch);
+  const visible = owned.filter(species => {
+    if (partnerRarityFilter !== 'all' && rarityOf(species) !== partnerRarityFilter) return false;
+    return !query || [species.name, frenchName(species.name)].some(name => normalizePartnerName(name).includes(query));
+  });
+  if (!visible.length) return query ? '<p>No captured Pokémon matches your search.</p>' : '<p>No captured Pokémon of this rarity.</p>';
+  return visible.map(species => {
+    const {id, name, types} = species;
+    const selected = meta.startingPartner === id ? ' · Selected' : '';
+    const label = `${mon(id, '', 'lazy')}<span><strong>${esc(name)}${selected}</strong>${rarityBadge(rarityOf(species))}<small>${types.map(type => NAME_TYPES[type]).join(' / ')} · Captured ${meta.captured[id]}</small></span>`;
+    return button(label, 'partner-choice', id, 'captured-partner', active);
+  }).join('');
+}
+
+function partnersView() {
+  const active = run && !TERMINAL.has(run.phase);
+  const options = Object.entries({all: 'All rarities', ...rarityLabels}).map(([value, label]) =>
+    `<option value="${value}"${value === partnerRarityFilter ? ' selected' : ''}>${label}</option>`
+  ).join('');
+  return `<h2>Partner collection</h2><p>${active ? 'You can change your starting partner when you return to camp.' : 'Choose a captured Pokémon for your next expedition.'}</p>
+    <div class="partner-collection-controls">${button(`Random partner${!meta.startingPartner ? ' · Selected' : ''}`, 'partner-choice', '', 'paper-panel', active)}
+    <div class="partner-filters">
+      <label><span>Pokémon name</span><input type="search" data-partner-search aria-controls="captured-partners" value="${esc(partnerSearch)}" autocomplete="off" spellcheck="false"></label>
+      <label><span>Filter by rarity</span><select data-partner-rarity aria-controls="captured-partners">${options}</select></label>
+    </div></div>
+    <div id="captured-partners" class="captured-partners">${capturedPartnersView()}</div>`;
 }
 function plansView() {
   return `<h2>Expedition plan</h2><p>Choose a strategy for this expedition. An active plan selects routes, boons, supplies, spring actions and capture attempts, and may spend expedition gold at the merchant. Reforges and Eevee’s evolution remain your decisions.</p><div class="plan-options">${PLANS.map(plan=>choice(plan.asset, plan.name + ((run.plan || "manual") === plan.id ? " · Selected" : ""), plan.text, "set-plan", plan.id)).join("")}</div><p>Plans run while this game is visible. Pause or switch to Manual at any time.</p>${button(`Away progression: ${run.idleEnabled ? "On" : "Off"}`, "idle-toggle", "", "paper-panel", !run.plan || run.plan === "manual")}<p>When enabled, your plan can progress after this window is hidden or closed, for up to eight hours. Pause stops away progression. Eevee waits for your evolution choice. Each expedition ends at victory or defeat; another expedition requires your choice.</p>`;
@@ -601,6 +744,9 @@ function threatView() {
   }).join("")}</div><p>Your selected challenge is saved for new expeditions. An expedition keeps its starting threat, including away progression.</p>`;
 }
 function menuContent() {
+  if (modal === 'reset-save') {
+    return `<h2>Start over from scratch?</h2><p>Your current expedition, captured Pokémon, upgrades and settings will be permanently erased.</p><p class="reset-save-error" role="alert" hidden>The save could not be erased.</p><div class="pause-actions">${button('Cancel','close','','paper-panel main-button')}${button('Erase all progress','confirm-reset-save','','paper-panel reset-save-button')}</div>`;
+  }
   if(modal==='legacy')return legacyView();
   if(modal==='partners')return partnersView();
   if (modal === "threats") return threatView();
@@ -615,7 +761,7 @@ function menuContent() {
   if (modal === "pause")
     return `<h2>Pause</h2><p>Battle and travel are paused.</p>${audioControl()}<div class="pause-actions">${button("Resume", "close", "", "paper-panel main-button")}${button("Expedition plan", "plans", "", "paper-panel")}${button("Partner & moves", "partner", "", "paper-panel")}${button("Expedition boons", "journal", "", "paper-panel")}${button("Know the guardians", "guardians", "", "paper-panel")}${button("Field guide", "guide", "", "paper-panel")}${button("How to play", "help", "", "paper-panel")}${button("Return to camp", "retire", "", "paper-panel", TERMINAL.has(run.phase))}</div>`;
   if (modal === "retire" || modal === "replace")
-    return `<h2>Return to camp?</h2><p>This expedition will end. Your gold and victories will be retained.</p><div class="pause-actions">${button("Continue the journey", "close", "", "paper-panel main-button")}${button("End expedition", "confirm-retire", pendingStarter || "", "", "")}</div>`;
+    return `<h2>Return to camp?</h2><p>This expedition will end. Your gold and victories will be retained.</p><div class="pause-actions">${button("Continue the journey", "close", "", "paper-panel main-button")}${button("End expedition", "confirm-retire")}</div>`;
   if (modal === "upgrades")
     return `<h2>Permanent upgrades</h2><p class="menu-money">${art("gold-coins")}${meta.gold} gold</p><div class="upgrade-list">${Object.entries(
       E.UPGRADE_DEFS,
@@ -657,8 +803,11 @@ window.addEventListener("resize", updateMenuScroll);
 function renderMenu() {
   const host = q("#menu-host");
   if (!host) return;
+  const resetButton = ['pause', 'legacy'].includes(modal)
+    ? button('Start over from scratch', 'reset-save', '', 'paper-panel reset-save-button')
+    : '';
   host.innerHTML = modal
-    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top"><span class="menu-scroll-note" hidden></span>${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}${modal==='pause'?button('Legacy camp','legacy','','paper-panel')+mobileSpeedControl():''}${['help','pause'].includes(modal)?languageControl():''}</div></dialog>`
+    ? `<dialog aria-labelledby="menu-heading"><div class="menu-top"><span class="menu-scroll-note" hidden></span>${button("Close", "close", "", "menu-close paper-panel")}</div><div class="menu-content">${menuContent()}${modal === "help" ? audioControl() : ""}${modal==='pause'?button('Legacy camp','legacy','','paper-panel')+mobileSpeedControl():''}${['help','pause'].includes(modal)?languageControl():''}${resetButton}</div></dialog>`
     : "";
   if (modal) {
     const d = host.querySelector("dialog");
@@ -700,15 +849,17 @@ function closeMenu() {
 }
 let pendingStarter = null;
 let idleReport = null;
-function begin(id) {
+function begin(id, mode, seed = Date.now()) {
   invalidateWork();
   effects.clear();
   audio.stop();
   audio.setPaused(false);
-  run = E.createRun(id, meta, catalogue, Date.now());
+  run = E.createRun(id, meta, catalogue, seed);
+  starterBoonCategory = 'all';
   E.enableBranching(run);
   E.enableEndless(run,meta);
-  run.introPending=true;run.introMode=meta.startingPartner&&meta.captured[meta.startingPartner]?'chosen':'random';
+  run.introPending = true;
+  run.introMode = mode;
   run.starterId = id;
   titleMode = false;
   modal = null;
@@ -832,7 +983,7 @@ async function playGrowth(token) {
     label.textContent = `${catalogue.pokemon[growth.fromId].name} is evolving…`;
     const reading = q(".battle-narration"), previousReading = narration || run.log.at(-1);
     if (reading) reading.replaceChildren(label);
-    else node.closest("#battle-scene,#map-scene").append(label);
+    else node.closest("#battle-scene,#map-scene,#landmark-scene").append(label);
     q(".victory-banner")?.remove();
     const completed = await effects.evolve(node, catalogue.pokemon[growth.toId].artwork,
       name, (ms) => wait(ms, token, node), () => {node.dataset.species=String(growth.toId);applyMapArtwork(node.closest("#map-actor"), catalogue.artworkLayout[growth.toId]);});
@@ -875,7 +1026,7 @@ async function playRegionEntry(token) {
 async function playAwakening(token) {
   const id = run.pendingAwakenings[0];
   const recipe = SYNERGIES.find((candidate) => candidate.id === id);
-  const scene = q("#map-scene") || q("#battle-scene");
+  const scene = q("#map-scene,#battle-scene,#landmark-scene");
   if (scene && recipe) {
     const toast = document.createElement("section");
     toast.className = "vfx awakening-toast";
@@ -894,21 +1045,136 @@ async function playAwakening(token) {
   persist();
   return true;
 }
-async function playStarterRoll(token){
- const scene=q('#partner-roll');if(!scene)return false;
- const strip=scene.querySelector('.roll-strip'),windowNode=scene.querySelector('.roll-window');
- if(strip&&windowNode){
-  const step=strip.querySelector('.roll-item').getBoundingClientRect().width,start=windowNode.clientWidth/2-step/2,end=windowNode.clientWidth/2-step*30.5;
-  const duration=effects.reduced?250:2800;
-  const animation=effects.animate(strip,[{transform:`translateX(${effects.reduced?end:start}px)`},{transform:`translateX(${end}px)`}],{duration,reducedDuration:250,fill:'forwards',easing:'cubic-bezier(.16,1,.3,1)'});
-  if(!await wait(duration,token,scene))return false;
-  animation?.cancel();strip.style.transform=`translateX(${windowNode.clientWidth/2-step*30.5}px)`;
-  scene.querySelector('[data-roll-result]').textContent=catalogue.pokemon[run.hero.id].name;
-  strip.querySelector('[data-roll-index="30"]').classList.add('roll-winner');
-  audio.play('reward');if(!await wait(900,token,scene))return false;
- }else if(!await wait(800,token,scene))return false;
- if(!live(token))return false;run.introPending=false;persist();return true;
+async function scrollStarterRoll(strip, windowNode, token, scene) {
+  const card = strip.querySelector('.roll-item');
+  const offset = index => windowNode.clientWidth / 2 - card.offsetWidth * (index + 0.5);
+  const start = offset(effects.reduced ? rollWinnerIndex - 2 : 0);
+  const end = offset(rollWinnerIndex);
+  const duration = effects.reduced ? 1150 : 3400;
+  const place = x => { strip.style.transform = `translate3d(${x}px,0,0)`; };
+  place(start);
+
+  // Decode the reel before it moves, with a deadline for slow or missing assets.
+  let deadline;
+  await Promise.race([
+    Promise.allSettled([...strip.querySelectorAll('img')].map(image => image.decode())),
+    new Promise(resolve => { deadline = setTimeout(resolve, 900); }),
+  ]);
+  clearTimeout(deadline);
+
+  let elapsed = 0;
+  let previous;
+  while (live(token) && scene.isConnected && elapsed < duration) {
+    if (paused || document.hidden) {
+      if (!await waitForActivity(token) || !scene.isConnected) return false;
+      previous = undefined;
+    }
+    const now = await new Promise(resolve => requestAnimationFrame(resolve));
+    if (!live(token) || !scene.isConnected) return false;
+    if (paused || document.hidden) continue;
+    // A stalled frame must not advance the reel through portraits the player never saw.
+    if (previous !== undefined) elapsed += Math.min(34, now - previous);
+    previous = now;
+    const progress = Math.min(1, elapsed / duration);
+    const eased = 1 - (1 - progress) ** 2.5;
+    place(start + (end - start) * eased);
+  }
+  if (!live(token) || !scene.isConnected) return false;
+  place(offset(rollWinnerIndex));
+  return true;
 }
+
+function showStarterResult(scene) {
+  const strip = scene.querySelector('.roll-strip');
+  const reel = scene.querySelector('.roll-window');
+  const winner = strip.querySelector(`[data-roll-index="${rollWinnerIndex}"]`);
+  strip.style.transform = `translate3d(${reel.clientWidth / 2 - winner.offsetWidth * (rollWinnerIndex + .5)}px,0,0)`;
+  const species = catalogue.pokemon[run.hero.id];
+  const rarity = rarityOf(species);
+  const special = rarity === 'legendary' || rarity === 'mythical';
+  scene.dataset.revealRarity = rarity;
+  scene.classList.toggle('roll-special', special);
+  scene.querySelector('[data-roll-result]').textContent = species.name;
+  scene.querySelector('[data-roll-rarity]').textContent = rarityLabels[rarity];
+  winner.classList.add('roll-winner');
+  scene.querySelector('[data-roll-choices]').hidden = false;
+  return special;
+}
+
+async function playStarterRoll(token) {
+  const scene = q('#partner-roll');
+  if (!scene) return false;
+  const strip = scene.querySelector('.roll-strip');
+  if (strip) {
+    if (!await scrollStarterRoll(strip, scene.querySelector('.roll-window'), token, scene)) return false;
+    run.introChoicePending = true;
+    audio.play(showStarterResult(scene) ? 'evolve' : 'reward');
+  } else if (!await wait(800, token, scene)) return false;
+  if (!live(token)) return false;
+  run.introPending = false;
+  persist();
+  return true;
+}
+
+async function playCaptureReveal(token) {
+  const scene = q('.capture-scene');
+  const ball = scene?.querySelector('.capture-ball-position');
+  const wild = scene?.querySelector('.capture-wild');
+  const reading = scene?.querySelector('[data-capture-reading]');
+  if (!ball || !wild || !reading) throw new Error('The capture scene is unavailable.');
+  const reduced = effects.reduced;
+  const distance = reduced ? 24 : scene.querySelector('.landmark-stage').clientWidth * .48;
+  const rise = reduced ? 10 : Math.min(105, scene.querySelector('.landmark-stage').clientHeight * .37);
+  const animate = (node, frames, normal, short, easing = 'ease-in-out') => {
+    effects.animate(node, frames, {duration:normal,reducedDuration:short,easing,fill:'forwards'});
+    return wait(reduced ? short : normal, token, scene);
+  };
+
+  audio.play('select');
+  if (!await animate(ball, [
+    {transform:`translate(${-distance}px,-10px) rotate(-28deg)`},
+    {transform:`translate(${-distance * .46}px,${-rise}px) rotate(120deg)`,offset:.52},
+    {transform:'translate(0,-24px) rotate(290deg)',offset:.84},
+    {transform:'translate(0,0) rotate(360deg)'},
+  ], 650, 300, 'linear')) return false;
+
+  if (!await animate(wild, [
+    {opacity:1,transform:'translateY(0) scale(1)'},
+    {opacity:0,transform:'translateY(10%) scale(.12)'},
+  ], 320, 180, 'ease-in')) return false;
+  wild.hidden = true;
+  reading.textContent = 'The Pokéball is shaking…';
+
+  const angle = reduced ? 5 : 17;
+  for (let shake = 0; shake < 3; shake++) {
+    if (!await wait(reduced ? 70 : 140, token, scene)) return false;
+    audio.play('select');
+    if (!await animate(ball, [
+      {transform:'rotate(0deg)'}, {transform:`rotate(${angle}deg)`},
+      {transform:`rotate(${-angle}deg)`}, {transform:'rotate(0deg)'},
+    ], 290, 150)) return false;
+  }
+
+  const result = captureReveal;
+  if (!result.caught) {
+    reading.textContent = 'The Pokémon broke free!';
+    wild.hidden = false;
+    const escape = animate(wild, [
+      {opacity:0,transform:'translateY(10%) scale(.12)'},
+      {opacity:1,transform:'translateY(0) scale(1)'},
+    ], 390, 230, 'ease-out');
+    effects.animate(ball, [
+      {opacity:1,transform:'translateX(0) rotate(0deg)'},
+      {opacity:0,transform:`translateX(${reduced ? 8 : 38}px) rotate(35deg)`},
+    ], {duration:300,reducedDuration:180,fill:'forwards'});
+    if (!await escape) return false;
+  } else {
+    audio.play(specialCaptureRarity(result) ? 'evolve' : 'reward');
+  }
+  captureReveal = null;
+  return true;
+}
+
 async function pump() {
   if (running || titleMode || !run || fatal) return;
   running = true;
@@ -922,7 +1188,7 @@ async function pump() {
         await wait(30, token);
         continue;
       }
-      if(run.introPending){if(!await playStarterRoll(token))break;render();continue;}
+      if(run.introPending){if(!await playStarterRoll(token))break;if(!run.introChoicePending)render();continue;}
       if (run.pendingGrowth && !["battle", "victoryBeat"].includes(run.phase)) {
         if (!await playGrowth(token)) break;
         render();
@@ -930,6 +1196,11 @@ async function pump() {
       }
       if (run.pendingAwakenings?.length) {
         if (!await playAwakening(token)) break;
+        render();
+        continue;
+      }
+      if (captureAnimating()) {
+        if (!await playCaptureReveal(token)) break;
         render();
         continue;
       }
@@ -946,9 +1217,11 @@ async function pump() {
       const decision = planDecision(run);
       if (decision) {
         narration = `${PLANS.find(p=>p.id===run.plan).name} plan is choosing the next step…`;
-        if (!await wait(1100, token)) break;
+        const showingSpecialCapture = decision.action === 'capture' && decision.value === 'continue' && specialCaptureRarity(run.pendingCapture);
+        if (!await wait(showingSpecialCapture ? 1900 : 1100, token)) break;
         if (planDecision(run)?.action !== decision.action || planDecision(run)?.value !== decision.value) continue;
         if (!applyPlanDecision(run, decision, catalogue)) throw new Error("The expedition plan could not apply its choice.");
+        if (decision.action === 'capture' && decision.value === 'attempt') captureReveal = run.pendingCapture;
         persist();
         render();
         continue;
@@ -963,13 +1236,13 @@ async function pump() {
         narration = "";
         persist();
         render();
-        if (run.phase === "battle") await wait(700, token);
         continue;
       }
       if (run.phase === "battle") {
         const scene = q("#battle-scene");
         if (!scene?.querySelector(".actor-ally .body-art") || !scene.querySelector(".actor-enemy .body-art"))
           throw new Error("The battle scene is unavailable.");
+        if (run.battleActions === 0 && !narration && !await wait(1500, token, scene)) break;
         const side = run.nextSide,
           move = E.bestMove(run, catalogue),
           actor = side === "ally" ? run.hero : run.enemy;
@@ -1030,9 +1303,45 @@ async function pump() {
   }
 }
 async function dispatch(action, value) {
-  if(action==='random-start'){
-    const id=E.startingPartner(meta,Date.now(),catalogue);
-    if(run&&!TERMINAL.has(run.phase)){pendingStarter=id;openMenu('replace');}else begin(id);
+  if (!keepSaveSession()) return;
+  if (action === 'accept-starter-draw' || action === 'choose-captured-starter') {
+    if (!run?.introChoicePending || titleMode || modal || paused) return;
+    if (action === 'choose-captured-starter') {
+      const id = Number(value);
+      if (meta.captured[id] && catalogue.pokemon[id]) begin(id, 'chosen', run.initialSeed);
+      return;
+    }
+    run.introChoicePending = false;
+    persist();
+    render();
+    pump();
+    return;
+  }
+  if (action === 'reset-save' && ((titleMode && !modal) || ['pause', 'legacy'].includes(modal))) {
+    openMenu('reset-save');
+    return;
+  }
+  if (action === 'confirm-reset-save' && modal === 'reset-save') {
+    if (!resetSave(saveStorage, document, location.port)) {
+      q('.reset-save-error').hidden = false;
+      return;
+    }
+    // Prevent pagehide from writing the old expedition back during reload.
+    saveSessionIsCurrent = () => false;
+    invalidateWork();
+    location.reload();
+    return;
+  }
+  if (action === 'random-start' || action === 'chosen-start') {
+    const mode = action === 'chosen-start' ? 'chosen' : 'random';
+    const id = mode === 'chosen' ? E.selectedStartingPartner(meta, catalogue) : E.randomStartingPartner(Date.now(), catalogue);
+    if (!id) return;
+    if (run && !TERMINAL.has(run.phase)) {
+      pendingStarter = {id, mode};
+      openMenu('replace');
+    } else {
+      begin(id, mode);
+    }
     return;
   }
   if(['unlock-skill','equip-skill','equip-gear','partner-choice'].includes(action)&&meta&&(!run||TERMINAL.has(run.phase))){
@@ -1133,17 +1442,6 @@ async function dispatch(action, value) {
     }
     return;
   }
-  if (action === "starter") {
-    const id = Number(value);
-    if (!STARTERS.includes(id) || !meta.unlockedStarters[id]) return;
-    if (run && !TERMINAL.has(run.phase)) {
-      pendingStarter = id;
-      openMenu("replace");
-      return;
-    }
-    begin(id);
-    return;
-  }
   if (action === "resume") {
     if (run?.idleEnabled) run.idleCredit = 0;
     titleMode = false;
@@ -1167,7 +1465,7 @@ async function dispatch(action, value) {
     modal = null;
     paused = false;
     pendingStarter = null;
-    if (next) begin(next);
+    if (next) begin(next.id, next.mode);
     else {
       render();
     }
@@ -1185,15 +1483,23 @@ async function dispatch(action, value) {
     return;
   }
   if (action === "retry") {
-    const starter =
-      E.startingPartner(meta,Date.now(),catalogue);
-    begin(starter);
+    const selected = E.selectedStartingPartner(meta, catalogue);
+    begin(selected ?? E.randomStartingPartner(Date.now(), catalogue), selected ? 'chosen' : 'random');
     return;
   }
   if (modal || !run || titleMode || paused || fatal) return;
-  if(action==='capture-attempt'){if(E.attemptCapture(run,catalogue)){persist();render();pump();}return;}
+  if(action==='capture-attempt'){
+    const result = E.attemptCapture(run, catalogue);
+    if (result) {
+      captureReveal = run.pendingCapture;
+      persist();
+      render();
+      pump();
+    }
+    return;
+  }
   if(action==='capture-skip'){if(E.skipCapture(run)){persist();render();pump();}return;}
-  if(action==='capture-continue'){if(run.phase==='capture'&&run.pendingCapture?.attempted&&E.depart(run)){persist();render();pump();}return;}
+  if(action==='capture-continue'){if(!captureAnimating()&&run.phase==='capture'&&run.pendingCapture?.attempted&&E.depart(run)){persist();render();pump();}return;}
   if (action === "evolve") {
     if (E.chooseEvolution(run, Number(value), catalogue)) {
       persist();
@@ -1259,6 +1565,29 @@ function previewRouteEvent(e) {
 }
 app.addEventListener('pointerover',previewRouteEvent);
 app.addEventListener('focusin',previewRouteEvent);
+function refreshCapturedPartners() {
+  q('#captured-partners').innerHTML = capturedPartnersView();
+  localizer.refresh();
+  updateMenuScroll();
+}
+app.addEventListener('input', event => {
+  if (modal !== 'partners' || !event.target.matches('[data-partner-search]')) return;
+  partnerSearch = event.target.value;
+  refreshCapturedPartners();
+});
+app.addEventListener('change', event => {
+  if (event.target.matches('[data-starter-boon-category]') && run?.phase === 'starter') {
+    starterBoonCategory = event.target.value;
+    const choices = q('.initial-bonus-dock .dock-choices');
+    choices.innerHTML = starterBoonChoices();
+    choices.scrollTop = 0;
+    localizer.refresh();
+    return;
+  }
+  if (modal !== 'partners' || !event.target.matches('[data-partner-rarity]')) return;
+  partnerRarityFilter = event.target.value;
+  refreshCapturedPartners();
+});
 app.addEventListener("click", (e) => {
   const node = e.target.closest("[data-action]");
   if (node && !node.disabled) {
@@ -1291,6 +1620,7 @@ function catchUpAbsence() {
   }
 }
 document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && !keepSaveSession()) return;
   if (fatal) return;
   if (document.hidden && run?.idleEnabled && !paused && !titleMode) {
     invalidateWork();
@@ -1308,8 +1638,9 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) { wakeWork(); pump(); }
 });
 window.addEventListener("pagehide", () => {
-  if (meta) persist();
+  if (meta && (!saveSessionIsCurrent || saveSessionIsCurrent())) persist();
 });
+window.addEventListener("focus", keepSaveSession);
 async function boot() {
   try {
     const response = await Promise.all(
@@ -1323,6 +1654,7 @@ async function boot() {
     );
     catalogue = { pokemon: response[0], moves: response[1], artworkLayout: response[3] };
     world = response[2];
+    saveSessionIsCurrent = openSaveSession(saveStorage, document, location.port);
     const state = readState(saveStorage, catalogue);
     meta = state.meta;
     configureTranslations(response[4]);setLocale(meta.language);localizer.refresh();
@@ -1382,7 +1714,9 @@ async function boot() {
       ...required.map((name) => "assets/generated/" + name + ".webp"),
       ...[...IMPACT_ASSETS, "evolution-aura"].map((name) =>
         "assets/effects/" + name + "-sheet.webp"),
-      ...Object.values(catalogue.pokemon).map((p) => p.artwork),
+      ...[run?.hero.id, run?.enemy?.id, E.selectedStartingPartner(meta, catalogue)]
+        .filter((id) => catalogue.pokemon[id])
+        .map((id) => catalogue.pokemon[id].artwork),
     ];
     let prepared = 0;
     function updateLoading() {

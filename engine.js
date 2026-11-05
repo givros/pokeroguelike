@@ -2,6 +2,7 @@ import { activeSynergies, awakenedBy } from "./builds.js";
 import { guardianAbility } from "./guardians.js";
 import {selectedRouteNode,routeOptions,enableRouteGraph} from './route-graph.js';
 import {gearTier,awardLegacy,salvageEquipment} from './legacy.js';
+import {STARTER_BOONS, equippedStarterBoon} from './starter-boons.js';
 
 export const STAGES = [
   { kind: "wild", name: "Woodland Edge", pool: [10, 16, 19] },
@@ -30,6 +31,7 @@ export const region = (run) => REGIONS.find((r) =>
 export const BONUSES = [
   {
     id: "hp_boost",
+    category: "defense",
     name: "Endurance",
     asset: "healing-berry",
     text: "Maximum HP +20%.",
@@ -37,6 +39,7 @@ export const BONUSES = [
   },
   {
     id: "attack_boost",
+    category: "offense",
     name: "Strength",
     asset: "attack-fang",
     text: "Attack and Special Attack +15%.",
@@ -44,6 +47,7 @@ export const BONUSES = [
   },
   {
     id: "defense_boost",
+    category: "defense",
     name: "Resilience",
     asset: "defense-shell",
     text: "Defense and Special Defense +15%.",
@@ -51,6 +55,7 @@ export const BONUSES = [
   },
   {
     id: "crit_chance",
+    category: "offense",
     name: "Precision",
     asset: "critical-lens",
     text: "Critical chance +10 percentage points.",
@@ -58,6 +63,7 @@ export const BONUSES = [
   },
   {
     id: "type_boost",
+    category: "offense",
     name: "Elemental Affinity",
     asset: "affinity-crystal",
     text: "Same-type attack bonus +20 percentage points.",
@@ -65,6 +71,7 @@ export const BONUSES = [
   },
   {
     id: "regeneration",
+    category: "defense",
     name: "Living Roots",
     asset: "living-roots",
     text: "Recover 10% maximum HP after every victory.",
@@ -72,6 +79,7 @@ export const BONUSES = [
   },
   {
     id: "lifesteal",
+    category: "defense",
     name: "Ravenous Fang",
     asset: "ravenous-fang-v2",
     text: "Heal for 15% of damage dealt.",
@@ -79,6 +87,7 @@ export const BONUSES = [
   },
   {
     id: "first_guard",
+    category: "defense",
     name: "Opening Guard",
     asset: "opening-guard",
     text: "Take 50% less damage from the first hit.",
@@ -86,6 +95,7 @@ export const BONUSES = [
   },
   {
     id: "gold_boost",
+    category: "expedition",
     name: "Lucky Charm",
     asset: "gold-coins",
     text: "Battle gold +30%.",
@@ -93,6 +103,7 @@ export const BONUSES = [
   },
   {
     id: "momentum",
+    category: "offense",
     name: "Wayfarer Momentum",
     asset: "wayfarer-spur",
     text: "Damage +3% per battle action, up to +30%.",
@@ -100,6 +111,7 @@ export const BONUSES = [
   },
   {
     id: "pp_boost",
+    category: "expedition",
     name: "Second Wind",
     asset: "healing-potion",
     text: "Restore all PP and recover 20% maximum HP.",
@@ -107,11 +119,13 @@ export const BONUSES = [
   },
   {
     id: "focus_crit",
+    category: "offense",
     name: "Guardian Eye",
     asset: "guardian-eye",
     text: "Critical hits deal 25% additional damage.",
     max: 1,
   },
+  ...STARTER_BOONS,
 ];
 export const UPGRADE_DEFS = {
   maxHpBonus: {
@@ -384,10 +398,10 @@ export function fighter(id, level, catalogue, upgrades = {}) {
     shield: 0,
   };
 }
-function eligibleBonuses(run) {
+function eligibleBonuses(run, includeStarterOnly = false) {
   return BONUSES.filter(
     (b) =>
-      count(run, b.id) < b.max &&
+      (includeStarterOnly || !b.starterOnly) && count(run, b.id) < b.max &&
       (b.id !== "pp_boost" ||
         run.hero.hp < run.hero.maxHp ||
         run.hero.moves.some((s) => s.pp < (s.maxPp || 35))),
@@ -402,6 +416,12 @@ export function offerBonuses(run) {
     );
   }
   return chosen;
+}
+
+export function expandStarterOffers(run) {
+  if (!run.endless || run.phase !== "starter") return;
+  const eligible = eligibleBonuses(run, true).map(bonus => bonus.id);
+  run.offers = [...new Set([...run.offers, ...eligible])].filter(id => eligible.includes(id));
 }
 export function rerollCost(run) {
   return (run.rerolls || 0) >= 3 ? null : 20 + (run.rerolls || 0) * 15;
@@ -471,11 +491,53 @@ export function enableEndless(run,meta){
  run.skill=fresh?meta.equippedSkill||null:null;
  run.gear=fresh&&meta.equippedGear?{id:meta.equippedGear,tier:meta.equipment[meta.equippedGear]}:null;
  if(fresh){run.coins=0;const hp=8*gearTier(run,'charm');run.hero.maxHp+=hp;run.hero.hp+=hp;}
+ if (fresh) expandStarterOffers(run);
  return true;
 }
-export function startingPartner(meta,seed=Date.now(),catalogue=null){
- if(meta.startingPartner&&meta.captured?.[meta.startingPartner]&&(!catalogue||catalogue.pokemon[meta.startingPartner]))return Number(meta.startingPartner);
- const pool=[...new Set([1,4,7,25,133,152,...Object.keys(meta.captured||{}).map(Number).filter(id=>!catalogue||catalogue.pokemon[id])])];let x=seed>>>0||1;x^=x<<13;x^=x>>>17;x^=x<<5;return pool[(x>>>0)%pool.length];
+export function selectedStartingPartner(meta, catalogue) {
+  const id = Number(meta.startingPartner);
+  return meta.captured?.[id] > 0 && catalogue.pokemon[id] ? id : null;
+}
+
+const captureRates = { common: 0.70, rare: 0.45, legendary: 0.25 };
+const speciesPools = new WeakMap();
+
+export function captureEncounterOdds(stageIndex) {
+  const progress = clamp(stageIndex / 30, 0, 1);
+  const rare = 0.12 + 0.23 * progress;
+  const legendary = 0.01 + 0.14 * progress;
+  return { common: 1 - rare - legendary, rare, legendary };
+}
+
+export function drawCatalogueSpecies(catalogue, fraction, stageIndex = 0) {
+  let pools = speciesPools.get(catalogue.pokemon);
+  if (!pools) {
+    pools = { common: [], rare: [], legendary: [] };
+    for (const species of Object.values(catalogue.pokemon)) {
+      (pools[species.rarity] ?? pools.common).push(species.id);
+    }
+    speciesPools.set(catalogue.pokemon, pools);
+  }
+
+  const available = Object.entries(captureEncounterOdds(stageIndex))
+    .filter(([rarity]) => pools[rarity].length > 0);
+  const total = available.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = fraction * total;
+  for (const [rarity, weight] of available) {
+    const pool = pools[rarity];
+    if (roll < weight) return pool[Math.floor(roll / weight * pool.length)];
+    roll -= weight;
+  }
+  // Floating-point rounding can put the roll exactly at the upper boundary.
+  return pools[available.at(-1)[0]].at(-1);
+}
+
+export function randomStartingPartner(seed, catalogue) {
+  return drawCatalogueSpecies(catalogue, random({ seed: seed >>> 0 || 1 }));
+}
+
+export function startingPartner(meta, seed, catalogue) {
+  return selectedStartingPartner(meta, catalogue) ?? randomStartingPartner(seed, catalogue);
 }
 export const depthPressure = run => run.endless?{hp:1.18+run.stageIndex*.045,damage:1.12+run.stageIndex*.035}:{hp:1,damage:1};
 function grantBonus(run, id) {
@@ -521,7 +583,8 @@ export function setShrineOffering(run, enabled) {
 export function canSelectBonus(run, id) {
   const boon = BONUSES.find((b) => b.id === id);
   return ['starter', 'reward', 'shrine'].includes(run.phase) && run.offers.includes(id) &&
-    !!boon && count(run, id) < boon.max && (!run.shrineEmpowered ||
+    !!boon && (!boon.starterOnly || run.endless && run.phase === "starter") &&
+    count(run, id) < boon.max && (!run.shrineEmpowered ||
       (run.phase === "shrine" && canEmpowerBonus(run, id) && run.hero.hp > shrineOfferingCost(run)));
 }
 export function selectBonus(run, id) {
@@ -647,9 +710,9 @@ export function activateStage(run, catalogue) {
   addLog(run, node.name + ".");
   if (["wild", "elite", "boss", "capture"].includes(node.kind)) {
     const prepared = run.scouting?.stageIndex === run.stageIndex &&
-      node.pool.includes(run.scouting.speciesId);
-    const id = prepared ? run.scouting.speciesId :
-      node.pool[Math.floor(random(run) * node.pool.length)],
+      node.kind !== "capture" && node.pool.includes(run.scouting.speciesId);
+    const id = node.kind === "capture" ? drawCatalogueSpecies(catalogue, random(run), run.stageIndex) :
+      prepared ? run.scouting.speciesId : node.pool[Math.floor(random(run) * node.pool.length)],
       level = Math.min(100,
         4 +
         Math.floor(run.stageIndex * 0.65) +
@@ -665,8 +728,8 @@ export function activateStage(run, catalogue) {
     }
     if(run.endless){run.enemy.maxHp=Math.min(900000,Math.ceil(run.enemy.maxHp*depthPressure(run).hp));run.enemy.hp=run.enemy.maxHp;}
     run.hero.guardUsed = false;
-    run.hero.shield = 0;
-    if(run.endless&&run.skill==='ward')run.hero.shield=Math.ceil(run.hero.maxHp*.12);
+    const ward = run.endless && run.skill === 'ward' ? .12 : 0;
+    run.hero.shield = Math.ceil(run.hero.maxHp * Math.max(ward, equippedStarterBoon(run)?.barrier ?? 0));
     run.preparedStrike = !!prepared || (run.routeMode==='branching'&&run.preparedStrike===true);
     run.scouting = null;
     run.battleActions = 0;
@@ -716,6 +779,11 @@ export function expectedDamage(
     catalogue,
     player,
   );
+  const openingBoon = equippedStarterBoon(run);
+  const boonMultiplier = openingBoon?.damage?.({
+    run, player, attacker, defender, move, sameType: stab > 1, effectiveness: eff,
+    dangerous: ['elite', 'boss'].includes(stage(run).kind),
+  }) ?? 1;
   return (
     (Math.floor(
       (((2 * attacker.level) / 5 + 2) * move.power * atk) /
@@ -724,7 +792,7 @@ export function expectedDamage(
     ) +
       2) *
     stab *
-    eff * (player ? (run.endless&&run.skill==='adrenaline'&&attacker.hp<attacker.maxHp*.35?1.25:1) : threatModifiers(run).enemyDamage*depthPressure(run).damage) *
+    eff * boonMultiplier * (player ? (run.endless&&run.skill==='adrenaline'&&attacker.hp<attacker.maxHp*.35?1.25:1) : threatModifiers(run).enemyDamage*depthPressure(run).damage) *
     (player && guardianAbility(run)?.key === "multiscale" && defender.hp === defender.maxHp ? 0.5 : 1) *
     (!player && guardianAbility(run)?.key === "swarm" && attacker.hp * 3 <= attacker.maxHp && move.type === "bug" ? 1.5 : 1)
   );
@@ -884,7 +952,8 @@ function winBattle(run, catalogue) {
         (1 + 0.3 * count(run, "gold_boost")) * threatModifiers(run).gold,
     );
   run.coins += gold;
-  const xp = node.kind === "boss" ? 3 : node.kind === "elite" ? 2 : 1;
+  const boon = equippedStarterBoon(run);
+  const xp = (node.kind === "boss" ? 3 : node.kind === "elite" ? 2 : 1) + (boon?.experience ?? 0);
   run.hero.xp += xp;
   while (run.hero.xp >= 2) {
     if(run.hero.level>=100){run.hero.xp=0;break;}
@@ -901,13 +970,14 @@ function winBattle(run, catalogue) {
   run.hero.hp = Math.min(run.hero.maxHp, run.hero.hp + healing);
   run.hero.moves.forEach((slot) => {
     const base = catalogue.moves[slot.id];
-    if (base) slot.pp = Math.min(base.pp, slot.pp + 2);
+    if (base) slot.pp = Math.min(base.pp, slot.pp + (boon?.ppRecovery ?? 2));
   });
   addLog(run, `Victory! +${gold} gold, +${xp} experience.`);
   run.pendingReward = true;
   if(run.endless&&['elite','boss'].includes(node.kind)){const loot=salvageEquipment(run);addLog(run,`Equipment found: ${loot.name} · tier ${loot.tier}.`);}
   if(run.endless&&node.kind==='capture'){
-    const chance=Math.min(.85,([150,149].includes(run.enemy.id)?.35:[123,131].includes(run.enemy.id)?.45:.7)+.02*gearTier(run,'lens'));
+    const rarity = catalogue.pokemon[run.enemy.id].rarity;
+    const chance = Math.min(0.85, (captureRates[rarity] ?? captureRates.common) + (boon?.captureChance ?? 0) + 0.02 * gearTier(run, 'lens'));
     run.pendingCapture={id:run.enemy.id,chance,attempted:false,caught:false};run.phase='capture';
   }else if (!run.endless&&run.stageIndex === STAGES.length - 1) {
     run.phase = "complete";
@@ -1073,6 +1143,7 @@ export function settle(run, meta) {
   run.settled = true;
   if(run.endless)run.pendingCapture=null;
   if(run.introPending)run.introPending=false;
+  if (run.introChoicePending) run.introChoicePending = false;
   run.landmark = null;
   run.endBonus =
     run.phase === "defeat"

@@ -1,8 +1,49 @@
-import { baseMeta, BONUSES, STAGES, clamp, region, MAX_THREAT, stageAt } from "./engine.js";
+import { baseMeta, BONUSES, STAGES, clamp, region, MAX_THREAT, stageAt, expandStarterOffers } from "./engine.js";
 import {validBranchState} from './route-graph.js';
 import { SYNERGIES } from "./builds.js";
 import {SKILLS,EQUIPMENT} from './legacy.js';
 export const SAVE_KEY = "pokeRogueAdventureV3";
+const LEGACY_SAVE_KEY = "pokeBattleProgress";
+const SAVE_SESSION_KEY = "pokeRogueSaveSession";
+
+export function resetSave(storage, document, port) {
+  try {
+    storage.removeItem(LEGACY_SAVE_KEY);
+    storage.removeItem(SAVE_KEY);
+    document.cookie = `${SAVE_SESSION_KEY}${port}=; Path=/; Max-Age=0; SameSite=Lax`;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function openSaveSession(storage, document, port) {
+  const name = SAVE_SESSION_KEY + port;
+  const readCookie = () => document.cookie.split(';').map(part => part.trim())
+    .find(part => part.startsWith(name + '='))?.slice(name.length + 1);
+  try {
+    const previous = storage.getItem(SAVE_SESSION_KEY);
+    const cookie = readCookie();
+    const session = cookie || crypto.randomUUID();
+    document.cookie = `${name}=${session}; Path=/; Max-Age=34560000; SameSite=Lax`;
+    if (readCookie() !== session) return null;
+
+    // Saves from before cookie tracking are adopted on the first visit.
+    if (previous !== null && previous !== cookie) {
+      storage.removeItem(SAVE_KEY);
+      storage.removeItem(LEGACY_SAVE_KEY);
+    }
+    storage.setItem(SAVE_SESSION_KEY, session);
+    return () => readCookie() === session;
+  } catch {
+    return null;
+  }
+}
+
+function validEncounterSpecies(stage, id, catalogue) {
+  if (stage?.kind === "capture") return Number.isInteger(id) && !!catalogue.pokemon[id];
+  return stage?.pool?.includes(id);
+}
 function validEndless(r,c){
  if(r.routeMode!=='branching'||![0,1].includes(r.proceduralFromChapter)||r.phase==='complete')return false;
  if(r.skill!=null&&!SKILLS.some(s=>s.id===r.skill))return false;
@@ -120,6 +161,7 @@ export function validRun(r, c) {
   if(r.endless&&!validEndless(r,c))return false;
   if(r.introPending!=null&&(typeof r.introPending!=='boolean'||r.introPending&&r.phase!=='starter'))return false;
   if(r.introMode!=null&&!['random','chosen'].includes(r.introMode))return false;
+  if(r.introChoicePending!=null&&(typeof r.introChoicePending!=='boolean'||r.introChoicePending&&(r.phase!=='starter'||r.introPending||r.introMode!=='random')))return false;
   if (typeof r.settled !== "boolean" || typeof r.pendingReward !== "boolean" ||
     (r.pendingEvolution != null && typeof r.pendingEvolution !== "boolean")) return false;
   if (r.settled && !["complete", "defeat", "retired"].includes(r.phase)) return false;
@@ -184,9 +226,9 @@ export function validRun(r, c) {
     return false;
   if (
     !Array.isArray(r.offers) ||
-    r.offers.length > 3 ||
+    r.offers.length > (r.endless && r.phase === "starter" ? BONUSES.length : 3) ||
     new Set(r.offers).size !== r.offers.length ||
-    !r.offers.every((id) => BONUSES.some((b) => b.id === id))
+    !r.offers.every((id) => BONUSES.some((b) => b.id === id && (!b.starterOnly || r.endless && r.phase === "starter")))
   )
     return false;
   if (r.idleEnabled !== undefined && typeof r.idleEnabled !== "boolean") return false;
@@ -252,7 +294,7 @@ export function validRun(r, c) {
     !r.encounters.every((entry, i, entries) => entry &&
       Number.isInteger(entry.stage) && entry.stage >= 0 && entry.stage <= r.stageIndex &&
       (i === 0 || entry.stage > entries[i - 1].stage) &&
-      stageAt(r,entry.stage)?.pool?.includes(entry.id) &&
+      validEncounterSpecies(stageAt(r, entry.stage), entry.id, c) &&
       Number.isInteger(entry.level) && entry.level > 0 && entry.level <= 100 &&
       typeof entry.won === "boolean"))) return false;
   if (r.initialSeed != null && (!Number.isInteger(r.initialSeed) ||
@@ -283,6 +325,7 @@ export function readState(storage, catalogue) {
       const s = JSON.parse(raw);
       const meta = normalizeMeta(s.meta);
       let run = validRun(s.run, catalogue) ? s.run : null;
+      if (run) expandStarterOffers(run);
       if (s.run && !run)
         warning =
           "This expedition cannot be resumed. Your permanent progress has been retained.";
@@ -294,7 +337,7 @@ export function readState(storage, catalogue) {
         run.phase = "defeat";
       return { meta, run, warning };
     }
-    const legacy = JSON.parse(storage.getItem("pokeBattleProgress") || "null");
+    const legacy = JSON.parse(storage.getItem(LEGACY_SAVE_KEY) || "null");
     return { meta: normalizeMeta(legacy), run: null, warning };
   } catch {
     return {
